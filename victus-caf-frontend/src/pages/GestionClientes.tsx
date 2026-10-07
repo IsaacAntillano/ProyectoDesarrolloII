@@ -64,6 +64,7 @@ export default function GestionClientes() {
   }, [tab, verTodos, esAdmin]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargar();
   }, [cargar]);
 

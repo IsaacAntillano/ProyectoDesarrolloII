@@ -1,22 +1,8 @@
 import api from './api';
+import { type ApiResponse, unwrap } from './apiTypes';
+import { getApiErrorMessage } from '../utils/apiError';
 
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
-function unwrap<T>(res: { data: ApiResponse<T> }): T {
-  return res.data.data;
-}
-
-export function getApiErrorMessage(err: unknown, fallback: string): string {
-  if (typeof err === 'object' && err !== null && 'response' in err) {
-    const data = (err as { response?: { data?: { message?: string } } }).response?.data;
-    if (data?.message) return data.message;
-  }
-  return fallback;
-}
+export { getApiErrorMessage };
 
 export interface ClienteBase {
   id: number;

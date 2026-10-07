@@ -1,14 +1,5 @@
 import api from './api';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
-function unwrap<T>(res: { data: ApiResponse<T> }): T {
-  return res.data.data;
-}
+import { type ApiResponse, unwrap } from './apiTypes';
 
 export interface Secretaria {
   idUsuarioSistema: number;

@@ -1,18 +1,25 @@
+import { type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 
 interface PrivateRouteProps {
-  children: JSX.Element;
+  children: ReactNode;
   allowedRoles: string[];
 }
 
 export const PrivateRoute = ({ children, allowedRoles }: PrivateRouteProps) => {
   const userStr = localStorage.getItem('user');
   if (!userStr) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/" replace />;
   }
-  const user = JSON.parse(userStr);
-  if (!allowedRoles.includes(user.rol)) {
-    return <Navigate to="/login" />;
+  let user: { rol?: string };
+  try {
+    user = JSON.parse(userStr);
+  } catch {
+    return <Navigate to="/" replace />;
+  }
+  const rol = user?.rol ?? '';
+  if (!rol || !allowedRoles.includes(rol)) {
+    return <Navigate to="/" replace />;
   }
   return children;
 };

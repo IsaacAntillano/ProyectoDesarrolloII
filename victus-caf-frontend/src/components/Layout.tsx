@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FiLogOut, FiUsers, FiUserPlus, FiHome } from 'react-icons/fi';
+import { type ReactNode, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { FiLogOut, FiUsers, FiUserPlus, FiHome, FiMenu, FiX } from 'react-icons/fi';
 
 interface LayoutProps {
   children: ReactNode;
@@ -8,24 +8,47 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, title }: LayoutProps) {
-  const navigate = useNavigate();
   const userStr = localStorage.getItem('user');
-  let user: any = null;
+  let user: { rol?: string; nombreCompleto?: string; numeroDocumento?: number } | null = null;
   if (userStr) {
-    try { user = JSON.parse(userStr); } catch (e) {}
+    try {
+      user = JSON.parse(userStr);
+    } catch {
+      /* JSON de usuario inválido: se ignora */
+    }
   }
 
   const logout = () => {
-    localStorage.clear();
-    window.location.href = '/login';
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    window.location.href = import.meta.env.BASE_URL;
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 relative">
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col">
-        <div className="p-4 bg-slate-950">
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-white flex flex-col transform transition-transform duration-200 md:relative md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+        <div className="flex items-center justify-between p-4 bg-slate-950">
           <h2 className="text-2xl font-bold text-center">Victus CAF</h2>
+          <button
+            type="button"
+            className="md:hidden p-2 rounded-md text-slate-200 hover:bg-slate-800"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Cerrar menú"
+          >
+            <FiX className="h-5 w-5" />
+          </button>
         </div>
         <nav className="flex-1 p-4 space-y-2">
           {user?.rol === 'ADMINISTRADOR' && (
@@ -66,17 +89,27 @@ export default function Layout({ children, title }: LayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white h-16 flex items-center justify-between px-8 border-b">
-          <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
-          <button 
+      <main className="flex-1 flex flex-col overflow-hidden md:ml-64">
+        <header className="bg-white h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="md:hidden p-2 rounded-md text-slate-700 hover:bg-slate-100 transition"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Abrir menú"
+            >
+              <FiMenu className="h-5 w-5" />
+            </button>
+            <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
+          </div>
+          <button
             onClick={logout}
             className="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition"
           >
-            <FiLogOut /> <span>Cerrar Sesión</span>
+            <FiLogOut /> <span className="hidden sm:inline">Cerrar Sesión</span>
           </button>
         </header>
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

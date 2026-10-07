@@ -8,20 +8,24 @@ import {
   reactivarUsuario,
   buscarUsuarioPorDocumento,
 } from '../services/usuarioSistemaService';
+import {
+  listarTarifas,
+  actualizarTarifa,
+  listarEquipos,
+  listarEquiposMantenimientoProximo,
+  crearEquipo,
+  consultarFlujoCaja,
+  type Tarifa,
+  type Equipo,
+  type EquipoDTO,
+  type FlujoCaja,
+} from '../services/adminService';
 import Layout from '../components/Layout';
 import DocumentTypeBar from '../components/DocumentTypeBar';
 import { cupoDisponible, mensajeCupo, ROL_LIMITS } from '../constants/rolLimits';
-import { isServerUnreachable, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
+import { isServerUnreachable, getApiErrorMessage, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
 import toast from 'react-hot-toast';
 import { FiEdit2, FiTrash2, FiPlus, FiList, FiSearch, FiRefreshCw } from 'react-icons/fi';
-import axios from 'axios';
-
-function getErrorMessage(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err) && err.response?.data?.message) {
-    return err.response.data.message as string;
-  }
-  return fallback;
-}
 
 export default function AdminDashboard() {
   const [usuarios, setUsuarios] = useState<UsuarioSistema[]>([]);
@@ -39,6 +43,37 @@ export default function AdminDashboard() {
     contrasena: '',
   });
 
+  const [section, setSection] = useState<'usuarios' | 'recursos'>('usuarios');
+  const [resourceTab, setResourceTab] = useState<'tarifas' | 'equipos' | 'flujoCaja'>('tarifas');
+  const [tarifas, setTarifas] = useState<Tarifa[]>([]);
+  const [tarifaEdits, setTarifaEdits] = useState<Record<Tarifa['tipoDeCliente'], { valorMensual: number; valorDiario: number; valorPlus: number }>>({
+    PARTICULAR_MENSUAL: { valorMensual: 0, valorDiario: 0, valorPlus: 0 },
+    PARTICULAR_DIARIO: { valorMensual: 0, valorDiario: 0, valorPlus: 0 },
+    BENEFICIARIO_EPS: { valorMensual: 0, valorDiario: 0, valorPlus: 0 },
+  });
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [equiposProximo, setEquiposProximo] = useState<Equipo[]>([]);
+  const [equipoForm, setEquipoForm] = useState<Partial<EquipoDTO>>({
+    nombre: '',
+    descripcion: '',
+    fechaAdquisicion: '',
+    estadoEquipo: 'OPERATIVO',
+    proximoMantenimiento: '',
+  });
+  const [flujoFecha, setFlujoFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [flujoCaja, setFlujoCaja] = useState<FlujoCaja | null>(null);
+
+  const currentAdminId = (() => {
+    const userString = localStorage.getItem('user');
+    if (!userString) return 0;
+    try {
+      const parsed = JSON.parse(userString);
+      return parsed?.id ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
+
   const cargarUsuarios = async () => {
     setLoading(true);
     try {
@@ -54,8 +89,82 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargarUsuarios();
   }, []);
+
+  const cargarTarifas = async () => {
+    try {
+      const data = await listarTarifas();
+      setTarifas(data);
+      const edits: Record<Tarifa['tipoDeCliente'], { valorMensual: number; valorDiario: number; valorPlus: number }> = {
+        PARTICULAR_MENSUAL: { valorMensual: 0, valorDiario: 0, valorPlus: 0 },
+        PARTICULAR_DIARIO: { valorMensual: 0, valorDiario: 0, valorPlus: 0 },
+        BENEFICIARIO_EPS: { valorMensual: 0, valorDiario: 0, valorPlus: 0 },
+      };
+      data.forEach((tarifa) => {
+        edits[tarifa.tipoDeCliente] = {
+          valorMensual: tarifa.valorMensual,
+          valorDiario: tarifa.valorDiario,
+          valorPlus: tarifa.valorPlus,
+        };
+      });
+      setTarifaEdits(edits);
+    } catch (err) {
+      toast.error(isServerUnreachable(err) ? SERVER_UNREACHABLE_MESSAGE : 'Error al cargar tarifas');
+    }
+  };
+
+  const cargarEquipos = async () => {
+    try {
+      const datos = await listarEquipos();
+      setEquipos(datos);
+    } catch (err) {
+      toast.error(isServerUnreachable(err) ? SERVER_UNREACHABLE_MESSAGE : 'Error al cargar equipos');
+    }
+  };
+
+  const cargarEquiposProximoMantenimiento = async () => {
+    try {
+      const datos = await listarEquiposMantenimientoProximo();
+      setEquiposProximo(datos);
+    } catch (err) {
+      toast.error(isServerUnreachable(err) ? SERVER_UNREACHABLE_MESSAGE : 'Error al cargar equipos para mantenimiento');
+    }
+  };
+
+  const cargarFlujoCaja = async (fecha: string) => {
+    try {
+      const datos = await consultarFlujoCaja(fecha);
+      setFlujoCaja(datos);
+    } catch (err) {
+      toast.error(isServerUnreachable(err) ? SERVER_UNREACHABLE_MESSAGE : getApiErrorMessage(err, 'No hay flujo de caja para esa fecha'));
+      setFlujoCaja(null);
+    }
+  };
+
+  useEffect(() => {
+    if (section !== 'recursos') return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cargarTarifas();
+    cargarEquipos();
+    cargarEquiposProximoMantenimiento();
+  }, [section]);
+
+  useEffect(() => {
+    if (section !== 'recursos') return;
+    if (resourceTab === 'tarifas') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      cargarTarifas();
+    }
+    if (resourceTab === 'equipos') {
+      cargarEquipos();
+      cargarEquiposProximoMantenimiento();
+    }
+    if (resourceTab === 'flujoCaja') {
+      setFlujoCaja(null);
+    }
+  }, [section, resourceTab]);
 
   const conteoPorRol = useMemo(() => {
     const adminTotal = usuarios.filter((u) => u.rol === 'ADMINISTRADOR').length;
@@ -100,8 +209,51 @@ export default function AdminDashboard() {
       setBusqueda(String(doc));
       toast.success(`Usuario encontrado: ${encontrado.nombreCompleto}`);
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Usuario no encontrado'));
+      toast.error(getApiErrorMessage(err, 'Usuario no encontrado'));
     }
+  };
+
+  const handleActualizarTarifa = async (tipo: Tarifa['tipoDeCliente']) => {
+    try {
+      const tarifa = tarifaEdits[tipo];
+      await actualizarTarifa(tipo, {
+        tipoDeCliente: tipo,
+        valorMensual: tarifa.valorMensual,
+        valorDiario: tarifa.valorDiario,
+        valorPlus: tarifa.valorPlus,
+        idAdminModificador: currentAdminId,
+      });
+      toast.success('Tarifa actualizada correctamente');
+      cargarTarifas();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Error al actualizar tarifa'));
+    }
+  };
+
+  const handleCrearEquipo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!equipoForm.nombre || !equipoForm.fechaAdquisicion || !equipoForm.proximoMantenimiento) {
+      toast.error('Completa los campos obligatorios del equipo');
+      return;
+    }
+    try {
+      const nuevo = await crearEquipo(equipoForm as EquipoDTO);
+      setEquipos((prev) => [...prev, nuevo]);
+      toast.success('Equipo registrado correctamente');
+      setEquipoForm({
+        nombre: '',
+        descripcion: '',
+        fechaAdquisicion: '',
+        estadoEquipo: 'OPERATIVO',
+        proximoMantenimiento: '',
+      });
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Error al crear equipo'));
+    }
+  };
+
+  const handleConsultarFlujoCaja = async () => {
+    await cargarFlujoCaja(flujoFecha);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -120,7 +272,7 @@ export default function AdminDashboard() {
       cargarUsuarios();
       resetForm();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Error al crear usuario'));
+      toast.error(getApiErrorMessage(err, 'Error al crear usuario'));
     }
   };
 
@@ -143,7 +295,7 @@ export default function AdminDashboard() {
       setCurrentUser(null);
       resetForm();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Error al actualizar usuario'));
+      toast.error(getApiErrorMessage(err, 'Error al actualizar usuario'));
     }
   };
 
@@ -154,7 +306,7 @@ export default function AdminDashboard() {
       toast.success('Usuario inactivado');
       cargarUsuarios();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Error al inactivar usuario'));
+      toast.error(getApiErrorMessage(err, 'Error al inactivar usuario'));
     }
   };
 
@@ -164,7 +316,7 @@ export default function AdminDashboard() {
       toast.success('Usuario reactivado');
       cargarUsuarios();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Error al reactivar usuario'));
+      toast.error(getApiErrorMessage(err, 'Error al reactivar usuario'));
     }
   };
 
@@ -204,7 +356,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <Layout title="Gestión de Usuarios del Sistema">
+    <Layout title="Panel de Administrador">
       <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-900">
         <strong>Cupos:</strong> Administrador {conteoPorRol.adminTotal}/{ROL_LIMITS.ADMINISTRADOR}
         {' · '}Secretarias activas {conteoPorRol.secActivas}/{ROL_LIMITS.SECRETARIA}
@@ -213,6 +365,29 @@ export default function AdminDashboard() {
 
       <div className="mb-6 flex flex-wrap gap-3">
         <button
+          type="button"
+          onClick={() => setSection('usuarios')}
+          className={`px-4 py-2 rounded-md shadow-sm transition ${
+            section === 'usuarios' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          Usuarios del sistema
+        </button>
+        <button
+          type="button"
+          onClick={() => setSection('recursos')}
+          className={`px-4 py-2 rounded-md shadow-sm transition ${
+            section === 'recursos' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          Gestión de recursos
+        </button>
+      </div>
+
+      {section === 'usuarios' && (
+        <>
+          <div className="mb-6 flex flex-wrap gap-3">
+            <button
           onClick={() => {
             setModo('list');
             resetForm();
@@ -445,6 +620,316 @@ export default function AdminDashboard() {
             </div>
           </form>
         </div>
+      )}
+      </>
+      )}
+
+      {section === 'recursos' && (
+        <>
+          <div className="mb-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setResourceTab('tarifas')}
+              className={`px-4 py-2 rounded-md shadow-sm transition ${
+                resourceTab === 'tarifas' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Tarifas
+            </button>
+            <button
+              type="button"
+              onClick={() => setResourceTab('equipos')}
+              className={`px-4 py-2 rounded-md shadow-sm transition ${
+                resourceTab === 'equipos' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Equipos
+            </button>
+            <button
+              type="button"
+              onClick={() => setResourceTab('flujoCaja')}
+              className={`px-4 py-2 rounded-md shadow-sm transition ${
+                resourceTab === 'flujoCaja' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Flujo de caja
+            </button>
+          </div>
+
+          {resourceTab === 'tarifas' && (
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                <h2 className="text-xl font-semibold mb-4">Gestión de Tarifas</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Ajusta los valores vigentes para clientes mensuales, diarios y beneficiarios EPS.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Tipo de cliente</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Valor mensual</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Valor diario</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Valor plus</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {tarifas.map((tarifa) => (
+                        <tr key={tarifa.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {tarifa.tipoDeCliente.replaceAll('_', ' ')}
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={tarifaEdits[tarifa.tipoDeCliente]?.valorMensual ?? 0}
+                              onChange={(e) =>
+                                setTarifaEdits({
+                                  ...tarifaEdits,
+                                  [tarifa.tipoDeCliente]: {
+                                    ...tarifaEdits[tarifa.tipoDeCliente],
+                                    valorMensual: parseFloat(e.target.value) || 0,
+                                  },
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={tarifaEdits[tarifa.tipoDeCliente]?.valorDiario ?? 0}
+                              onChange={(e) =>
+                                setTarifaEdits({
+                                  ...tarifaEdits,
+                                  [tarifa.tipoDeCliente]: {
+                                    ...tarifaEdits[tarifa.tipoDeCliente],
+                                    valorDiario: parseFloat(e.target.value) || 0,
+                                  },
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={tarifaEdits[tarifa.tipoDeCliente]?.valorPlus ?? 0}
+                              onChange={(e) =>
+                                setTarifaEdits({
+                                  ...tarifaEdits,
+                                  [tarifa.tipoDeCliente]: {
+                                    ...tarifaEdits[tarifa.tipoDeCliente],
+                                    valorPlus: parseFloat(e.target.value) || 0,
+                                  },
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleActualizarTarifa(tarifa.tipoDeCliente)}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+                            >
+                              Guardar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {tarifas.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                            No hay tarifas cargadas.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {resourceTab === 'equipos' && (
+            <div className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                  <h2 className="text-xl font-semibold mb-4">Registrar nuevo equipo</h2>
+                  <form onSubmit={handleCrearEquipo} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                      <input
+                        type="text"
+                        value={equipoForm.nombre || ''}
+                        onChange={(e) => setEquipoForm({ ...equipoForm, nombre: e.target.value })}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                      <textarea
+                        value={equipoForm.descripcion || ''}
+                        onChange={(e) => setEquipoForm({ ...equipoForm, descripcion: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de adquisición</label>
+                      <input
+                        type="date"
+                        value={equipoForm.fechaAdquisicion || ''}
+                        onChange={(e) => setEquipoForm({ ...equipoForm, fechaAdquisicion: e.target.value })}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                      <select
+                        value={equipoForm.estadoEquipo || 'OPERATIVO'}
+                        onChange={(e) => setEquipoForm({ ...equipoForm, estadoEquipo: e.target.value as Equipo['estadoEquipo'] })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
+                      >
+                        <option value="OPERATIVO">Operativo</option>
+                        <option value="EN_MANTENIMIENTO">En mantenimiento</option>
+                        <option value="DADO_DE_BAJA">Dado de baja</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Próximo mantenimiento</label>
+                      <input
+                        type="date"
+                        value={equipoForm.proximoMantenimiento || ''}
+                        onChange={(e) => setEquipoForm({ ...equipoForm, proximoMantenimiento: e.target.value })}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Crear equipo
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                  <h2 className="text-xl font-semibold mb-4">Inventario de equipos</h2>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nombre</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Mantenimiento</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {equipos.map((equipo) => (
+                          <tr key={equipo.idEquipo} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">{equipo.nombre}</td>
+                            <td className="px-4 py-3">{equipo.estadoEquipo.replaceAll('_', ' ')}</td>
+                            <td className="px-4 py-3">{equipo.proximoMantenimiento}</td>
+                          </tr>
+                        ))}
+                        {equipos.length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
+                              No hay equipos registrados.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-semibold mb-3">Equipos con mantenimiento próximo</h3>
+                {equiposProximo.length === 0 ? (
+                  <p className="text-gray-600">No hay equipos con mantenimiento programado en los próximos 5 días.</p>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {equiposProximo.map((equipo) => (
+                      <div key={equipo.idEquipo} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="font-semibold">{equipo.nombre}</p>
+                        <p className="text-sm text-gray-600">Próximo mantenimiento: {equipo.proximoMantenimiento}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {resourceTab === 'flujoCaja' && (
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                <h2 className="text-xl font-semibold mb-4">Consulta de flujo de caja</h2>
+                <div className="grid gap-4 md:grid-cols-3 items-end">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                    <input
+                      type="date"
+                      value={flujoFecha}
+                      onChange={(e) => setFlujoFecha(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div className="md:col-span-2 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleConsultarFlujoCaja}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      Consultar flujo
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {flujoCaja && (
+                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm grid gap-4 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">Fecha</p>
+                    <p className="text-lg font-semibold">{flujoCaja.fecha}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">Ingreso mensual</p>
+                    <p className="text-lg font-semibold">${flujoCaja.totalIngresoParticular.toFixed(2)}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">Ingreso diario</p>
+                    <p className="text-lg font-semibold">${flujoCaja.totalIngresoParticularDiario.toFixed(2)}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">Copago EPS</p>
+                    <p className="text-lg font-semibold">${flujoCaja.totalIngresoCopagoEps.toFixed(2)}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">Egresos mantenimiento</p>
+                    <p className="text-lg font-semibold">${flujoCaja.totalEgresosMantenimiento.toFixed(2)}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">Utilidad neta</p>
+                    <p className="text-lg font-semibold text-green-700">${flujoCaja.utilidadNeta.toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </Layout>
   );
