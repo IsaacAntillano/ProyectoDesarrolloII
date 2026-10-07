@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  listarClientesMensuales,
-  listarClientesDiarios,
+  listarParticularesMensuales,
+  listarParticularesDiarios,
   listarBeneficiariosEps,
   buscarClienteMensual,
   buscarClienteDiario,
@@ -24,7 +24,7 @@ import {
   type ClienteMensualDTO,
   type ClienteDiarioDTO,
   type BeneficiarioEpsDTO,
-} from '../services/clienteParticularService';
+} from '../services/clienteService';
 import { registrarIngreso } from '../services/secretariaService';
 import Layout from '../components/Layout';
 import DocumentTypeBar from '../components/DocumentTypeBar';
@@ -90,8 +90,8 @@ export default function SecretariaDashboard() {
     setLoading(true);
     try {
       const [mensuales, diarios, eps] = await Promise.all([
-        listarClientesMensuales(),
-        listarClientesDiarios(),
+        listarParticularesMensuales(),
+        listarParticularesDiarios(),
         listarBeneficiariosEps(),
       ]);
       setClientesMensuales(mensuales);

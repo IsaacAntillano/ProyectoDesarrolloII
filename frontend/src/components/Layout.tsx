@@ -38,7 +38,14 @@ export default function Layout({ children, title }: LayoutProps) {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-white flex flex-col transform transition-transform duration-200 md:relative md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+      {/* En movil es fixed (se desliza sobre el contenido); en md pasa a ocupar
+          su propio espacio en el flujo, por eso el main no lleva margen: el
+          aside ya lo aporta como item del flex. */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-64 shrink-0 bg-slate-900 text-white flex flex-col transform transition-transform duration-200 md:relative ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0`}
+      >
         <div className="flex items-center justify-between p-4 bg-slate-950">
           <h2 className="text-2xl font-bold text-center">Victus CAF</h2>
           <button
@@ -89,7 +96,7 @@ export default function Layout({ children, title }: LayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden md:ml-64">
+      <main className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b">
           <div className="flex items-center gap-3">
             <button

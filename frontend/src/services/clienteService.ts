@@ -4,19 +4,75 @@ import { getApiErrorMessage } from '../utils/apiError';
 
 export { getApiErrorMessage };
 
+// ─── Tipos ──────────────────────────────────────────────────────────
+// `ParticularMensual`, `ParticularDiario` y `BeneficiarioEps` son las tres
+// especializaciones de Usuario que expone el backend. `ClienteBase` es el
+// alias plano que necesitan las vistas de gestion, donde no importa la
+// especializacion concreta.
+
+export interface ParticularMensual {
+  id: number;
+  tipoDeDocumento: string;
+  numeroDeDocumento: number;
+  nombreCompleto: string;
+  fechaDeNacimiento: string;
+  telefono: number;
+  correoElectronico: string;
+  estado: boolean;
+  estadoMembresia: 'ACTIVO' | 'VENCIDO' | 'BLOQUEADO';
+  tipoMembresia: 'MENSUAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+  fechaVencimiento: string;
+}
+
+export interface ParticularDiario {
+  id: number;
+  tipoDeDocumento: string;
+  numeroDeDocumento: number;
+  nombreCompleto: string;
+  fechaDeNacimiento?: string;
+  telefono?: number;
+  correoElectronico?: string;
+  estado: boolean;
+  horaIngreso: string;
+  horaExpiracion: string;
+  estadoAcceso: 'ACTIVO' | 'EXPIRADO';
+}
+
+export interface BeneficiarioEps {
+  id: number;
+  tipoDeDocumento: string;
+  numeroDeDocumento: number;
+  nombreCompleto: string;
+  fechaDeNacimiento: string;
+  telefono: number;
+  correoElectronico: string;
+  estado: boolean;
+  entidadEps: string;
+  sesionesAutorizadas: number;
+  sesionesAsistidas: number;
+  diagnostico: string;
+  zonaCuerpoTratar: string;
+  medicoRemitente: string;
+  estadoContrato: 'ACTIVO' | 'FINALIZADO' | 'BLOQUEADO' | 'CANCELADO_ANTICIPADAMENTE';
+}
+
+/** Vista plana para listados que no distinguen tipo (GestionClientes). */
 export interface ClienteBase {
   id: number;
   tipoDeDocumento: string;
   numeroDeDocumento: number;
   nombreCompleto: string;
   fechaDeNacimiento?: string;
-  telefono: number;
-  correoElectronico: string;
+  // Opcional: los clientes diarios pueden registrarse sin telefono ni correo.
+  telefono?: number;
+  correoElectronico?: string;
   estado?: boolean;
   tipoDeCliente?: string;
   estadoMembresia?: string;
   estadoContrato?: string;
 }
+
+// ─── DTOs de entrada ────────────────────────────────────────────────
 
 export interface ClienteMensualDTO {
   tipoDeDocumento: string;
@@ -33,10 +89,10 @@ export interface ClienteDiarioDTO {
   tipoDeDocumento: string;
   numeroDeDocumento: number;
   nombreCompleto: string;
-  fechaDeNacimiento: string;
-  telefono: number;
-  correoElectronico: string;
-  contrasena: string;
+  fechaDeNacimiento?: string;
+  telefono?: number;
+  correoElectronico?: string;
+  contrasena?: string;
 }
 
 export interface BeneficiarioEpsDTO {
@@ -56,6 +112,7 @@ export interface BeneficiarioEpsDTO {
   zonaCuerpoTratar: string;
 }
 
+/** Actualizacion parcial. El backend acepta todos los campos opcionales. */
 export interface ActualizarClienteDTO {
   nombreCompleto?: string;
   fechaDeNacimiento?: string;
@@ -65,14 +122,9 @@ export interface ActualizarClienteDTO {
   tipoMembresia?: 'MENSUAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
 }
 
-export const crearClienteMensual = (data: ClienteMensualDTO) =>
-  api.post<ApiResponse<ClienteBase>>('/clientes/mensual', data).then(unwrap);
-
-export const crearClienteDiario = (data: ClienteDiarioDTO) =>
-  api.post<ApiResponse<ClienteBase>>('/clientes/diario', data).then(unwrap);
-
-export const crearBeneficiarioEps = (data: BeneficiarioEpsDTO) =>
-  api.post<ApiResponse<ClienteBase>>('/clientes/eps', data).then(unwrap);
+// ─── Listados ───────────────────────────────────────────────────────
+// Listados planos para vistas de gestion (GestionClientes), donde no importa
+// la especializacion.
 
 export const listarMensualesActivos = () =>
   api.get<ApiResponse<ClienteBase[]>>('/clientes/mensuales/activos').then(unwrap);
@@ -92,38 +144,76 @@ export const listarEpsActivos = () =>
 export const listarEpsTodos = () =>
   api.get<ApiResponse<ClienteBase[]>>('/clientes/eps/todos').then(unwrap);
 
+// Listados tipados por especializacion, para vistas que muestran los campos
+// propios de cada tipo (SecretariaDashboard).
+
+export const listarParticularesMensuales = () =>
+  api.get<ApiResponse<ParticularMensual[]>>('/clientes/mensuales/todos').then(unwrap);
+
+export const listarParticularesDiarios = () =>
+  api.get<ApiResponse<ParticularDiario[]>>('/clientes/diarios/todos').then(unwrap);
+
+export const listarBeneficiariosEps = () =>
+  api.get<ApiResponse<BeneficiarioEps[]>>('/clientes/eps/todos').then(unwrap);
+
+// ─── Particulares mensuales ─────────────────────────────────────────
+
 export const buscarClienteMensual = (numeroDocumento: number) =>
-  api.get<ApiResponse<ClienteBase>>(`/clientes/mensual/${numeroDocumento}`).then(unwrap);
+  api.get<ApiResponse<ParticularMensual>>(`/clientes/mensual/${numeroDocumento}`).then(unwrap);
 
-export const buscarClienteDiario = (numeroDocumento: number) =>
-  api.get<ApiResponse<ClienteBase>>(`/clientes/diario/${numeroDocumento}`).then(unwrap);
+export const crearClienteMensual = (data: ClienteMensualDTO) =>
+  api.post<ApiResponse<ParticularMensual>>('/clientes/mensual', data).then(unwrap);
 
-export const buscarBeneficiarioEps = (numeroDocumento: number) =>
-  api.get<ApiResponse<ClienteBase>>(`/clientes/eps/${numeroDocumento}`).then(unwrap);
-
-export const actualizarClienteMensual = (numeroDocumento: number, data: ActualizarClienteDTO) =>
-  api.put<ApiResponse<ClienteBase>>(`/clientes/mensual/${numeroDocumento}`, data).then(unwrap);
-
-export const actualizarClienteDiario = (numeroDocumento: number, data: ActualizarClienteDTO) =>
-  api.put<ApiResponse<ClienteBase>>(`/clientes/diario/${numeroDocumento}`, data).then(unwrap);
-
-export const actualizarBeneficiarioEps = (numeroDocumento: number, data: ActualizarClienteDTO) =>
-  api.put<ApiResponse<ClienteBase>>(`/clientes/eps/${numeroDocumento}`, data).then(unwrap);
+export const actualizarClienteMensual = (
+  numeroDocumento: number,
+  data: ActualizarClienteDTO
+) =>
+  api
+    .put<ApiResponse<ParticularMensual>>(`/clientes/mensual/${numeroDocumento}`, data)
+    .then(unwrap);
 
 export const desactivarClienteMensual = (numeroDocumento: number) =>
   api.delete<ApiResponse<void>>(`/clientes/mensual/${numeroDocumento}`);
 
+export const reactivarClienteMensual = (numeroDocumento: number) =>
+  api
+    .put<ApiResponse<ParticularMensual>>(`/clientes/mensual/${numeroDocumento}/reactivar`)
+    .then(unwrap);
+
+// ─── Particulares diarios ───────────────────────────────────────────
+
+export const buscarClienteDiario = (numeroDocumento: number) =>
+  api.get<ApiResponse<ParticularDiario>>(`/clientes/diario/${numeroDocumento}`).then(unwrap);
+
+export const crearClienteDiario = (data: ClienteDiarioDTO) =>
+  api.post<ApiResponse<ParticularDiario>>('/clientes/diario', data).then(unwrap);
+
+export const actualizarClienteDiario = (numeroDocumento: number, data: ActualizarClienteDTO) =>
+  api.put<ApiResponse<ParticularDiario>>(`/clientes/diario/${numeroDocumento}`, data).then(unwrap);
+
 export const desactivarClienteDiario = (numeroDocumento: number) =>
   api.delete<ApiResponse<void>>(`/clientes/diario/${numeroDocumento}`);
+
+export const reactivarClienteDiario = (numeroDocumento: number) =>
+  api
+    .put<ApiResponse<ParticularDiario>>(`/clientes/diario/${numeroDocumento}/reactivar`)
+    .then(unwrap);
+
+// ─── Beneficiarios EPS ──────────────────────────────────────────────
+
+export const buscarBeneficiarioEps = (numeroDocumento: number) =>
+  api.get<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}`).then(unwrap);
+
+export const crearBeneficiarioEps = (data: BeneficiarioEpsDTO) =>
+  api.post<ApiResponse<BeneficiarioEps>>('/clientes/eps', data).then(unwrap);
+
+export const actualizarBeneficiarioEps = (numeroDocumento: number, data: ActualizarClienteDTO) =>
+  api.put<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}`, data).then(unwrap);
 
 export const desactivarBeneficiarioEps = (numeroDocumento: number) =>
   api.delete<ApiResponse<void>>(`/clientes/eps/${numeroDocumento}`);
 
-export const reactivarClienteMensual = (numeroDocumento: number) =>
-  api.put<ApiResponse<ClienteBase>>(`/clientes/mensual/${numeroDocumento}/reactivar`).then(unwrap);
-
-export const reactivarClienteDiario = (numeroDocumento: number) =>
-  api.put<ApiResponse<ClienteBase>>(`/clientes/diario/${numeroDocumento}/reactivar`).then(unwrap);
-
 export const reactivarBeneficiarioEps = (numeroDocumento: number) =>
-  api.put<ApiResponse<ClienteBase>>(`/clientes/eps/${numeroDocumento}/reactivar`).then(unwrap);
+  api
+    .put<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}/reactivar`)
+    .then(unwrap);
