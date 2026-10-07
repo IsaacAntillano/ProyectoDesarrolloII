@@ -8,6 +8,7 @@ import { PrivateRoute } from './components/PrivateRoute';
 import RegistrarClienteMensual from './pages/RegistrarClienteMensual';
 import RegistrarClienteDiario from './pages/RegistrarClienteDiario';
 import RegistrarClienteEps from './pages/RegistrarClienteEps';
+import RegistrarPago from './pages/RegistrarPago';
 import GestionClientes from './pages/GestionClientes';
 import { Toaster } from 'react-hot-toast';
 
@@ -49,6 +50,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={['CLIENTE']}>
                 <ClienteDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/registrar-pago"
+            element={
+              <PrivateRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA']}>
+                <RegistrarPago />
               </PrivateRoute>
             }
           />

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { FiShield, FiUsers, FiUserCheck, FiHome } from 'react-icons/fi';
 
 const ROLES = [
@@ -12,7 +14,7 @@ const ROLES = [
   {
     rol: 'SECRETARIA',
     label: 'Secretaria',
-    descripcion: 'Clientes (mensual/diario/EPS) y registro de ingresos',
+    descripcion: 'Clientes (mensual/diario/EPS), pagos y registro de ingresos',
     ruta: '/secretaria',
     icono: FiUsers,
   },
@@ -34,9 +36,19 @@ const ROLES = [
 
 export default function SeleccionarRol() {
   const navigate = useNavigate();
+  const [documento, setDocumento] = useState('');
 
   const entrar = (rol: string, label: string, ruta: string) => {
-    localStorage.setItem('user', JSON.stringify({ id: 0, numeroDocumento: 0, nombreCompleto: label, rol }));
+    const numeroDocumento = Number(documento.trim());
+    if (!numeroDocumento || numeroDocumento <= 0) {
+      toast.error('Ingresa tu número de documento para continuar');
+      return;
+    }
+
+    localStorage.setItem(
+      'user',
+      JSON.stringify({ id: 0, numeroDocumento, nombreCompleto: label, rol })
+    );
     navigate(ruta);
   };
 
@@ -48,11 +60,29 @@ export default function SeleccionarRol() {
           Vista del sistema (MVC) · sin autenticación JWT
         </p>
         <p className="mt-1 text-sm text-gray-500">
-          Selecciona el rol con el que quieres entrar a la vista
+          Elige tu rol y escribe tu número de documento
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <label htmlFor="documento" className="block text-sm font-medium text-gray-700 mb-1">
+          Número de documento
+        </label>
+        <input
+          id="documento"
+          type="number"
+          value={documento}
+          onChange={(e) => setDocumento(e.target.value)}
+          placeholder="Ej: 100000001"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Se usa para identificarte en la API (header X-Documento). No es una contraseña:
+          el backend confía en el valor, así que es solo para desarrollo local.
+        </p>
+      </div>
+
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-2xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {ROLES.map(({ rol, label, descripcion, ruta, icono: Icono }) => (
             <button

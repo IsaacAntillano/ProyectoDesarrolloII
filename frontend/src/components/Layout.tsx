@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiLogOut, FiUsers, FiUserPlus, FiHome, FiMenu, FiX } from 'react-icons/fi';
+import { FiLogOut, FiUsers, FiUserPlus, FiHome, FiMenu, FiX, FiDollarSign } from 'react-icons/fi';
 
 interface LayoutProps {
   children: ReactNode;
@@ -66,6 +66,9 @@ export default function Layout({ children, title }: LayoutProps) {
               <Link to="/gestion-clientes" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded transition">
                 <FiUserPlus /> <span>Clientes (Mensual/Diario/EPS)</span>
               </Link>
+              <Link to="/registrar-pago" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded transition">
+                <FiDollarSign /> <span>Registrar Pago</span>
+              </Link>
             </>
           )}
           {user?.rol === 'SECRETARIA' && (
@@ -75,6 +78,9 @@ export default function Layout({ children, title }: LayoutProps) {
               </Link>
               <Link to="/gestion-clientes" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded transition">
                 <FiUserPlus /> <span>Clientes (Mensual/Diario/EPS)</span>
+              </Link>
+              <Link to="/registrar-pago" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded transition">
+                <FiDollarSign /> <span>Registrar Pago</span>
               </Link>
             </>
           )}

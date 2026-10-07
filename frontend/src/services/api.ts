@@ -20,14 +20,19 @@ api.interceptors.request.use((config) => {
     const user = readUserFromStorage();
     if (user?.rol) {
         config.headers.set('X-Rol', user.rol);
+        // El backend usa el documento para saber qué entrenador o cliente
+        // está llamando (services como EntrenadorService lo requieren).
+        if (user.numeroDocumento) {
+            config.headers.set('X-Documento', String(user.numeroDocumento));
+        }
     }
     return config;
 });
 
-function readUserFromStorage(): { rol?: string } | null {
+function readUserFromStorage(): { rol?: string; numeroDocumento?: number } | null {
     try {
         const raw = localStorage.getItem('user');
-        return raw ? (JSON.parse(raw) as { rol?: string }) : null;
+        return raw ? (JSON.parse(raw) as { rol?: string; numeroDocumento?: number }) : null;
     } catch {
         // JSON invalido en localStorage: se sigue sin header y el backend
         // respondera 401, que es el comportamiento correcto.

@@ -172,6 +172,24 @@ public class ClienteService {
                 .orElseThrow(() -> new RuntimeException("Beneficiario EPS no encontrado"));
     }
 
+    /**
+     * Consulta un cliente sin importar su tipo: resuelve la especializacion
+     * correcta a partir del discriminador de tipo de cliente.
+     */
+    @Transactional(readOnly = true)
+    public Usuario consultarClientePorDocumento(Long numeroDocumento) {
+        Usuario usuario = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        if (usuario instanceof ParticularMensual mensual) {
+            return consultarParticularMensualPorDocumento(numeroDocumento);
+        } else if (usuario instanceof ParticularDiario diario) {
+            return consultarParticularDiarioPorDocumento(numeroDocumento);
+        } else if (usuario instanceof BeneficiarioEps eps) {
+            return consultarBeneficiarioEPSPorDocumento(numeroDocumento);
+        }
+        return usuario;
+    }
+
     // Versión para secretaria (solo muestra clientes activos)
     public List<ParticularMensual> listarParticularesMensualesActivos() {
         return particularMensualRepository.findByEstadoMembresia(EstadoMembresia.ACTIVO);

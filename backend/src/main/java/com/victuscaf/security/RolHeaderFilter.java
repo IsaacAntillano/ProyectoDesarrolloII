@@ -40,12 +40,15 @@ public class RolHeaderFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(RolHeaderFilter.class);
 
     private final String headerName;
+    private final String headerDocumento;
     private final List<String> rolesPermitidos;
 
     public RolHeaderFilter(
             @Value("${app.security.header-rol:X-Rol}") String headerName,
-            @Value("${app.security.roles-permitidos:ADMINISTRADOR,SECRETARIA,ENTRENADOR}") String rolesPermitidos) {
+            @Value("${app.security.header-documento:X-Documento}") String headerDocumento,
+            @Value("${app.security.roles-permitidos:ADMINISTRADOR,SECRETARIA,ENTRENADOR,CLIENTE}") String rolesPermitidos) {
         this.headerName = headerName;
+        this.headerDocumento = headerDocumento;
         this.rolesPermitidos = Arrays.stream(rolesPermitidos.split(","))
                 .map(String::trim)
                 .filter(StringUtils::hasText)
@@ -77,12 +80,34 @@ public class RolHeaderFilter extends OncePerRequestFilter {
             return;
         }
 
-        // El valor numerico 0 es el que usa el selector de rol: la vista no pide documento.
+        // Principal: si viene documento, se usa como identidad (por ejemplo
+        // "ENTRENADOR:100000003"); si no, el rol a secas. Los services que
+        // necesitan saber quien llama leen el principal.
+        String principal = rolNormalizado;
+        String documento = request.getHeader(headerDocumento);
+        if (StringUtils.hasText(documento) && !"0".equals(documento.trim())) {
+            principal = rolNormalizado + ":" + documento.trim();
+        }
+
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                rolNormalizado, null,
+                principal, null,
                 List.of(new SimpleGrantedAuthority("ROLE_" + rolNormalizado)));
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    /**
+     * Documento del usuario autenticado, o {@code null} si no se envio.
+     * La vista lo manda en {@code X-Documento}.
+     */
+    public static String documentoActual() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal() == null) {
+            return null;
+        }
+        String principal = auth.getPrincipal().toString();
+        int sep = principal.indexOf(':');
+        return sep > 0 ? principal.substring(sep + 1) : null;
     }
 }

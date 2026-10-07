@@ -235,4 +235,20 @@ public class PagoService {
         // Podrías añadir registro en bitácora aquí
         return tarifaRepository.save(tarifa);
     }
+
+    // ========== CONSULTA ==========
+
+    /** Historial de pagos de un cliente, sea del tipo que sea. */
+    @Transactional(readOnly = true)
+    public List<Pago> consultarPagosDeCliente(Long numeroDocumento) {
+        return usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .map(pagoRepository::findByUsuario)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+    }
+
+    /** Pagos de una fecha, para revisar antes de generar el flujo de caja. */
+    @Transactional(readOnly = true)
+    public List<Pago> consultarPagosPorFecha(LocalDate fecha) {
+        return pagoRepository.findByFechaPago(fecha);
+    }
 }

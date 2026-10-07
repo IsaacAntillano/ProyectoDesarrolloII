@@ -1,0 +1,79 @@
+import api from './api';
+import { type ApiResponse, unwrap } from './apiTypes';
+
+// Panel del cliente. El documento viaja en el header X-Documento (lo pone el
+// interceptor de api.ts desde localStorage), así que estos servicios no
+// reciben id: cada cliente solo puede ver lo suyo.
+
+export interface MiPerfil {
+  id: number;
+  tipoDeDocumento: string;
+  numeroDeDocumento: number;
+  nombreCompleto: string;
+  fechaDeNacimiento?: string;
+  telefono?: number;
+  correoElectronico?: string;
+  estado: boolean;
+  tipoDeCliente: 'PARTICULAR_MENSUAL' | 'PARTICULAR_DIARIO' | 'BENEFICIARIO_EPS';
+  estadoMembresia?: 'ACTIVO' | 'VENCIDO' | 'BLOQUEADO';
+  tipoMembresia?: 'MENSUAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+  estadoContrato?: 'ACTIVO' | 'FINALIZADO' | 'BLOQUEADO' | 'CANCELADO_ANTICIPADAMENTE';
+  contrato?: {
+    id: number;
+    fechaInicio: string;
+    fechaVencimiento: string;
+    tipoMembresia: string;
+    estado: string;
+  } | null;
+  remision?: {
+    id: number;
+    sesionesAutorizadas: number;
+    sesionesAsistidas: number;
+  } | null;
+  horaIngreso?: string;
+  horaExpiracion?: string;
+}
+
+export interface Progreso {
+  pesoPerdido: number;
+  imcActual: number;
+  porcentajeGrasaActual: number;
+  mensaje: string;
+}
+
+export interface MiRutina {
+  idRutina: number;
+  nombre: string;
+  descripcion: string;
+  fechaCreacion: string;
+  fechaVencimiento: string;
+  activa: boolean;
+}
+
+export interface MiEvaluacion {
+  id: number;
+  fechaEvaluacion: string;
+  peso: number;
+  talla: number;
+  imc: number;
+  porcentajeGrasa: number;
+  perimetroCintura: number;
+  presionArterial: string;
+  frecuenciaCardiaca: number;
+}
+
+export interface MiAsistencia {
+  id: number;
+  fechaIngreso: string;
+  horaIngreso: string;
+}
+
+export const miPerfil = () => api.get<ApiResponse<MiPerfil>>('/cliente/perfil').then(unwrap);
+
+export const miProgreso = () => api.get<ApiResponse<Progreso>>('/cliente/progreso').then(unwrap);
+
+export const misRutinas = () => api.get<ApiResponse<MiRutina[]>>('/cliente/rutinas').then(unwrap);
+
+export const misEvaluaciones = () => api.get<ApiResponse<MiEvaluacion[]>>('/cliente/evaluaciones').then(unwrap);
+
+export const misAsistencias = () => api.get<ApiResponse<MiAsistencia[]>>('/cliente/asistencias').then(unwrap);

@@ -20,10 +20,10 @@ public class EvaluacionService {
     private final EntrenadorRepository entrenadorRepository;
 
     @Transactional
-    public EvaluacionFisica crearEvaluacionInicial(Long numeroDocumento, Long idEntrenador, MedidasDTO medidas) {
+    public EvaluacionFisica crearEvaluacionInicial(Long numeroDocumento, Long documentoEntrenador, MedidasDTO medidas) {
         Usuario usuario = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        Entrenador entrenador = entrenadorRepository.findById(idEntrenador)
+        Entrenador entrenador = entrenadorRepository.findByNumeroDeDocumento(documentoEntrenador)
                 .orElseThrow(() -> new RuntimeException("Entrenador no encontrado"));
         // Verificar si ya existe una evaluación inicial (opcional)
         EvaluacionFisica evaluacion = new EvaluacionFisica();
@@ -36,9 +36,9 @@ public class EvaluacionService {
     }
 
     @Transactional
-    public EvaluacionFisica registrarEvaluacionPeriodica(Long numeroDocumento, Long idEntrenador, MedidasDTO medidas) {
+    public EvaluacionFisica registrarEvaluacionPeriodica(Long numeroDocumento, Long documentoEntrenador, MedidasDTO medidas) {
         // similar a crearEvaluacionInicial, sin validación de existencia previa
-        return crearEvaluacionInicial(numeroDocumento, idEntrenador, medidas);
+        return crearEvaluacionInicial(numeroDocumento, documentoEntrenador, medidas);
     }
 
     private void actualizarMedidas(EvaluacionFisica ev, MedidasDTO m) {

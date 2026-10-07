@@ -39,10 +39,13 @@ public class EntrenadorService {
     }
 
     // Horarios
+    /**
+     * El parametro es el numero de documento del entrenador, que es lo que
+     * viaja en el header X-Documento (no el id de base de datos).
+     */
     @Transactional
-    public HorarioEntrenador crearHorario(Long idEntrenador, HorarioDTO dto) {
-        Entrenador entrenador = entrenadorRepository.findById(idEntrenador)
-                .orElseThrow(() -> new RuntimeException("Entrenador no encontrado"));
+    public HorarioEntrenador crearHorario(Long documentoEntrenador, HorarioDTO dto) {
+        Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
         HorarioEntrenador horario = new HorarioEntrenador();
         horario.setEntrenador(entrenador);
         horario.setFechaDisponible(dto.fechaDisponible());
@@ -68,9 +71,8 @@ public class EntrenadorService {
 
     // Rutinas
     @Transactional
-    public Rutina crearRutina(Long idEntrenador, Long numeroDocumento, RutinaDTO dto) {
-        Entrenador entrenador = entrenadorRepository.findById(idEntrenador)
-                .orElseThrow(() -> new RuntimeException("Entrenador no encontrado"));
+    public Rutina crearRutina(Long documentoEntrenador, Long numeroDocumento, RutinaDTO dto) {
+        Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
         Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
         Rutina rutina = new Rutina();
@@ -86,9 +88,8 @@ public class EntrenadorService {
 
     // Mensajes
     @Transactional
-    public Mensaje enviarMensaje(Long idEntrenador, Long numeroDocumento, String contenido) {
-        Entrenador entrenador = entrenadorRepository.findById(idEntrenador)
-                .orElseThrow(() -> new RuntimeException("Entrenador no encontrado"));
+    public Mensaje enviarMensaje(Long documentoEntrenador, Long numeroDocumento, String contenido) {
+        Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
         Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
         Mensaje msg = new Mensaje();
@@ -99,5 +100,31 @@ public class EntrenadorService {
         msg.setHoraEnvio(java.time.LocalTime.now());
         msg.setLeido(false);
         return mensajeRepository.save(msg);
+    }
+
+    // ========== CONSULTAS ==========
+
+    private Entrenador buscarPorDocumento(Long documento) {
+        return entrenadorRepository.findByNumeroDeDocumento(documento)
+                .orElseThrow(() -> new RuntimeException(
+                        "No existe un entrenador con el documento " + documento));
+    }
+
+    /** Horarios declarados por un entrenador, para su panel. */
+    @Transactional(readOnly = true)
+    public List<HorarioEntrenador> listarHorariosDelEntrenador(Long documentoEntrenador) {
+        Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
+        return horarioRepository.findByEntrenador(entrenador);
+    }
+
+    /** Clientes que este entrenador tiene asignados (con rutina o horario). */
+    @Transactional(readOnly = true)
+    public List<Usuario> listarClientesAsignados(Long documentoEntrenador) {
+        Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
+        return rutinaRepository.findByEntrenador(entrenador).stream()
+                .map(Rutina::getUsuario)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
     }
 }
