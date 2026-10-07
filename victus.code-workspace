@@ -1,10 +1,33 @@
 {
   "folders": [
     {
+      "name": "Victus-Caf",
       "path": "."
     },
     {
-      "path": "/home/santiago/Projects/bovedavictus"
+      "name": "Frontend",
+      "path": "frontend"
+    },
+    {
+      "name": "Backend",
+      "path": "backend"
+    },
+    {
+      "name": "Notas (Obsidian)",
+      "path": "obsidian"
     }
-  ]
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/target": true,
+      "**/.metals": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/target": true,
+      "**/.metals": true,
+      "**/dist": true
+    }
+  }
 }

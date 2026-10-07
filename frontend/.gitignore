@@ -1,0 +1,11 @@
+# Las reglas comunes viven en el .gitignore de la raiz del monorepo.
+# Aqui solo lo especifico del frontend.
+
+# Build
+dist
+dist-ssr
+*.local
+
+# Sistema
+.DS_Store
+Thumbs.db
