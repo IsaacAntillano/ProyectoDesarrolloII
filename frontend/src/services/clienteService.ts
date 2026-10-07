@@ -85,14 +85,19 @@ export interface ClienteMensualDTO {
   tipoMembresia: 'MENSUAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
 }
 
+/**
+ * El backend exige todos estos campos (`@NotNull` / `@NotBlank` en
+ * ClienteDiarioDTO), asi que aca son obligatorios aunque el tipo sea parcial
+ * para permitir actualizaciones parciales.
+ */
 export interface ClienteDiarioDTO {
   tipoDeDocumento: string;
   numeroDeDocumento: number;
   nombreCompleto: string;
-  fechaDeNacimiento?: string;
-  telefono?: number;
-  correoElectronico?: string;
-  contrasena?: string;
+  fechaDeNacimiento: string;
+  telefono: number;
+  correoElectronico: string;
+  contrasena: string;
 }
 
 export interface BeneficiarioEpsDTO {
