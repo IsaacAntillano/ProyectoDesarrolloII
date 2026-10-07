@@ -1,29 +1,124 @@
 # AGENTS.md
 
-Sistema de gestión de gimnasio (Victus-Caf) bajo arquitectura **MVC**. Este repositorio contiene únicamente la **vista**: el frontend Vite + React 19 + TypeScript + Tailwind v4. El README raíz (`Readme.md`, español) está desactualizado; confiar en `package.json`.
+Monorepo del sistema de gestión de gimnasio (Victus-Caf). Dos módulos: `frontend/`
+(vista) y `backend/` (modelo + controlador). Confiar en los archivos, no en
+documentación previa: el README raíz está actualizado a la realidad actual.
 
-## Vista (`victus-caf-frontend/`)
-- Vite + React 19 + TypeScript + Tailwind v4 (via `@tailwindcss/vite` en `vite.config.ts`). Su `README.md` es la plantilla stock de Vite — ignorar.
-- **Sin autenticación JWT.** El login fue reemplazado por un **selector de rol** (`src/pages/SeleccionarRol.tsx`): se elige rol y se guarda en `localStorage` la clave `user` con `{ id: 0, numeroDocumento: 0, nombreCompleto, rol }`. No existe `token`.
-- Rutas: `/` → `SeleccionarRol`; `/admin`, `/secretaria`, `/entrenador`, `/cliente`, `/gestion-clientes*`, `/registrar-cliente-*` protegidas por `PrivateRoute` con prop `allowedRoles` (redirige a `/` si no hay `user` o el rol no es permitido) (`src/App.tsx`). `Layout.tsx` cierra sesión limpiando `localStorage` y volviendo a `BASE_URL`.
-- Roles del dominio: `ADMINISTRADOR` · `SECRETARIA` · `ENTRENADOR` · `CLIENTE`. `EntrenadorDashboard` y `ClienteDashboard` son placeholders.
-- `npm run dev`: Vite proxya `/api` → `http://localhost:8080`; no hace falta `.env`. `src/services/api.ts` usa `import.meta.env.VITE_API_URL ?? '/api'` (axios, sin interceptor de auth).
-- `npm run build` = `tsc -b && vite build` (typecheck incluido). Lint: `npm run lint` (ESLint flat config).
-- `vite.config.ts`: `base: '/Sistema-PMS-victus-caf/'` (GitHub Pages); `App.tsx` usa `import.meta.env.BASE_URL` como basename del router.
-- Servicios en `src/services/`: `apiTypes.ts` define `ApiResponse<T>` y `unwrap` (compartidos); `apiError.ts` define `getApiErrorMessage` / `isServerUnreachable` / `SERVER_UNREACHABLE_MESSAGE`. No duplicar estos helpers en páginas ni servicios.
-- Contrato API (canónico): `POST /api/acceso/registrar-ingreso` con body `{ numeroDocumento }` (en `secretariaService`). No hay versiones duplicadas.
+## Convenciones
 
-## Backend (externo a este repo)
-- El backend Spring Boot vivía en `victus-caf-backend/`; fue **retirado del workspace** (visible solo en git history). La vista consume su API real en `:8080` vía `/api`.
-- Residuos de esa etapa quedan en la raíz (`.mvn/`, `mvnw`, `mvnw.cmd`, `BcryptGen.java`, `HELP.md`): **ignorarlos**, no limpiar ni usar.
+- Código, comentarios y commits en **español**.
+- Nombres de clases en inglés; paquetes en inglés también.
+- El vault de Obsidian está en `obsidian/`. Al cerrar sesión, actualizar
+  `obsidian/context/estado-proyecto.md`, añadir entrada a
+  `obsidian/context/decisiones.md` y **agregar** nodos/aristas a
+  `obsidian/canvas/lienzo-victus.canvas` (nunca borrar los previos; IDs únicos,
+  JSON válido). Para leer contexto al inicio: `obsidian/context/index.md`,
+  `estado-proyecto.md` y el lienzo.
 
-## Obsidian (contexto + lienzo infinito)
-- Vault en `obsidian/` (abrir en Obsidian como *Open folder as vault*): `context/` contiene notas, `canvas/lienzo-victus.canvas` es el lienzo maestro en evolución (spec JSON Canvas).
-- **Al iniciar sesión**: leer `obsidian/context/index.md`, `obsidian/context/estado-proyecto.md` y `obsidian/canvas/lienzo-victus.canvas` para contextualizar.
-- **Al cerrar sesión**: actualizar `estado-proyecto.md`, añadir entradas a `decisiones.md` y **agregar** nodos/aristas a `lienzo-victus.canvas` (nunca borrar los existentes); mantener JSON válido e IDs únicos. Los archivos de código se referencian como texto (viven fuera del vault); nodos `file` solo para notas internas del vault.
-- Todo (notas, lienzo, commits) en español.
+## Frontend (`frontend/`)
+
+Vite · React 19 · TypeScript · Tailwind v4 · axios · react-router-dom.
+
+- **Sin autenticación.** El login fue reemplazado por un selector de rol
+  (`src/pages/SeleccionarRol.tsx`): se elige rol y se guarda
+  `localStorage['user'] = { id: 0, numeroDocumento: 0, nombreCompleto, rol }`.
+  No hay token. `id` y `numeroDocumento` quedan en 0 porque la vista no pide
+  credenciales.
+- **Autorización por header.** `src/services/api.ts` tiene un interceptor que
+  manda `X-Rol` con el rol de `localStorage`. El backend lo aplica. Ver
+  `RolHeaderFilter` en el backend. No confundir: esto es autorización por rol
+  declarado, no autenticación.
+- Rutas en `src/App.tsx`: `/` → `SeleccionarRol`; `/admin`, `/secretaria`,
+  `/entrenador`, `/cliente`, `/gestion-clientes*`, `/registrar-cliente-*`
+  protegidas por `PrivateRoute` con prop `allowedRoles` (redirige a `/`).
+- `npm run dev` proxy `/api` → `http://localhost:8080`. `src/services/api.ts`
+  usa `import.meta.env.VITE_API_URL ?? '/api'`.
+- `npm run build` = `tsc -b && vite build` (typecheck incluido).
+  `npm run lint` = ESLint flat config.
+- Servicios en `src/services/`. `apiTypes.ts` define `ApiResponse<T>` y
+  `unwrap` (compartidos). `src/utils/apiError.ts` define
+  `getApiErrorMessage` / `isServerUnreachable` / `SERVER_UNREACHABLE_MESSAGE`.
+  No reimplementar estos helpers en páginas.
+- `clienteService.ts` es el **único** servicio de clientes. Expone los tipos
+  ricos (`ParticularMensual`, `ParticularDiario`, `BeneficiarioEps`) y
+  listados tipados por categoría (`listarParticularesMensuales`,
+  `listarParticularesDiarios`, `listarBeneficiariosEps`) más listados planos
+  (`listarMensualesTodos`, etc.) para `GestionClientes`.
+- `rolLimits.ts` codifica los cupos por rol (1 admin, 2 secretaria, 3
+  entrenador). Es una regla de negocio en la vista, sin contraparte en backend.
+- `EntrenadorDashboard` y `ClienteDashboard` son placeholders.
+
+## Backend (`backend/`)
+
+Spring Boot 3.2.5 · Java 21 · Spring Security · Spring Data JPA · MariaDB.
+Paquete base: `com.victuscaf`. Todo lo nuevo va dentro de ese paquete: es la
+raíz del component scan.
+
+```
+com.victuscaf
+├── VictusCafApplication.java   # @SpringBootApplication, NO mover
+├── gimnasio/                   # dominio (MVC: controller/service/repository/models/dto)
+│   ├── controller/             # @RestController, traduce HTTP <-> caso de uso
+│   ├── service/                # lógica de negocio, inyecta repositorios
+│   ├── repository/             # Spring Data JPA
+│   ├── models/                 # @Entity
+│   ├── dto/                    # records / clases de entrada
+│   └── exception/              # @RestControllerAdvice
+└── security/                   # SecurityConfig, RolHeaderFilter
+```
+
+Estructura MVC clásica, no hexagonal. Las layers se cruzan: los services
+inyectan repositorios directamente, y los controllers devuelven entities JPA
+(envueltas en `ApiResponse<T>`), no DTOs de salida.
+
+### Comandos
+
+No hay `mvn` en el PATH → **siempre `./mvnw`**.
+
+| Tarea | Comando |
+| --- | --- |
+| Compilar | `./mvnw -q compile` |
+| Levantar | `./mvnw spring-boot:run` |
+| Empaquetar | `./mvnw clean package` |
+
+### Configuración
+
+- **Sin migraciones** (ni Flyway ni Liquibase ni `schema.sql`).
+  `spring.jpa.hibernate.ddl-auto=update` → Hibernate genera el esquema desde los
+  entities. Requiere que la base exista pero esté vacía.
+- Credenciales en variables de entorno leídas de `backend/.env` vía
+  `spring.config.import`. **Nunca commitear el `.env`.** `.env.example` es la
+  plantilla.
+- MariaDB debe escuchar en `3306` por TCP. En distros con `skip-networking` hay
+  que habilitar `bind_address`.
+
+### Gotchas
+
+1. **Lombok 1.18.48 mínimo.** Con 1.18.32 y JDK 27 el build falla con
+   `ExceptionInInitializerError`.
+2. **`Equipo.estadoEquipo`** usa `@Enumerated(EnumType.STRING)`. Si se agrega un
+   valor al enum, los registros existentes no se corrompen (por eso es STRING y
+   no el ordinal por defecto).
+3. **Autorización por header no es autenticación.** `RolHeaderFilter` confía en
+   `X-Rol`. Quien alcance el puerto 8080 puede declararse admin. Solo local.
+4. **`@PreAuthorize` es la fuente de verdad** de permisos. Vive en los
+   controllers. El filtro solo construye el `SecurityContext`.
+5. **No hay tests.** No hay datasource de prueba. La verificación es `compile`.
+6. `spring.jpa.open-in-view=false` está activo: los controllers que necesiten
+   una relación lazy deben cargarla explícitamente en el service.
+
+### Contrato con el frontend
+
+El sobre de respuesta es `ApiResponse<T> { success, message, data }` y el
+frontend lo desenvuelve con `unwrap` (`frontend/src/services/apiTypes.ts`).
+
+Endpoint de ingreso canónico: `POST /api/acceso/registrar-ingreso`.
 
 ## Misc
-- `.metals/` es un artefacto LSP de Scala Metals trackeado por error; ignorar.
-- `.github/modernize/` es salida de tool-use, no CI. No hay workflows de CI.
-- Código/comentarios/commits en español; mantener la convención.
+
+- `.metals/`, `.bloop/`, `backend.log`, `BcryptGen.*` son artefactos y están en
+  `.gitignore`. Si aparecen trackeados, sacarlos con `git rm --cached`.
+- `.github/modernize/` es salida de herramienta, no CI. **No hay CI**: la
+  verificación es local.
+- No hay despliegue a GitHub Pages configurado; `vite.config.ts` usa `base: '/'`
+  para desarrollo local.

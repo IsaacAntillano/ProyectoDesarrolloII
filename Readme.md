@@ -1,194 +1,243 @@
-# 🏋️ Victus CAF
+# Victus CAF
 
-## ¿Qué es Victus CAF?
-Victus CAF es un sistema de gestión para un Centro de Acondicionamiento Físico (CAF). Está diseñado para administrar clientes, contratos, remisiones médicas, pagos, evaluaciones físicas, control de acceso y los distintos roles que intervienen en el proceso operativo.
+Sistema de gestión para un Centro de Acondicionamiento Físico (CAF): clientes,
+contratos, remisiones médicas, inventario, tarifas y flujo de caja.
 
-El proyecto combina:
-- Backend en **Spring Boot 3.2.5** y **Java 21**
-- Base de datos **MariaDB / MySQL**
-- Frontend en **React 18 + TypeScript** con **Vite**
-- Autenticación mediante **JWT** y control de acceso por roles
+Monorepo con dos módulos:
 
-## Objetivo del sistema
-Permitir a un CAF manejar:
-- clientes particulares con membresía mensual o acceso diario
-- beneficiarios de EPS con remisión médica
-- contratos y pagos
-- entrenadores y evaluaciones
-- roles administrativos y de secretaria
-- búsqueda y gestión de clientes desde el panel
-
-## Características principales
-- Login con JWT
-- Roles: **ADMINISTRADOR**, **SECRETARIA**, **ENTRENADOR**
-- CRUD de usuarios del sistema
-- Registro de clientes mensuales, diarios y beneficiarios EPS
-- Generación automática de contrato para clientes mensuales
-- Buscadores por documento
-- Rutas protegidas en frontend
-- CORS habilitado para `http://localhost:5173`
+| Módulo | Stack | Puerto |
+| --- | --- | --- |
+| [`frontend/`](frontend/) | Vite · React 19 · TypeScript · Tailwind v4 · axios | 5173 |
+| [`backend/`](backend/) | Spring Boot 3.2.5 · Java 21 · Spring Security · JPA · MariaDB | 8080 |
 
 ---
 
-## Estructura del proyecto
+## Puesta en marcha
 
-### Raíz del workspace
-```text
-victus-caf/
-├── Readme.md
-├── HELP.md
-├── LICENSE
-├── victus-caf-backend/
-└── victus-caf-frontend/
+### Requisitos
+
+- JDK 21 o superior (probado con JDK 27)
+- Node.js 20 o superior
+- MariaDB corriendo con la base `victus_caf_db` creada y accesible por TCP
+
+No hace falta instalar Maven: el backend trae wrapper (`backend/mvnw`).
+
+### 1. Base de datos
+
+El esquema lo genera Hibernate a partir de los entities (`ddl-auto=update`), así
+que no hay migraciones que correr. Solo hace falta la base vacía:
+
+```sql
+CREATE DATABASE IF NOT EXISTS victus_caf_db
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 ```
 
-### Backend
-```text
-victus-caf-backend/
-├── pom.xml
-└── src/main/java/com/victuscaf/
-    ├── VictusCafApplication.java
-    ├── modules/client/
-    │   ├── controller/
-    │   ├── service/
-    │   ├── repository/
-    │   ├── models/
-    │   └── dto/
-    ├── security/
-    └── exception/
+Spring Boot se conecta por TCP, así que MariaDB debe escuchar en `3306`. En
+distribuciones que vienen con `skip-networking` o sin `bind-address`, hay que
+habilitarlo:
+
+```sql
+INSTALL PLUGIN bind_address SONAME 'haed';
+SET GLOBAL bind_address='127.0.0.1';
 ```
 
-### Frontend
-```text
-victus-caf-frontend/
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── src/
-    ├── App.tsx
-    ├── main.tsx
-    ├── components/
-    ├── constants/
-    ├── pages/
-    ├── services/
-    └── utils/
-```
+### 2. Backend
 
----
-
-## Backend: estructura y cómo trabaja
-
-### Paquetes principales
-- `com.victuscaf.modules.client.controller`
-  - Controladores REST para clientes y operaciones del CAF
-- `com.victuscaf.modules.client.service`
-  - Lógica de negocio y reglas de negocio
-- `com.victuscaf.modules.client.repository`
-  - Repositorios JPA para persistencia
-- `com.victuscaf.modules.client.models`
-  - Entidades JPA: clientes, contratos, remisiones, usuarios
-- `com.victuscaf.modules.client.dto`
-  - Objetos de transferencia para peticiones y respuestas
-- `com.victuscaf.security`
-  - Seguridad JWT y configuración de Spring Security
-
-### Modelo de datos ocupado
-- `Usuario` (abstracto) → `ParticularMensual`, `ParticularDiario`, `BeneficiarioEps`
-- `UsuarioSistema` (abstracto) → `Administrador`, `Entrenador`, `Secretaria`
-- `Contrato` ↔ `ParticularMensual`
-- `Remision` ↔ `BeneficiarioEps`
-
-### Flujo de trabajo del backend
-1. El frontend hace login a `/api/auth/login`
-2. `AuthController` autentica con `AuthenticationManager`
-3. Se genera un JWT con `JwtUtils`
-4. El token se usa en las llamadas al backend
-5. `SecurityConfig` valida todas las rutas excepto `/api/auth/**`
-6. Los controladores delegan a servicios y repositorios
-
-### Endpoints clave
-- `POST /api/auth/login` → Iniciar sesión
-- `POST /api/clientes/mensual` → Registrar cliente mensual
-- `GET /api/clientes/mensual/{numeroDocumento}` → Consultar cliente mensual
-- `GET /api/clientes/mensuales/activos` → Listar clientes mensuales activos
-- `GET /api/clientes/mensuales/todos` → Listar todos los clientes mensuales
-- `POST /api/clientes/diario` → Registrar cliente diario
-- `POST /api/clientes/eps` → Registrar beneficiario EPS
-
----
-
-## Frontend: estructura y cómo se trabaja
-
-### Carpetas principales
-- `src/pages/` → páginas de la aplicación
-- `src/components/` → componentes reutilizables
-- `src/services/` → llamadas a la API
-- `src/utils/` → utilidades generales
-
-### Componentes importantes
-- `Login.tsx` → formulario de login, guarda token y datos de usuario en `localStorage`
-- `PrivateRoute.tsx` → proteje rutas según rol
-- `GestionClientes.tsx` → lista clientes, búsqueda por documento, edición e inactivación
-- `RegistrarClienteMensual.tsx` → formulario para registrar clientes mensuales
-
-### Servicios de frontend
-- `api.ts` → instancia Axios con interceptores JWT
-- `clienteService.ts` → funciones para consumir endpoints de clientes
-- `usuarioSistemaService.ts` → funciones para CRUD de usuarios del sistema
-
-### Flujo de trabajo del frontend
-1. El usuario ingresa documento y contraseña
-2. `Login.tsx` envía datos a `/api/auth/login`
-3. Se guarda token en `localStorage`
-4. Las llamadas siguientes usan el token en `Authorization`
-5. El usuario navega según su rol
-6. Las páginas consumen datos con servicios y renderizan tablas
-
----
-
-## Cómo ejecutar el proyecto localmente
-
-### Backend
 ```bash
-cd victus-caf-backend
-../mvnw clean package
-../mvnw spring-boot:run
+cd backend
+cp .env.example .env      # y completar DB_USERNAME / DB_PASSWORD
+./mvnw spring-boot:run
 ```
 
-Configura `src/main/resources/application.properties` con tu conexión MariaDB/MySQL.
+Levanta en `http://localhost:8080`.
 
-### Frontend
+### 3. Frontend
+
 ```bash
-cd victus-caf-frontend
+cd frontend
 npm install
 npm run dev
 ```
 
-Asegúrate de tener `VITE_API_URL` apuntando al backend si usas un `.env`.
+Levanta en `http://localhost:5173`. Vite hace proxy de `/api` a
+`http://localhost:8080`, así que no hace falta configurar nada más.
+
+### Verificación
+
+```bash
+cd frontend && npm run build   # incluye typecheck (tsc -b)
+cd frontend && npm run lint
+cd backend && ./mvnw compile
+```
 
 ---
 
-## Notas importantes
-- El backend usa JWT y solo permite rutas públicas en `/api/auth/**`
-- El frontend asume que `localStorage` contiene `token` y `user`
-- El registro de cliente mensual crea contrato automáticamente
-- El endpoint de lista de mensuales activos devuelve solo clientes con contrato activo
+## Autorización por header
 
-## Buenas prácticas de desarrollo
-- Añade validaciones en DTO cuando crees nuevos endpoints
-- No expongas el token en peticiones públicas
-- Usa `@JsonIgnore` o referencias de Jackson para evitar recursión infinita en entidades bidireccionales
-- Mantén los roles y permisos actualizados en `SecurityConfig`
+> **Esto no es autenticación.** Ver la advertencia al final de la sección.
+
+La vista no maneja token. Al abrir la app se elige un rol
+(`SeleccionarRol.tsx`), que queda en `localStorage['user']` y se reenvía en cada
+petición como header `X-Rol`. El backend (`RolHeaderFilter`) lee ese header,
+valida el valor contra el enum `Rol` y construye el contexto de seguridad con
+`ROLE_<rol>`. Los `@PreAuthorize` de los controllers siguen siendo la única
+fuente de verdad sobre quién puede llamar a cada endpoint.
+
+```bash
+curl -H "X-Rol: ADMINISTRADOR" http://localhost:8080/api/admin/tarifas
+```
+
+Sin header, la respuesta es `401`.
+
+**Roles:** `ADMINISTRADOR` · `SECRETARIA` · `ENTRENADOR`
+
+| Perfil de acceso | Endpoints |
+| --- | --- |
+| `SECRETARIA`, `ADMINISTRADOR` | registrar, consultar, listar, actualizar y reactivar clientes |
+| `ADMINISTRADOR` | desactivar clientes, CRUD de usuarios del sistema, todo `/api/admin` |
+| `SECRETARIA`, `ADMINISTRADOR` | registrar ingreso |
+
+### Advertencia
+
+No hay prueba de identidad: cualquier persona o proceso que alcance el puerto
+8080 puede declarar `X-Rol: ADMINISTRADOR` y obtener permisos de administrador.
+Es aceptable **únicamente en desarrollo local**. No expongas el backend en red
+con esta configuración. Para un despliegue real hay que volver a autenticación
+(sesión con cookie o token firmado).
 
 ---
 
-## Qué se puede mejorar
-- Añadir documentación de API con Swagger
-- Manejar mejor los errores con `ApiResponse` global
-- Separar el frontend en módulos más pequeños
-- Crear tests automatizados para servicios y controladores
+## Endpoints
+
+Base: `/api`
+
+### Clientes — `/clientes`
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| `POST` | `/mensual` | secretaria, admin |
+| `GET` | `/mensual/{numeroDocumento}` | secretaria, admin |
+| `PUT` | `/mensual/{numeroDocumento}` | secretaria, admin |
+| `PUT` | `/mensual/{numeroDocumento}/reactivar` | secretaria, admin |
+| `DELETE` | `/mensual/{numeroDocumento}` | admin |
+| `POST` | `/diario` | secretaria, admin |
+| `GET` | `/diario/{numeroDocumento}` | secretaria, admin |
+| `PUT` | `/diario/{numeroDocumento}` | secretaria, admin |
+| `PUT` | `/diario/{numeroDocumento}/reactivar` | secretaria, admin |
+| `DELETE` | `/diario/{numeroDocumento}` | admin |
+| `POST` | `/eps` | secretaria, admin |
+| `GET` | `/eps/{numeroDocumento}` | secretaria, admin |
+| `PUT` | `/eps/{numeroDocumento}` | secretaria, admin |
+| `PUT` | `/eps/{numeroDocumento}/reactivar` | secretaria, admin |
+| `DELETE` | `/eps/{numeroDocumento}` | admin |
+| `GET` | `/mensuales/activos` · `/mensuales/todos` | secretaria, admin |
+| `GET` | `/diarios/activos` · `/diarios/todos` | secretaria, admin |
+| `GET` | `/eps/activos` · `/eps/todos` | secretaria, admin |
+| `GET` | `/contratos/vencidos` | secretaria, admin |
+| `POST` | `/diario/migrar/{numeroDocumento}` | secretaria, admin |
+
+### Usuarios del sistema — `/usuarios-sistema` (solo admin)
+
+| Método | Ruta |
+| --- | --- |
+| `GET` | `/` |
+| `GET` | `/buscar?documento=` |
+| `POST` | `/` |
+| `PUT` | `/{id}` |
+| `DELETE` | `/{id}` |
+| `PATCH` | `/{id}/reactivar` |
+
+### Administración — `/admin` (solo admin)
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/tarifas` | tarifas por tipo de cliente |
+| `PUT` | `/tarifas/{tipo}` | actualiza la tarifa de un tipo |
+| `GET` | `/equipos` | inventario de equipos |
+| `GET` | `/equipos/mantenimiento-proximo` | mantenimiento en los próximos 5 días |
+| `POST` | `/equipos` | registra un equipo |
+| `GET` | `/flujo-caja?fecha=AAAA-MM-DD` | flujo de caja de una fecha |
+
+### Acceso — `/acceso`
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| `POST` | `/registrar-ingreso` | secretaria, admin |
+
+Todas las respuestas usan el sobre `ApiResponse<T>`:
+`{ success, message, data }`.
+
+---
+
+## Estructura
+
+```
+victus-caf/
+├── frontend/              # vista
+│   └── src/
+│       ├── components/    # Layout, PrivateRoute, DocumentTypeBar
+│       ├── constants/     # límites de cupo por rol
+│       ├── pages/         # una vista por rol + formularios de registro
+│       ├── services/      # capa de acceso a la API (axios)
+│       └── utils/         # helpers de error
+├── backend/               # modelo + controlador
+│   └── src/main/java/com/victuscaf/
+│       ├── VictusCafApplication.java
+│       ├── gimnasio/      # dominio del CAF
+│       │   ├── controller/
+│       │   ├── service/
+│       │   ├── repository/
+│       │   ├── models/
+│       │   ├── dto/
+│       │   └── exception/
+│       └── security/      # SecurityConfig, RolHeaderFilter
+└── obsidian/              # notas de contexto y lienzo del proyecto
+```
+
+### Roles de la aplicación
+
+| Rol | Vista | Qué puede hacer |
+| --- | --- | --- |
+| `ADMINISTRADOR` | `/admin` | usuarios del sistema, tarifas, equipos, flujo de caja, clientes |
+| `SECRETARIA` | `/secretaria` | clientes, registro de ingresos |
+| `ENTRENADOR` | `/entrenador` | vista placeholder (sin implementar) |
+| `CLIENTE` | `/cliente` | vista placeholder (sin implementar) |
+
+---
+
+## Modelo de datos
+
+`Usuario` y `UsuarioSistema` son clases abstractas con
+`@Inheritance(strategy = JOINED)`, así que cada subclase tiene su propia tabla.
+
+```
+Usuario (abstracta)          UsuarioSistema (abstracta)
+├── ParticularMensual        ├── Administrador
+├── ParticularDiario         ├── Secretaria
+└── BeneficiarioEps          └── Entrenador
+```
+
+Relaciones: `ParticularMensual` ↔ `Contrato` (1:1, genera contrato al registrarse)
+y `BeneficiarioEps` ↔ `Remision` (1:1). Ambas usan
+`@JsonManagedReference` / `@JsonBackReference` para evitar recursión al
+serializar a JSON.
+
+---
+
+## Notas técnicas
+
+- **Lombok 1.18.48** es la versión mínima: las anteriores no soportan JDK 27 y el
+  build falla con `ExceptionInInitializerError`.
+- **`Equipo.estadoEquipo`** usa `@Enumerated(EnumType.STRING)` para que agregar
+  valores al enum no corrompa los registros existentes.
+- **No hay tests.** No hay datasource de prueba ni framework de test en el
+  frontend. La verificación es `compile`, `npm run build` y `npm run lint`.
+- **Las credenciales** viven en `backend/.env`, que está en `.gitignore`.
+  `backend/.env.example` documenta las variables.
 
 ---
 
 ## Licencia
-Este proyecto se entrega con licencia de uso **estudiantil**. Consulta `LICENSE` para los términos.
+
+Uso estudiantil. Ver [`LICENSE`](LICENSE).

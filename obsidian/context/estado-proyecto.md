@@ -1,34 +1,83 @@
 # Estado del proyecto
 
-> Snapshot al inicio/cierre de cada sesión. Última actualización: 2026-09-15.
+> Snapshot al inicio/cierre de cada sesión. Última actualización: 2026-10-07.
 
-## Sesión: 2026-09-15 (cierre · vista MVC sin JWT)
+## Sesión: 2026-10-07 (cierre · monorepo + backend revivido)
 
 ### Último commit
-Sin commitear aún: la vista se convirtió en "vista MVC sin autenticación". Último commit previo: `92e8580`.
 
-### Qué se hizo en la sesión
-- **MVC / sin JWT**: el backend se retiró del workspace (visible en git history) y este repo quedó como **vista** única.
-- **Selector de rol** (`SeleccionarRol.tsx`) reemplaza el login: `/` elige rol y guarda `localStorage['user'] = { id: 0, numeroDocumento: 0, nombreCompleto, rol }`. No hay `token`.
-- Rutas reajustadas: `/login` y `getDefaultRoute` eliminados; catch-all `*` → `/`. `PrivateRoute` redirige a `/`; `Layout` cierra sesión limpiando `localStorage`.
-- **Bugfixes**: `currentAdminId` en `AdminDashboard` (leía `idUsuarioSistema`; ya no hay `if (!localStorage)`); desactivar/activar clientes diario y beneficiarios EPS en `SecretariaDashboard` (con confirmación y actualización de estado); endpoint de ingreso unificado a `POST /acceso/registrar-ingreso` (canónico).
-- **Refactor de servicios**: `ApiResponse`/`unwrap` en `apiTypes.ts` (se eliminaron las 5 copias); `getApiErrorMessage` consolidado en `apiError.ts`.
-- **Lint en verde** (se silenciaron advertencias preexistentes de `react-hooks/set-state-in-effect`).
+Pendiente de cerrar al terminar la sesión (ver `git log`).
+
+### Qué se hizo
+
+- **Monorepo.** `victus-caf-frontend/` → `frontend/`; el backend (108 clases
+  bajo `com.victuscaf`) vuelve al workspace desde el historial → `backend/`.
+  El wrapper de Maven pasa a `backend/`, que es donde se usa.
+- **Repos y zips eliminados del workspace:** `victus-caf-backend/` (esqueleto
+  hexagonal vacío, 1 commit), `SistemaBasicoVictus/` (prototipo sin commits),
+  `victus-notas/` (vault Obsidian vacío) y los 2 zips.
+- **JWT eliminado.** `RolHeaderFilter` autoriza por el header `X-Rol` que
+  manda la vista. Se borran `JwtUtils`, `JwtResponse`, `LoginRequest`,
+  `AuthController`, `GenerarHash`, `UserDetailsServiceImpl`, `UserDetailsImpl` y
+  `JwtAuthTokenFilter`. Los `@PreAuthorize` existentes no se tocaron.
+- **`AdminController`** nuevo: expone tarifas, equipos y flujo de caja. Solo 3
+  métodos de service son nuevos; el resto ya existía (`EquipoDTO`,
+  `InventarioService.crearEquipo`, `equiposPorMantenimientoProximo`,
+  `AdminService.consultarFlujoCaja`).
+- **Servicios de cliente fusionados.** `clienteService.ts` y
+  `clienteParticularService.ts` eran dos fuentes de verdad para la misma API.
+  Se conserva el primero con los tipos ricos.
+- **Nombres saneados.** `com.victuscaf.modules.client` → `com.victuscaf.gimnasio`
+  (99 archivos). `BeneficiarioEPSDTO` → `BeneficiarioEpsDTO`. Se elimina el
+  endpoint `debug/mensual/{doc}`, que no tenía autorización.
+- **Configuración.** Credenciales fuera del repo (`.env` + `.env.example`).
+  `.gitignore` raíz unificado. `victus.code-workspace` con rutas locales.
+  `vite.config.ts` con `base: '/'` (desarrollo local).
+- **Documentación.** `Readme.md` y `AGENTS.md` reescritos para describir la
+  realidad. Nodo del canvas corregido (`README.md` → `Readme.md`).
+
+### Bugs corregidos
+
+- Lombok 1.18.32 no soportaba JDK 27: el build fallaba con
+  `ExceptionInInitializerError`. Actualizado a 1.18.48.
+- `Equipo.estadoEquipo` persistía como ordinal; ahora `@Enumerated(STRING)`.
+- Los tres `reactivar*` del servicio de clientes declaraban
+  `ApiResponse<X>` en vez de `ApiResponse<ApiResponse<X>>`, así que `unwrap`
+  devolvía el sobre entero.
+- `Layout.tsx` duplicaba el margen del sidebar en escritorio (`md:relative` +
+  `md:ml-64` = 32rem en vez de 16rem).
 
 ### Qué quedó en WIP
+
 - `EntrenadorDashboard` y `ClienteDashboard` siguen siendo placeholders.
-- Backend con JWT retirado del workspace: el flujo real exige levantar el backend en `:8080`.
+- 6 services (`Evaluacion`, `Inventario` parcialmente, `Notificacion`, `Pago`,
+  `Entrenador`, `Seguridad`) no están expuestos por ningún controller: el trabajo
+  está escrito pero no llega a la API.
+- Sin datos de arranque: la base se crea vacía y Hibernate genera el esquema.
+  No hay seed de administrador, así que `POST /usuarios-sistema` es la única
+  forma de crear el primer admin.
 
 ### Problemas conocidos
-- Al elegir rol, `id: 0` y `numeroDocumento: 0` (la vista no pide credenciales): los flujos que dependan de un usuario real requieren el backend.
-- Código sin commitear (incluye la eliminación de `victus-caf-backend/` y `Login.tsx`).
+
+- **La autorización por header no es autenticación.** Quien alcance el puerto
+  8080 puede declarar `X-Rol: ADMINISTRADOR`. Solo desarrollo local.
+- **MariaDB debe escuchar en TCP.** En la máquina local venía con
+  `skip-networking`; se resolvió con
+  `INSTALL PLUGIN bind_address SONAME 'haed'; SET GLOBAL bind_address='127.0.0.1';`
+- **Sin tests.** No hay datasource de prueba ni framework en el frontend.
+- La contraseña de `.env` se compartió en texto plano durante la sesión;
+  conviene rotarla.
 
 ### Próximos pasos
-- Commitear la sesión (vista MVC sin JWT).
-- Decidir si `EntrenadorDashboard`/`ClienteDashboard` se implementan con datos reales.
-- Mantener al día vault Obsidian y lienzo.
+
+- Probar los endpoints end-to-end con `curl` (requiere el backend levantado).
+- Decidir si se expone `InventarioService` (registro de mantenimiento) y los
+  services de entrenador, evaluación y pago.
+- Implementar o quitar `EntrenadorDashboard` / `ClienteDashboard`.
+- Rotar la contraseña de `victus_app` en MariaDB.
 
 ---
+
 ## Plantilla (sesión nueva)
 
 - Fecha:
@@ -39,31 +88,35 @@ Sin commitear aún: la vista se convirtió en "vista MVC sin autenticación". Ú
 - Próximos pasos:
 
 ---
-## Sesión: 2026-09-15 (primer snapshot)
+
+## Sesión: 2026-09-15 (cierre · vista MVC sin JWT)
 
 ### Último commit
-`92e8580` — "Se hacen las respectivas mejoras se implementa una capa de iteraciones para la secretaria"
 
-### Qué funciona
-- Backend multicapa (controller/service/repository/models/dto/exception) bajo `com.victuscaf.modules.client`.
-- JWT + roles (`com.victuscaf.security`): único endpoint público `/api/auth/login`; el resto exige Bearer.
-- Frontend React 19 con login, dashboards por rol y registro de clientes (diario / EPS / mensual).
+`e458b14` — "Se retira el backend y la vista pasa a MVC sin autenticación JWT"
 
-### En progreso (WIP)
-- Capa de iteraciones para la secretaria (mejoras recientes).
-- Pulido de funcionalidades pendientes.
+### Qué se hizo en la sesión
 
-### Problemas conocidos
-- No hay seed de admin: sin `ADMINISTRADOR` no se puede entrar (generar BCrypt de `admin123` con `security/GenerarHash.java` / root `BcryptGen.java`).
-- `Readme.md` raíz desactualizado en versiones (dice React 18; `package.json` tiene React 19).
-- `.metals/` y `.bloop/` son artefactos LSP trackeados por error; ignorar. `.github/modernize/` es salida de tool-use, no CI.
+- **MVC / sin JWT**: el backend se retiró del workspace y el repo quedó como
+  **vista** única.
+- **Selector de rol** (`SeleccionarRol.tsx`) reemplaza el login:
+  `localStorage['user']`. No hay `token`.
+- Rutas reajustadas; catch-all `*` → `/`.
+- **Bugfixes**: `currentAdminId` en `AdminDashboard`; desactivar/activar
+  clientes diario y beneficiarios EPS en `SecretariaDashboard`.
+- **Refactor de servicios**: `ApiResponse`/`unwrap` en `apiTypes.ts`,
+  `getApiErrorMessage` consolidado en `apiError.ts`.
+- Vault Obsidian creado en `obsidian/`.
 
-### Próximos pasos
-- Definir siguientes features (PBI) con el equipo.
-- Validar `../mvnw -q compile` y `npm run lint` / `npm run build` tras cambios.
-- Comprobar que el vault Obsidian y el lienzo se mantienen al día.
+### Problemas conocidos en ese momento
+
+- `id: 0` y `numeroDocumento: 0` al elegir rol.
+- Código sin commitear.
+- El backend exigía JWT mientras la vista ya no lo mandaba: toda petición
+  devolvía 401. **Resuelto en la sesión del 2026-10-07.**
 
 ---
+
 ## Plantilla (sesión nueva)
 
 - Fecha:

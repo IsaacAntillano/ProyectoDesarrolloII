@@ -1,22 +1,32 @@
 # Victus-Caf · Contexto del proyecto
 
-> Punto de entrada para el asistente y para ti. Leer **primero** al iniciar cualquier sesión de trabajo.
-> Estado vivo: [[estado-proyecto]] · Lienzo: [[lienzo-victus.canvas]] · Registro: [[decisiones]] · Glosario: [[glosario]]
+> Punto de entrada para el asistente y para ti. Leer **primero** al iniciar
+> cualquier sesión de trabajo.
+> Estado vivo: [[estado-proyecto]] · Lienzo: [[lienzo-victus.canvas]] ·
+> Registro: [[decisiones]] · Glosario: [[glosario]]
 
 ## Qué es
 
-Sistema de gestión de gimnasio (Victus-Caf) bajo arquitectura **MVC**. Este repo es solo la **vista**; el modelo/controlador (backend) vive en otro repo y se consume vía API.
+Sistema de gestión de gimnasio (Victus-Caf) bajo arquitectura **MVC**, en un
+monorepo con vista y backend.
 
 | Capa | Stack | Dónde |
 | --- | --- | --- |
-| Vista | Vite · React 19 · TypeScript · Tailwind v4 | `victus-caf-frontend/` (este repo) |
-| Backend (MVC: modelo/controlador) | Spring Boot · MariaDB · API REST | Repo externo, consumido vía `/api` en `:8080`; retirado de este workspace |
+| Vista | Vite · React 19 · TypeScript · Tailwind v4 | `frontend/` (puerto 5173) |
+| Modelo + controlador | Spring Boot 3.2.5 · Java 21 · MariaDB | `backend/` (puerto 8080) |
 
-## Arquitectura de la vista
+## Arquitectura
 
-- **Sin JWT.** La entrada es un **selector de rol** (`SeleccionarRol.tsx`): guarda en `localStorage` la clave `user` con `{ id: 0, numeroDocumento: 0, nombreCompleto, rol }`. No existe `token`.
-- **Rutas**: `/` → `SeleccionarRol`. `/admin`, `/secretaria`, `/entrenador`, `/cliente`, `/gestion-clientes*` y `/registrar-cliente-*` están guardadas por `PrivateRoute` (prop `allowedRoles`); sin `user` o rol no permitido → redirige a `/`.
-- **Datos**: Vite proxya `/api` → `http://localhost:8080`. Servicios en `src/services/`; helpers compartidos en `apiTypes.ts` (`ApiResponse`/`unwrap`) y `apiError.ts` (`getApiErrorMessage`, `isServerUnreachable`).
+- **Sin autenticación.** La entrada es un selector de rol
+  (`SeleccionarRol.tsx`): guarda `localStorage['user'] =
+  { id: 0, numeroDocumento: 0, nombreCompleto, rol }`. No hay token.
+- **Autorización por header.** `api.ts` manda `X-Rol`; `RolHeaderFilter` en el
+  backend construye el `SecurityContext`. Los `@PreAuthorize` de los
+  controllers deciden el acceso. **No es autenticación**: solo desarrollo local.
+- **Datos**: Vite proxy `/api` → `http://localhost:8080`. MariaDB debe escuchar
+  en 3306 por TCP.
+- **Base de datos**: sin migraciones. `ddl-auto=update` genera el esquema desde
+  los entities; la base se crea vacía.
 
 ## Roles (dominio)
 
@@ -24,17 +34,30 @@ Sistema de gestión de gimnasio (Victus-Caf) bajo arquitectura **MVC**. Este rep
 
 ## Módulos / features
 
-- Vista por rol: Admin (`/admin`) · Secretaria (`/secretaria`) · Entrenador (`/entrenador`, placeholder) · Cliente (`/cliente`, placeholder)
-- Clientes: diario · EPS · mensual (registro y gestión)
-- Registro de ingreso: `POST /api/acceso/registrar-ingreso` (canónico)
-- Módulos restantes (equipos, flujo de caja, tarifas, usuarios) expuestos en el dashboard del admin
+- Vista por rol: Admin (`/admin`) · Secretaria (`/secretaria`) · Entrenador
+  (`/entrenador`, placeholder) · Cliente (`/cliente`, placeholder)
+- Clientes: mensual · diario · EPS (registro, consulta, edición, inactivación,
+  reactivación)
+- Ingreso: `POST /api/acceso/registrar-ingreso`
+- Administración: tarifas, equipos (inventario), flujo de caja
+- Usuarios del sistema (admin / secretaria / entrenador)
+
+## Modelo de datos
+
+`Usuario` y `UsuarioSistema` son abstractas con
+`@Inheritance(JOINED)`: cada subclase tiene tabla propia.
+`ParticularMensual` ↔ `Contrato` y `BeneficiarioEps` ↔ `Remision` son 1:1.
 
 ## Estado actual (resumen)
 
-Ver [[estado-proyecto]]. Lo más reciente: la vista quedó como **vista MVC sin autenticación JWT** (selector de rol en lugar de login); todos los flujos siguen consumiendo la API real del backend por `/api`.
+Ver [[estado-proyecto]]. Lo más reciente: monorepo con el backend de vuelta,
+autorización por header en lugar de JWT, servicios de cliente fusionados,
+`AdminController` agregado y documentación reescrita.
 
 ## Convención con el asistente
 
-1. **Al iniciar sesión**: leer este índice, [[estado-proyecto]] y el lienzo [[lienzo-victus.canvas]].
-2. **Al terminar cada sesión**: actualizar [[estado-proyecto]], añadir entradas a [[decisiones]] y **agregar nodos/aristas al lienzo** (nunca borrar los previos — el lienzo es infinito).
-3. Todo en **español** (convención del repo).
+1. **Al iniciar sesión**: leer este índice, [[estado-proyecto]] y el lienzo.
+2. **Al terminar cada sesión**: actualizar [[estado-proyecto]], añadir entrada a
+   [[decisiones]] y **agregar** nodos/aristas al lienzo (nunca borrar los
+   previos).
+3. Todo en **español**.
