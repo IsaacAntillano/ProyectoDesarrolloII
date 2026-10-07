@@ -880,6 +880,46 @@
 			"width": 620,
 			"height": 70,
 			"color": "4"
+		},
+		{
+			"id": "n-pagos",
+			"type": "text",
+			"text": "**Pagos (nuevo)**\n/api/pagos\nmensualidad · diario · copago\nnomina · arriendo · mantenimiento\nflujo de caja · factura EPS\n\nEl sistema antes NO podia cobrar",
+			"x": 1200,
+			"y": -1400,
+			"width": 300,
+			"height": 150,
+			"color": "1"
+		},
+		{
+			"id": "n-paneles",
+			"type": "text",
+			"text": "**Paneles (nuevo)**\nEntrenadorController → horarios,\nrutinas, evaluaciones, metas\n\nClientePanelController → perfil,\nprogreso, rutina, asistencias\n\nDashboard antes: placeholders",
+			"x": 1530,
+			"y": -1400,
+			"width": 300,
+			"height": 150,
+			"color": "1"
+		},
+		{
+			"id": "n-documento",
+			"type": "text",
+			"text": "**X-Documento**\nEl selector de rol pide documento\ny lo manda en un header.\n\nEl backend lo adjunta al principal:\nservicios usan documento, no id.\n\nUn entrenador no puede actuar\nen nombre de otro.",
+			"x": 1860,
+			"y": -1400,
+			"width": 300,
+			"height": 150,
+			"color": "2"
+		},
+		{
+			"id": "n-estado-final",
+			"type": "text",
+			"text": "**Estado final**\n61 endpoints · 7 controllers\n\nAdmin → todo\nSecretaria → clientes, pagos, ingresos\nEntrenador → horarios, rutinas, evaluacion\nCliente → su membresia y progreso\n\nVerificado end-to-end vs MariaDB",
+			"x": 1200,
+			"y": -1220,
+			"width": 960,
+			"height": 110,
+			"color": "5"
 		}
 	],
 	"edges": [
@@ -1335,6 +1375,21 @@
 			"id": "e-n-nombres-n-docs",
 			"fromNode": "n-nombres",
 			"toNode": "n-docs"
+		},
+		{
+			"id": "e-n-pagos-n-estado-final",
+			"fromNode": "n-pagos",
+			"toNode": "n-estado-final"
+		},
+		{
+			"id": "e-n-paneles-n-estado-final",
+			"fromNode": "n-paneles",
+			"toNode": "n-estado-final"
+		},
+		{
+			"id": "e-n-documento-n-paneles",
+			"fromNode": "n-documento",
+			"toNode": "n-paneles"
 		}
 	]
 }

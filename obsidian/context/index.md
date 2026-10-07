@@ -20,9 +20,13 @@ monorepo con vista y backend.
 - **Sin autenticación.** La entrada es un selector de rol
   (`SeleccionarRol.tsx`): guarda `localStorage['user'] =
   { id: 0, numeroDocumento: 0, nombreCompleto, rol }`. No hay token.
-- **Autorización por header.** `api.ts` manda `X-Rol`; `RolHeaderFilter` en el
-  backend construye el `SecurityContext`. Los `@PreAuthorize` de los
-  controllers deciden el acceso. **No es autenticación**: solo desarrollo local.
+- **Autorización por header.** `api.ts` manda `X-Rol` y `X-Documento`;
+  `RolHeaderFilter` en el backend construye el `SecurityContext`. Los
+  `@PreAuthorize` de los controllers deciden el acceso. **No es
+  autenticación**: solo desarrollo local.
+- **Identidad del usuario.** `SeleccionarRol` pide rol + número de documento y
+  los guarda en `localStorage`. El documento permite que el backend sepa a qué
+  entrenador o cliente pertenece cada llamada.
 - **Datos**: Vite proxy `/api` → `http://localhost:8080`. MariaDB debe escuchar
   en 3306 por TCP.
 - **Base de datos**: sin migraciones. `ddl-auto=update` genera el esquema desde
@@ -34,10 +38,14 @@ monorepo con vista y backend.
 
 ## Módulos / features
 
-- Vista por rol: Admin (`/admin`) · Secretaria (`/secretaria`) · Entrenador
-  (`/entrenador`, placeholder) · Cliente (`/cliente`, placeholder)
+- Vista por rol: Admin (`/admin`) · Secretaria (`/secretaria`, `/registrar-pago`)
+  · Entrenador (`/entrenador`) · Cliente (`/cliente`)
 - Clientes: mensual · diario · EPS (registro, consulta, edición, inactivación,
   reactivación)
+- Pagos y caja: mensualidad, diario, copago EPS, nómina, arriendo, mantenimiento,
+  flujo de caja, factura EPS
+- Entrenador: horarios, rutinas, mensajes, evaluaciones físicas, metas
+- Cliente: perfil con membresía, progreso, rutina, evaluaciones, asistencias
 - Ingreso: `POST /api/acceso/registrar-ingreso`
 - Administración: tarifas, equipos (inventario), flujo de caja
 - Usuarios del sistema (admin / secretaria / entrenador)

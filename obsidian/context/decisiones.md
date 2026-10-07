@@ -4,6 +4,10 @@ Formato: fecha · decisión · motivo. Se añade una entrada al cerrar cada sesi
 
 | Fecha | Decisión | Motivo |
 | --- | --- | --- |
+| 2026-10-07 | Agregar el header **`X-Documento`** además de `X-Rol` | El selector de rol dejaba `numeroDocumento` en 0, así que los services de entrenador (que lo necesitan) no podían resolver quién llamaba. Ahora la identidad viaja en un header aparte y el backend la adjunta al principal |
+| 2026-10-07 | Los services de entrenador y evaluación reciben **documento, no id de base** | Antes usaban `idEntrenador` con `findById`. Lo que llega del cliente es un documento, y además así nadie puede actuar en nombre de otro entrenador |
+| 2026-10-07 | Exponer **`PagoController`** (`/api/pagos`) | `AccesoService` exige pago de membresía para dar ingreso, pero no había forma de registrarlo: el sistema no podía cobrar |
+| 2026-10-07 | Dejar el mantenimiento de tarifas en `AdminService` y los pagos en `PagoService` | `PagoService` ya tenía `actualizarTarifa`; duplicarlo en `AdminService` habría creado dos caminos para lo mismo. `/api/admin/tarifas` es el que usa la vista |
 | 2026-10-07 | Convertir el repo en **monorepo** (`frontend/` + `backend/`) y revivir el backend desde git history | Había 4 repos y 2 vaults en un mismo workspace, 3 de ellos muertos. El backend hacía falta: sin él la vista no tiene con qué speak |
 | 2026-10-07 | Reemplazar JWT por **autorización por header de rol** (`X-Rol`) | La vista ya no manejaba token desde la sesión anterior; con el backend exigiendo JWT toda petición daba 401. Es la mínima pieza que hace que ambos lados se entiendan |
 | 2026-10-07 | Conservar la **arquitectura MVC**, no adoptar la hexagonal | `victus-caf-backend/AGENTS.md` prescribía una arquitectura hexagonal de 4 capas para un repo que solo tenía 7 archivos. Sanear no es rediseñar: las 108 clases MVC funcionan |

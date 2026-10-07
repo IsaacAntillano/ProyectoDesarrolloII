@@ -20,17 +20,16 @@ documentación previa: el README raíz está actualizado a la realidad actual.
 Vite · React 19 · TypeScript · Tailwind v4 · axios · react-router-dom.
 
 - **Sin autenticación.** El login fue reemplazado por un selector de rol
-  (`src/pages/SeleccionarRol.tsx`): se elige rol y se guarda
-  `localStorage['user'] = { id: 0, numeroDocumento: 0, nombreCompleto, rol }`.
-  No hay token. `id` y `numeroDocumento` quedan en 0 porque la vista no pide
-  credenciales.
+  (`src/pages/SeleccionarRol.tsx`): se elige rol **y se escribe el número de
+  documento**, que se guarda en
+  `localStorage['user'] = { id: 0, numeroDocumento, nombreCompleto, rol }`.
+  No hay token.
 - **Autorización por header.** `src/services/api.ts` tiene un interceptor que
-  manda `X-Rol` con el rol de `localStorage`. El backend lo aplica. Ver
-  `RolHeaderFilter` en el backend. No confundir: esto es autorización por rol
-  declarado, no autenticación.
+  manda `X-Rol` y `X-Documento`. El backend los aplica (ver `RolHeaderFilter`).
+  No confundir: esto es rol declarado, no autenticación.
 - Rutas en `src/App.tsx`: `/` → `SeleccionarRol`; `/admin`, `/secretaria`,
-  `/entrenador`, `/cliente`, `/gestion-clientes*`, `/registrar-cliente-*`
-  protegidas por `PrivateRoute` con prop `allowedRoles` (redirige a `/`).
+  `/entrenador`, `/cliente`, `/gestion-clientes*`, `/registrar-cliente-*`,
+  `/registrar-pago` protegidas por `PrivateRoute` con prop `allowedRoles`.
 - `npm run dev` proxy `/api` → `http://localhost:8080`. `src/services/api.ts`
   usa `import.meta.env.VITE_API_URL ?? '/api'`.
 - `npm run build` = `tsc -b && vite build` (typecheck incluido).
@@ -39,14 +38,13 @@ Vite · React 19 · TypeScript · Tailwind v4 · axios · react-router-dom.
   `unwrap` (compartidos). `src/utils/apiError.ts` define
   `getApiErrorMessage` / `isServerUnreachable` / `SERVER_UNREACHABLE_MESSAGE`.
   No reimplementar estos helpers en páginas.
-- `clienteService.ts` es el **único** servicio de clientes. Expone los tipos
-  ricos (`ParticularMensual`, `ParticularDiario`, `BeneficiarioEps`) y
-  listados tipados por categoría (`listarParticularesMensuales`,
-  `listarParticularesDiarios`, `listarBeneficiariosEps`) más listados planos
-  (`listarMensualesTodos`, etc.) para `GestionClientes`.
+- `clienteService.ts` es el servicio de clientes (registro, búsqueda, listados,
+  edición, inactivación). `clientePanelService.ts` es el panel del cliente
+  (`/api/cliente`), que usa el documento del header. No confundirlos: el primero
+  opera sobre cualquier cliente, el segundo solo sobre el que llama.
+- Servicios nuevos: `entrenadorService.ts`, `pagoService.ts`.
 - `rolLimits.ts` codifica los cupos por rol (1 admin, 2 secretaria, 3
   entrenador). Es una regla de negocio en la vista, sin contraparte en backend.
-- `EntrenadorDashboard` y `ClienteDashboard` son placeholders.
 
 ## Backend (`backend/`)
 
@@ -66,6 +64,22 @@ com.victuscaf
 │   └── exception/              # @RestControllerAdvice
 └── security/                   # SecurityConfig, RolHeaderFilter
 ```
+
+Controllers (7, mapean 1:1 con las áreas del sistema):
+
+| Controller | Ruta base | Rol |
+| --- | --- | --- |
+| `ClienteController` | `/api/clientes` | secretaria, admin |
+| `ClientePanelController` | `/api/cliente` | cliente, admin |
+| `UsuarioSistemaController` | `/api/usuarios-sistema` | admin |
+| `AccesoController` | `/api/acceso` | secretaria, admin |
+| `AdminController` | `/api/admin` | admin |
+| `PagoController` | `/api/pagos` | secretaria, admin |
+| `EntrenadorController` | `/api/entrenador` | entrenador, admin |
+
+Ojo: `ClienteController` y `ClientePanelController` son distintos a propósito.
+El primero opera sobre cualquier cliente (registro, edición); el segundo solo
+sobre el que llama, identificado por el header `X-Documento`. No fusionar.
 
 Estructura MVC clásica, no hexagonal. Las layers se cruzan: los services
 inyectan repositorios directamente, y los controllers devuelven entities JPA
@@ -100,11 +114,19 @@ No hay `mvn` en el PATH → **siempre `./mvnw`**.
    valor al enum, los registros existentes no se corrompen (por eso es STRING y
    no el ordinal por defecto).
 3. **Autorización por header no es autenticación.** `RolHeaderFilter` confía en
-   `X-Rol`. Quien alcance el puerto 8080 puede declararse admin. Solo local.
-4. **`@PreAuthorize` es la fuente de verdad** de permisos. Vive en los
+   `X-Rol` y `X-Documento`. Quien alcance el puerto 8080 puede declararse admin.
+   Solo local.
+4. **Los services de entrenador y evaluación reciben documento, no id.** Antes
+   usaban `idEntrenador` (id de base) y `findById`. Ahora usan
+   `findByNumeroDeDocumento`, porque es lo que llega desde el header. Si se agrega
+   un método nuevo de entrenador, que Tome el documento.
+5. **`@PreAuthorize` es la fuente de verdad** de permisos. Vive en los
    controllers. El filtro solo construye el `SecurityContext`.
-5. **No hay tests.** No hay datasource de prueba. La verificación es `compile`.
-6. `spring.jpa.open-in-view=false` está activo: los controllers que necesiten
+6. **Los pagos validan el monto contra la tarifa.** `PagoService` compara con
+   tolerancia de 0.01 y rechaza. No agregar formas de cobrar sin validar.
+7. **No hay tests.** No hay datasource de prueba. La verificación es `compile`
+   más pruebas manuales con `curl`.
+8. `spring.jpa.open-in-view=false` está activo: los controllers que necesiten
    una relación lazy deben cargarla explícitamente en el service.
 
 ### Contrato con el frontend

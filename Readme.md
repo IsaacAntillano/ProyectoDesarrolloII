@@ -90,13 +90,28 @@ curl -H "X-Rol: ADMINISTRADOR" http://localhost:8080/api/admin/tarifas
 
 Sin header, la respuesta es `401`.
 
-**Roles:** `ADMINISTRADOR` · `SECRETARIA` · `ENTRENADOR`
+**Roles:** `ADMINISTRADOR` · `SECRETARIA` · `ENTRENADOR` · `CLIENTE`
+
+Además del rol, la vista manda **`X-Documento`** con el número de documento del
+usuario. El backend lo adjunta al principal de seguridad (`RolHeaderFilter`) y lo
+usa para saber a qué entrenador o cliente pertenece la llamada. Por eso los
+endpoints de entrenador y de panel de cliente **no reciben el id por la ruta**: un
+entrenador no puede actuar en nombre de otro.
+
+```bash
+curl -H "X-Rol: ENTRENADOR" -H "X-Documento: 100000003" \
+     http://localhost:8080/api/entrenador/perfil
+```
 
 | Perfil de acceso | Endpoints |
 | --- | --- |
 | `SECRETARIA`, `ADMINISTRADOR` | registrar, consultar, listar, actualizar y reactivar clientes |
 | `ADMINISTRADOR` | desactivar clientes, CRUD de usuarios del sistema, todo `/api/admin` |
 | `SECRETARIA`, `ADMINISTRADOR` | registrar ingreso |
+| `SECRETARIA`, `ADMINISTRADOR` | registrar pagos, nomina, arriendo, mantenimiento |
+| `ADMINISTRADOR` | generar flujo de caja, factura EPS |
+| `ENTRENADOR`, `ADMINISTRADOR` | panel del entrenador (`/api/entrenador`) |
+| `CLIENTE`, `ADMINISTRADOR` | panel del cliente (`/api/cliente`) |
 
 ### Advertencia
 
@@ -159,6 +174,49 @@ Base: `/api`
 | `POST` | `/equipos` | registra un equipo |
 | `GET` | `/flujo-caja?fecha=AAAA-MM-DD` | flujo de caja de una fecha |
 
+### Pagos y caja — `/pagos` (secretaría y admin)
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `POST` | `/mensualidad/{documento}` | mensualidad; renueva el contrato un mes |
+| `POST` | `/diario/{documento}` | acceso de cliente diario |
+| `POST` | `/copago-eps/{documento}` | copago de beneficiario EPS |
+| `POST` | `/nomina/{documento}` | pago a entrenador |
+| `POST` | `/arriendo` | gasto de arriendo |
+| `POST` | `/mantenimiento/{idEquipo}` | gasto de mantenimiento |
+| `POST` | `/flujo-caja?fecha=` | consolida pagos y gastos (solo admin) |
+| `GET` | `/facturas-eps?periodo=` | factura EPS (solo admin) |
+| `GET` | `/cliente/{documento}` | historial de pagos |
+| `PUT` | `/tarifas/{tipo}` | actualiza tarifa (solo admin) |
+
+El backend **valida el valor contra la tarifa vigente** y rechaza el pago si no
+coincide: es imposible cobrar un monto arbitrario.
+
+### Entrenador — `/entrenador` (entrenador y admin)
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/perfil` | datos del entrenador que llama |
+| `GET` | `/horarios` | sus horarios declarados |
+| `POST` | `/horarios` | declara un horario |
+| `POST` | `/horarios/{id}/asignar/{documento}` | asigna horario a cliente Plus |
+| `POST` | `/rutinas/{documento}` | crea rutina para un cliente |
+| `POST` | `/mensajes/{documento}` | mensaje a un cliente |
+| `POST` | `/evaluaciones/inicial/{documento}` | evaluación inicial (calcula IMC) |
+| `POST` | `/evaluaciones/periodica/{documento}` | evaluación de seguimiento |
+| `POST` | `/metas/particular/{documento}` | meta física de particular |
+| `POST` | `/metas/eps/{documento}` | meta clínica de EPS |
+
+### Panel del cliente — `/cliente` (cliente y admin)
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/perfil` | datos, membresía y contrato |
+| `GET` | `/progreso` | peso perdido, IMC y grasa |
+| `GET` | `/rutinas` | rutinas activas |
+| `GET` | `/evaluaciones` | historial de evaluaciones |
+| `GET` | `/asistencias` | historial de ingresos |
+
 ### Acceso — `/acceso`
 
 | Método | Ruta | Acceso |
@@ -166,7 +224,9 @@ Base: `/api`
 | `POST` | `/registrar-ingreso` | secretaria, admin |
 
 Todas las respuestas usan el sobre `ApiResponse<T>`:
-`{ success, message, data }`.
+`{ success, message, data }`. Los errores también: `{ success: false, message }`
+con el status HTTP correspondiente (400 validación, 401 sin autenticar, 403 sin
+permisos, 404 no encontrado).
 
 ---
 
@@ -200,9 +260,9 @@ victus-caf/
 | Rol | Vista | Qué puede hacer |
 | --- | --- | --- |
 | `ADMINISTRADOR` | `/admin` | usuarios del sistema, tarifas, equipos, flujo de caja, clientes |
-| `SECRETARIA` | `/secretaria` | clientes, registro de ingresos |
-| `ENTRENADOR` | `/entrenador` | vista placeholder (sin implementar) |
-| `CLIENTE` | `/cliente` | vista placeholder (sin implementar) |
+| `SECRETARIA` | `/secretaria`, `/registrar-pago` | clientes, ingresos, pagos |
+| `ENTRENADOR` | `/entrenador` | horarios, rutinas, evaluaciones, metas |
+| `CLIENTE` | `/cliente` | membresía, progreso, rutina, evaluaciones, ingresos |
 
 ---
 
