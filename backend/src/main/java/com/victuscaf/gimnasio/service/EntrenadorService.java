@@ -127,4 +127,11 @@ public class EntrenadorService {
                 .distinct()
                 .toList();
     }
+
+    /** Rutinas que este entrenador creo. */
+    @Transactional(readOnly = true)
+    public List<Rutina> listarRutinas(Long documentoEntrenador) {
+        Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
+        return rutinaRepository.findByEntrenador(entrenador);
+    }
 }

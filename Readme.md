@@ -33,6 +33,15 @@ CREATE DATABASE IF NOT EXISTS victus_caf_db
     COLLATE utf8mb4_unicode_ci;
 ```
 
+Al levantar por primera vez, el backend ejecuta un seed (`DataSeeder`) que
+crea el admin, la secretaria, el entrenador, las tarifas y un equipo de
+ejemplo, **solo si la base no tiene usuarios todavía**. No pisa datos
+existentes.
+
+Credenciales del seed (documentadas, solo locales): `ana@victus.co/admin123`
+(admin), `sara@victus.co/secretaria123` (secretaria), `enzo@victus.co/entrenador123`
+(entrenador).
+
 Spring Boot se conecta por TCP, así que MariaDB debe escuchar en `3306`. En
 distribuciones que vienen con `skip-networking` o sin `bind-address`, hay que
 habilitarlo:
@@ -217,6 +226,15 @@ coincide: es imposible cobrar un monto arbitrario.
 | `GET` | `/evaluaciones` | historial de evaluaciones |
 | `GET` | `/asistencias` | historial de ingresos |
 
+### Notificaciones — `/notificaciones` (admin y secretaria)
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/` | todas |
+| `GET` | `/no-leidas` | sin leer |
+| `POST` | `/copago-pendiente/{documento}` | genera alerta de copago pendiente |
+| `PUT` | `/{id}/leida` | marca leida |
+
 ### Acceso — `/acceso`
 
 | Método | Ruta | Acceso |
@@ -261,7 +279,7 @@ victus-caf/
 | --- | --- | --- |
 | `ADMINISTRADOR` | `/admin` | usuarios del sistema, tarifas, equipos, flujo de caja, clientes |
 | `SECRETARIA` | `/secretaria`, `/registrar-pago` | clientes, ingresos, pagos |
-| `ENTRENADOR` | `/entrenador` | horarios, rutinas, evaluaciones, metas |
+| `ENTRENADOR` | `/entrenador` | horarios, rutinas, evaluaciones y metas sobre sus clientes |
 | `CLIENTE` | `/cliente` | membresía, progreso, rutina, evaluaciones, ingresos |
 
 ---

@@ -81,8 +81,14 @@ export const asignarHorario = (idHorario: number, numeroDocumento: number) =>
 
 // ─── Rutinas ────────────────────────────────────────────────────────
 
+export const listarMisRutinas = () =>
+  api.get<ApiResponse<Rutina[]>>('/entrenador/rutinas').then(unwrap);
+
 export const crearRutina = (numeroDocumento: number, data: { nombre: string; descripcion: string; fechaVencimiento: string }) =>
   api.post<ApiResponse<Rutina>>(`/entrenador/rutinas/${numeroDocumento}`, data).then(unwrap);
+
+export const historialEvaluaciones = (numeroDocumento: number) =>
+  api.get<ApiResponse<EvaluacionFisica[]>>(`/entrenador/clientes/${numeroDocumento}/evaluaciones`).then(unwrap);
 
 // ─── Evaluaciones ───────────────────────────────────────────────────
 

@@ -81,6 +81,12 @@ public class EntrenadorController {
 
     // ─── Rutinas ─────────────────────────────────────────────────────
 
+    @GetMapping("/rutinas")
+    public ResponseEntity<ApiResponse<List<Rutina>>> listarRutinas() {
+        return ResponseEntity.ok(ApiResponse.success("Rutinas del entrenador",
+                entrenadorService.listarRutinas(documentoActual())));
+    }
+
     @PostMapping("/rutinas/{numeroDocumento}")
     public ResponseEntity<ApiResponse<Rutina>> crearRutina(
             @PathVariable Long numeroDocumento,
@@ -115,6 +121,14 @@ public class EntrenadorController {
             @Valid @RequestBody MedidasDTO medidas) {
         return ResponseEntity.ok(ApiResponse.success("Evaluacion periodica registrada",
                 evaluacionService.registrarEvaluacionPeriodica(numeroDocumento, documentoActual(), medidas)));
+    }
+
+    /** Historial de evaluaciones del cliente, para el seguimiento del entrenador. */
+    @GetMapping("/clientes/{numeroDocumento}/evaluaciones")
+    public ResponseEntity<ApiResponse<List<EvaluacionFisica>>> historialCliente(
+            @PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Historial de evaluaciones",
+                evaluacionService.consultarHistorial(numeroDocumento)));
     }
 
     // ─── Metas ───────────────────────────────────────────────────────
