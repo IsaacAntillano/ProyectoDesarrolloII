@@ -66,12 +66,14 @@ Pendiente de cerrar al terminar la sesión (ver `git log`).
 
 ### Qué quedó en WIP
 
-- Sin datos de arranque: la base se crea vacía y Hibernate genera el esquema.
-  No hay seed, así que `POST /usuarios-sistema` es la única forma de crear el
-  primer administrador. Las tarifas tampoco tienen valores por defecto.
-- `NotificacionService` y `SeguridadService` siguen sin exponerse.
-- `EntrenadorDashboard` muestra horarios; la API de rutinas, evaluaciones y
-  metas existe pero la vista aún no la consume.
+- La base arranca vacía y Hibernate genera el esquema; el `DataSeeder` carga
+  admin, secretaria, entrenador, tarifas y equipos **solo si no hay usuarios**.
+  Sobre una base con datos se queda inactivo.
+- `SeguridadService` sigue sin exponerse (no tiene caso de uso claro en la
+  aplicación actual).
+- `EntrenadorDashboard`: ya muestra horarios, lista de rutinas creadas y
+  formulario para crear rutina/evaluación en un cliente por documento, pero no
+  cubre metas (el endpoint existe).
 
 ### Problemas conocidos
 
@@ -87,14 +89,24 @@ Pendiente de cerrar al terminar la sesión (ver `git log`).
 - La contraseña de `.env` se compartió en texto plano durante la sesión;
   conviene rotarla.
 
+### Se resolvió esta sesión
+
+- **`migrarDiarioAMensual`**: la versión anterior insertaba un usuario nuevo
+  con el mismo documento y siempre fallaba. Ahora convierte el cliente (mueve
+  la fila entre `particular_diario` y `particular_mensual`, conserva el id y
+  crea el contrato). Probado.
+- **Seed inicial** (`DataSeeder`).
+- **`NotificacionService` expuesto** vía `/api/notificaciones` (persistencia,
+  listado, no leídas, marcar leída); antes solo imprimía por consola.
+- **`EntrenadorDashboard`** completa: perfil, horarios, rutinas creadas,
+  formulario de rutina y evaluación por documento.
+
 ### Próximos pasos
 
-- Exponer `NotificacionService` (reporte de copago pendiente).
-- Corregir `migrarDiarioAMensual` con una decisión de dominio sobre el
-  identificador.
+- `EntrenadorDashboard`: cubrir metas y evaluaciones repetidas.
 - Decidir la política de contraseñas de cliente (BCrypt o no storing).
 - Rotar la contraseña de `victus_app` en MariaDB.
-- Considerar un seed para development.
+- Considerar si `CLIENTE` debe ver también sus pagos.
 
 ---
 
