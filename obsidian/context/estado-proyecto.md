@@ -78,8 +78,6 @@ Pendiente de cerrar al terminar la sesión (ver `git log`).
 - **La autorización por header no es autenticación.** Quien alcance el puerto
   8080 puede declarar `X-Rol: ADMINISTRADOR` y `X-Documento` de cualquiera.
   Solo desarrollo local.
-- **`migrarDiarioAMensual` no funciona.** Copia el mismo `numeroDeDocumento`
-  del diario al mensual, y como es único el INSERT siempre choca. Preexistente.
 - **Las contraseñas de cliente viajan en las respuestas.** Los DTO de cliente no
   aplican BCrypt (los de usuario sí), así que `crearClienteMensual` devuelve la
   contraseña en texto plano.

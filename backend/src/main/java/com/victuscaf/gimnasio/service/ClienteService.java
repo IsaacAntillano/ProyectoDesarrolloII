@@ -12,6 +12,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 @Service
 @RequiredArgsConstructor
 public class ClienteService {
@@ -21,6 +24,9 @@ public class ClienteService {
     private final ParticularDiarioRepository particularDiarioRepository;
     private final BeneficiarioEpsRepository beneficiarioEpsRepository;
     private final ContratoRepository contratoRepository;
+
+    @PersistenceContext
+    private EntityManager em;
     private final RemisionRepository remisionRepository;
     private final EntrenadorRepository entrenadorRepository;
     private final TarifaRepository tarifaRepository;
@@ -345,25 +351,55 @@ public class ClienteService {
     @Transactional
     public ParticularMensual migrarDiarioAMensual(Long numeroDocumento, MigracionDTO dto) {
         ParticularDiario diario = consultarParticularDiarioPorDocumento(numeroDocumento);
-        // Crear un nuevo cliente mensual con los datos del diario + los nuevos
-        ClienteMensualDTO mensualDTO = new ClienteMensualDTO();
-        mensualDTO.setTipoDeDocumento(diario.getTipoDeDocumento());
-        mensualDTO.setNumeroDeDocumento(diario.getNumeroDeDocumento());
-        mensualDTO.setNombreCompleto(diario.getNombreCompleto());
-        mensualDTO.setFechaDeNacimiento(diario.getFechaDeNacimiento());
-        mensualDTO.setTelefono(diario.getTelefono());
-        mensualDTO.setCorreoElectronico(dto.correoElectronico());
-        mensualDTO.setContrasena(dto.contrasena());
-        mensualDTO.setTipoMembresia(dto.tipoMembresia());
+        Long idUsuario = diario.getId();
 
-        // Registrar nuevo cliente mensual
-        ParticularMensual nuevoMensual = registrarParticularMensual(mensualDTO);
+        /* No se puede borrar el ParticularDiario como entidad, porque al hacerlo
+         * Hibernate tambien elimina la fila base `usuario`, y esa fila esta
+         * referenciada por asistencia, pago y contrato (FK). La transicion se hace
+         * moviendo la fila entre las tablas hijas con SQL nativo:
+         *   - borrar la fila de particular_diario
+         *   - insertar la misma id en particular_mensual
+         *   - marcar tipo_de_cliente en la tabla usuario
+         * El documento del cliente se conserva y el contrato nace en la tabla
+         * contrato ligada al mismo usuario.id.
+         */
+        em.createNativeQuery("DELETE FROM particular_diario WHERE id = :id")
+                .setParameter("id", idUsuario)
+                .executeUpdate();
+        em.createNativeQuery("INSERT INTO particular_mensual (id, estado_membresia, tiene_entrenador) VALUES (:id, :em, :te)")
+                .setParameter("id", idUsuario)
+                .setParameter("em", 0) // EstadoMembresia.ACTIVO (ordinal)
+                .setParameter("te", false)
+                .executeUpdate();
+        em.createNativeQuery("UPDATE usuario SET tipo_de_cliente = :tipo, correo_electronico = :correo, contrasena = :contrasena WHERE id = :id")
+                .setParameter("tipo", "PARTICULAR_MENSUAL")
+                .setParameter("correo", dto.correoElectronico())
+                .setParameter("contrasena", dto.contrasena())
+                .setParameter("id", idUsuario)
+                .executeUpdate();
+        em.flush();
+        em.clear();
 
-        // Opcional: desactivar el diario (no eliminarlo)
-        diario.setEstado(false);
-        particularDiarioRepository.save(diario);
+        ParticularMensual saved = particularMensualRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Error al convertir a cliente mensual"));
 
-        return nuevoMensual;
+        Contrato contrato = new Contrato();
+        contrato.setCliente(saved);
+        contrato.setFechaInicio(LocalDate.now());
+        contrato.setTipoMembresia(dto.tipoMembresia());
+        LocalDate vencimiento = switch (dto.tipoMembresia()) {
+            case MENSUAL -> LocalDate.now().plusMonths(1);
+            case TRIMESTRAL -> LocalDate.now().plusMonths(3);
+            case SEMESTRAL -> LocalDate.now().plusMonths(6);
+            case ANUAL -> LocalDate.now().plusYears(1);
+        };
+        contrato.setFechaVencimiento(vencimiento);
+        contrato.setEstado(EstadoContratoParticular.ACTIVO);
+        contratoRepository.save(contrato);
+        saved.setContrato(contrato);
+        particularMensualRepository.save(saved);
+
+        return saved;
     }
 
     // ==================== ASIGNACIÓN AUTOMÁTICA DE ENTRENADOR ====================
