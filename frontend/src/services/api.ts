@@ -8,34 +8,23 @@ const api = axios.create({
 });
 
 /**
- * El backend autoriza por rol declarado en el header `X-Rol` (ver
- * `RolHeaderFilter` en el backend). La vista no maneja token: elige rol en
- * `SeleccionarRol.tsx` y lo guarda en `localStorage['user']`, asi que lo
- * reenviamos en cada peticion.
- *
- * Ojo: esto no es autenticacion. El backend confía en el header. Solo es valido
- * para desarrollo local; no exponer el backend en red.
+ * El backend autentica por JWT: `Login.tsx` guarda el token en
+ * `localStorage['user']` y lo reenviamos como `Authorization: Bearer ...`.
+ * Sin token, el backend rechaza con un error (no autorizado).
  */
 api.interceptors.request.use((config) => {
     const user = readUserFromStorage();
-    if (user?.rol) {
-        config.headers.set('X-Rol', user.rol);
-        // El backend usa el documento para saber qué entrenador o cliente
-        // está llamando (services como EntrenadorService lo requieren).
-        if (user.numeroDocumento) {
-            config.headers.set('X-Documento', String(user.numeroDocumento));
-        }
+    if (user?.token) {
+        config.headers.set('Authorization', `Bearer ${user.token}`);
     }
     return config;
 });
 
-function readUserFromStorage(): { rol?: string; numeroDocumento?: number } | null {
+function readUserFromStorage(): { token?: string } | null {
     try {
         const raw = localStorage.getItem('user');
-        return raw ? (JSON.parse(raw) as { rol?: string; numeroDocumento?: number }) : null;
+        return raw ? (JSON.parse(raw) as { token?: string }) : null;
     } catch {
-        // JSON invalido en localStorage: se sigue sin header y el backend
-        // respondera 401, que es el comportamiento correcto.
         return null;
     }
 }

@@ -95,15 +95,26 @@ public class EvaluacionService {
 
     public ProgresoDTO consultarProgreso(Long numeroDocumento) {
         List<EvaluacionFisica> evaluaciones = consultarHistorial(numeroDocumento);
-        if (evaluaciones.size() < 2) {
-            throw new RuntimeException("No hay suficientes evaluaciones para mostrar progreso");
+
+        if (evaluaciones.isEmpty()) {
+            // Sin evaluaciones: mensaje amigable para registrar la primera
+            return new ProgresoDTO(0, 0, 0, "No tienes evaluaciones registradas. Registra tu primera evaluación para comenzar a ver tu progreso.");
         }
+
+        if (evaluaciones.size() == 1) {
+            // Solo una evaluación: mostrar datos iniciales y sugerir segunda evaluación
+            EvaluacionFisica inicial = evaluaciones.getFirst();
+            return new ProgresoDTO(0, inicial.getImc(), inicial.getPorcentajeGrasa(),
+                "Tienes una evaluación registrada. Registra una segunda evaluación para ver tu progreso.");
+        }
+
+        // Dos o más evaluaciones: calcular progreso real
         EvaluacionFisica inicial = evaluaciones.getFirst();
         EvaluacionFisica ultima = evaluaciones.getLast();
 
         double pesoPerdido = inicial.getPeso() - ultima.getPeso();
         double imcActual = ultima.getImc();
-        double porcentajeGrasaActual = ultima.getPorcentajeGrasa(); // asegúrate de tener este campo
+        double porcentajeGrasaActual = ultima.getPorcentajeGrasa();
         String mensaje = "Progreso desde la evaluación inicial";
 
         return new ProgresoDTO(pesoPerdido, imcActual, porcentajeGrasaActual, mensaje);

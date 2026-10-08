@@ -21,9 +21,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 /**
  * Configuracion de seguridad del backend.
  *
- * <p>La autorizacion se basa en el rol que declara el cliente en el header
- * {@code X-Rol} (ver {@link RolHeaderFilter}). No hay token ni sesion: la vista
- * elige rol y lo manda en cada peticion.
+ * <p>La autenticacion es por JWT: el frontend manda
+ * {@code Authorization: Bearer <token>} y {@link JwtAuthFilter} construye el
+ * {@link org.springframework.security.core.context.SecurityContext} con el rol
+ * y documento del token. Sin token, la peticion queda sin autenticar y el
+ * filtro de autorizacion la rechaza.
  *
  * <p>Los {@code @PreAuthorize} de los controllers siguen siendo la unica fuente
  * de verdad sobre quien puede llamar a cada endpoint.
@@ -33,13 +35,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity // habilita @PreAuthorize
 public class SecurityConfig {
 
-    private final RolHeaderFilter rolHeaderFilter;
+    private final JwtAuthFilter jwtAuthFilter;
     private final List<String> allowedOrigins;
 
     public SecurityConfig(
-            RolHeaderFilter rolHeaderFilter,
+            JwtAuthFilter jwtAuthFilter,
             @Value("${app.security.allowed-origins:http://localhost:5173}") String allowedOrigins) {
-        this.rolHeaderFilter = rolHeaderFilter;
+        this.jwtAuthFilter = jwtAuthFilter;
         this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -62,10 +64,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Todo lo demas exige que el filtro haya establecido un rol.
+                        // Login: unico endpoint publico.
+                        .requestMatchers("/api/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(rolHeaderFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

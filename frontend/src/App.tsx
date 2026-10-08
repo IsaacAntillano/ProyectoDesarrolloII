@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
 import SeleccionarRol from './pages/SeleccionarRol';
 import AdminDashboard from './pages/AdminDashboard';
 import SecretariaDashboard from './pages/SecretariaDashboard';
@@ -20,7 +21,8 @@ function App() {
       <Toaster position="top-right" />
       <BrowserRouter basename={basename}>
         <Routes>
-          <Route path="/" element={<SeleccionarRol />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/seleccionar-rol" element={<SeleccionarRol />} />
           <Route
             path="/admin"
             element={

@@ -64,8 +64,10 @@ export default function GestionClientes() {
   }, [tab, verTodos, esAdmin]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargar();
+    const handleFocus = () => cargar();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [cargar]);
 
   const filtrados = useMemo(() => {

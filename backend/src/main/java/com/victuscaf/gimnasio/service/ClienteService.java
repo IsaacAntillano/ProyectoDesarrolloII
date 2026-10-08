@@ -15,6 +15,8 @@ import java.util.List;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 @Service
 @RequiredArgsConstructor
 public class ClienteService {
@@ -24,6 +26,7 @@ public class ClienteService {
     private final ParticularDiarioRepository particularDiarioRepository;
     private final BeneficiarioEpsRepository beneficiarioEpsRepository;
     private final ContratoRepository contratoRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @PersistenceContext
     private EntityManager em;
@@ -52,7 +55,7 @@ public class ClienteService {
         cliente.setFechaDeNacimiento(dto.getFechaDeNacimiento());
         cliente.setTelefono(dto.getTelefono());
         cliente.setCorreoElectronico(dto.getCorreoElectronico());
-        cliente.setContrasena(dto.getContrasena());
+        cliente.setContrasena(passwordEncoder.encode(dto.getContrasena()));
         cliente.setEstado(true);
         cliente.setTipoDeCliente(TipoDeCliente.PARTICULAR_MENSUAL);
         cliente.setTieneEntrenador(true);   // primer mes gratis
@@ -101,7 +104,7 @@ public class ClienteService {
         cliente.setFechaDeNacimiento(dto.fechaDeNacimiento());
         cliente.setTelefono(dto.telefono());
         cliente.setCorreoElectronico(dto.correoElectronico());
-        cliente.setContrasena(dto.contrasena());
+        cliente.setContrasena(passwordEncoder.encode(dto.contrasena()));
         cliente.setEstado(true);
         cliente.setTipoDeCliente(TipoDeCliente.PARTICULAR_DIARIO);
         cliente.setFechaDeIngreso(LocalDate.now());
@@ -128,7 +131,7 @@ public class ClienteService {
         beneficiario.setFechaDeNacimiento(dto.fechaDeNacimiento());
         beneficiario.setTelefono(dto.telefono());
         beneficiario.setCorreoElectronico(dto.correoElectronico());
-        beneficiario.setContrasena(dto.contrasena());
+        beneficiario.setContrasena(passwordEncoder.encode(dto.contrasena()));
         beneficiario.setEstado(true);
         beneficiario.setTipoDeCliente(TipoDeCliente.BENEFICIARIO_EPS);
         beneficiario.setTieneEntrenadorPermanente(dto.tieneEntrenadorPermanente());
@@ -227,7 +230,7 @@ public class ClienteService {
         if (dto.getFechaDeNacimiento() != null) cliente.setFechaDeNacimiento(dto.getFechaDeNacimiento());
         if (dto.getTelefono() != null) cliente.setTelefono(dto.getTelefono());
         if (dto.getCorreoElectronico() != null) cliente.setCorreoElectronico(dto.getCorreoElectronico());
-        if (dto.getContrasena() != null) cliente.setContrasena(dto.getContrasena());
+        if (dto.getContrasena() != null) cliente.setContrasena(passwordEncoder.encode(dto.getContrasena()));
         // Se puede actualizar el tipo de membresía (esto debería regenerar contrato)
         if (dto.getTipoMembresia() != null) {
             Contrato contrato = cliente.getContrato();
@@ -253,7 +256,7 @@ public class ClienteService {
         if (dto.getFechaDeNacimiento() != null) cliente.setFechaDeNacimiento(dto.getFechaDeNacimiento());
         if (dto.getTelefono() != null) cliente.setTelefono(dto.getTelefono());
         if (dto.getCorreoElectronico() != null) cliente.setCorreoElectronico(dto.getCorreoElectronico());
-        if (dto.getContrasena() != null) cliente.setContrasena(dto.getContrasena());
+        if (dto.getContrasena() != null) cliente.setContrasena(passwordEncoder.encode(dto.getContrasena()));
         return particularDiarioRepository.save(cliente);
     }
 
@@ -263,7 +266,7 @@ public class ClienteService {
         BeneficiarioEps cliente = consultarBeneficiarioEPSPorDocumento(numeroDocumento);
         if (dto.getTelefono() != null) cliente.setTelefono(dto.getTelefono());
         if (dto.getCorreoElectronico() != null) cliente.setCorreoElectronico(dto.getCorreoElectronico());
-        if (dto.getContrasena() != null) cliente.setContrasena(dto.getContrasena());
+        if (dto.getContrasena() != null) cliente.setContrasena(passwordEncoder.encode(dto.getContrasena()));
         return beneficiarioEpsRepository.save(cliente);
     }
 
