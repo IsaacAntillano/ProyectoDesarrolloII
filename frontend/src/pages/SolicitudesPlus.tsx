@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiCheck, FiRefreshCw, FiX } from 'react-icons/fi';
+import { FiRefreshCw, FiUserCheck } from 'react-icons/fi';
 import Layout from '../components/Layout';
+import PageHeader from '../components/ui/PageHeader';
+import Modal from '../components/ui/Modal';
+import StatusBadge from '../components/ui/StatusBadge';
+import EmptyState from '../components/ui/EmptyState';
+import LoadingState from '../components/ui/LoadingState';
+import ErrorState from '../components/ui/ErrorState';
+import Button from '../components/ui/Button';
+import { Field, Select, Textarea } from '../components/ui/Field';
+import HelpTip from '../components/ui/HelpTip';
 import {
   listarSolicitudesPlus,
   aprobarSolicitudPlus,
@@ -11,6 +20,8 @@ import {
 } from '../services/adminService';
 import { listarUsuarios, type UsuarioSistema } from '../services/usuarioSistemaService';
 import { getApiErrorMessage, isServerUnreachable, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
+import { etiqueta, ETIQUETA_ESTADO_SOLICITUD } from '../constants/labels';
+import { formatearFecha, formatearNumero } from '../utils/format';
 
 const FILTROS: { value: '' | EstadoSolicitudPlus; label: string }[] = [
   { value: 'PENDIENTE', label: 'Pendientes' },
@@ -19,22 +30,18 @@ const FILTROS: { value: '' | EstadoSolicitudPlus; label: string }[] = [
   { value: '', label: 'Todas' },
 ];
 
-const ETIQUETA_ESTADO: Record<EstadoSolicitudPlus, string> = {
-  PENDIENTE: 'Pendiente',
-  APROBADA: 'Aprobada',
-  RECHAZADA: 'Rechazada',
-};
+const CUPO_ENTRENADOR = 4;
 
-const CLASE_ESTADO: Record<EstadoSolicitudPlus, string> = {
-  PENDIENTE: 'bg-amber-100 text-amber-800',
-  APROBADA: 'bg-green-100 text-green-800',
-  RECHAZADA: 'bg-red-100 text-red-800',
+const TONE_SOLICITUD: Record<EstadoSolicitudPlus, 'amber' | 'green' | 'red'> = {
+  PENDIENTE: 'amber',
+  APROBADA: 'green',
+  RECHAZADA: 'red',
 };
 
 /**
- * Aprobacion de solicitudes del servicio de entrenador plus (PC-0011).
+ * Aprobación de solicitudes del servicio de entrenador plus (PC-0011).
  *
- * Al aprobar se puede elegir el entrenador; si se deja el automatico, el
+ * Al aprobar se puede elegir el entrenador; si se deja el automático, el
  * backend escoge el que tenga menos clientes activos y cupo disponible.
  */
 export default function SolicitudesPlus() {
@@ -42,6 +49,7 @@ export default function SolicitudesPlus() {
   const [solicitudes, setSolicitudes] = useState<SolicitudPlus[]>([]);
   const [entrenadores, setEntrenadores] = useState<UsuarioSistema[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [aprobando, setAprobando] = useState<SolicitudPlus | null>(null);
   const [documentoEntrenador, setDocumentoEntrenador] = useState('');
@@ -51,6 +59,7 @@ export default function SolicitudesPlus() {
 
   const cargar = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [s, usuarios] = await Promise.all([
         listarSolicitudesPlus(filtro || undefined),
@@ -59,7 +68,7 @@ export default function SolicitudesPlus() {
       setSolicitudes(s);
       setEntrenadores(usuarios.filter((u) => u.rol === 'ENTRENADOR' && u.estado));
     } catch (err) {
-      toast.error(
+      setError(
         isServerUnreachable(err)
           ? SERVER_UNREACHABLE_MESSAGE
           : getApiErrorMessage(err, 'No se pudieron cargar las solicitudes')
@@ -73,11 +82,6 @@ export default function SolicitudesPlus() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     cargar();
   }, [cargar]);
-
-  const pendientes = useMemo(
-    () => solicitudes.filter((s) => s.estado === 'PENDIENTE').length,
-    [solicitudes]
-  );
 
   const confirmarAprobacion = async () => {
     if (!aprobando) return;
@@ -117,53 +121,64 @@ export default function SolicitudesPlus() {
   };
 
   return (
-    <Layout title="Solicitudes de Entrenador Plus">
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <h3 className="font-semibold text-gray-800">Solicitudes del portal del cliente</h3>
-            <p className="text-sm text-gray-500">
-              {pendientes > 0
-                ? `${pendientes} solicitud${pendientes === 1 ? '' : 'es'} pendiente${pendientes === 1 ? '' : 's'} de respuesta.`
-                : 'No hay solicitudes pendientes con el filtro actual.'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <select
+    <Layout title="Solicitudes de Entrenador Plus" description="Aprueba o rechaza las solicitudes que llegan desde el portal del cliente">
+      <PageHeader
+        title="Solicitudes Plus"
+        description="Cada solicitud es de un cliente particular mensual que terminó su primer mes sin entrenador. Al aprobar, queda asignado un entrenador."
+        actions={
+          <>
+            <label className="sr-only" htmlFor="filtro-solicitudes">
+              Filtrar por estado
+            </label>
+            <Select
+              id="filtro-solicitudes"
               value={filtro}
               onChange={(e) => setFiltro(e.target.value as '' | EstadoSolicitudPlus)}
-              className="px-3 py-1.5 border rounded-md text-sm"
+              className="!w-auto"
             >
               {FILTROS.map((f) => (
                 <option key={f.value} value={f.value}>
                   {f.label}
                 </option>
               ))}
-            </select>
-            <button
-              type="button"
-              onClick={cargar}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-md hover:bg-gray-50"
-            >
-              <FiRefreshCw /> Actualizar
-            </button>
-          </div>
-        </div>
+            </Select>
+            <Button variant="secondary" onClick={() => void cargar()} aria-label="Actualizar solicitudes">
+              <FiRefreshCw aria-hidden="true" /> Actualizar
+            </Button>
+          </>
+        }
+      />
 
+      <HelpTip title="¿Cómo se asigna el entrenador?">
+        <p>
+          Si dejas el modo automático, el sistema elige el entrenador con menos clientes activos que
+          todavía tenga cupo (máximo {CUPO_ENTRENADOR} por entrenador). También puedes elegir uno
+          específico en el desplegable.
+        </p>
+      </HelpTip>
+
+      <div className="mt-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         {loading ? (
-          <p className="text-gray-500">Cargando...</p>
+          <LoadingState message="Cargando solicitudes..." />
+        ) : error ? (
+          <ErrorState message={error} onRetry={() => void cargar()} />
         ) : solicitudes.length === 0 ? (
-          <p className="text-gray-500 italic">No hay solicitudes para mostrar.</p>
+          <EmptyState
+            title="No hay solicitudes para mostrar"
+            message={
+              filtro === 'PENDIENTE'
+                ? 'No hay solicitudes pendientes con el filtro actual. Cuando un cliente pida el servicio Plus desde su portal, aparecerá aquí.'
+                : 'No hay solicitudes con este estado. Prueba con otro filtro.'
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
+              <caption className="sr-only">Solicitudes de entrenador plus</caption>
               <thead className="bg-gray-50">
                 <tr>
-                  {['Fecha', 'Cliente', 'Estado', 'Observación', 'Entrenador', 'Acciones'].map((h) => (
-                    <th
-                      key={h}
-                      className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
-                    >
+                  {['Fecha', 'Cliente', 'Estado', 'Observación', 'Entrenador asignado', 'Acciones'].map((h) => (
+                    <th key={h} scope="col" className="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">
                       {h}
                     </th>
                   ))}
@@ -172,53 +187,49 @@ export default function SolicitudesPlus() {
               <tbody className="divide-y divide-gray-200">
                 {solicitudes.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-sm">{s.fechaSolicitud}</td>
-                    <td className="px-3 py-2 text-sm">
-                      <p className="font-medium text-gray-800">
+                    <td className="px-3 py-2 text-sm">{formatearFecha(s.fechaSolicitud)}</td>
+                    <td className="px-3 py-2">
+                      <p className="text-sm font-medium text-gray-900">
                         {s.cliente?.nombreCompleto ?? 'Cliente'}
                       </p>
                       {s.cliente?.numeroDocumento && (
-                        <p className="text-xs text-gray-500">{s.cliente.numeroDocumento}</p>
+                        <p className="text-xs text-gray-500">{formatearNumero(s.cliente.numeroDocumento)}</p>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-sm">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${CLASE_ESTADO[s.estado]}`}
-                      >
-                        {ETIQUETA_ESTADO[s.estado]}
-                      </span>
+                    <td className="px-3 py-2">
+                      <StatusBadge tone={TONE_SOLICITUD[s.estado]}>
+                        {etiqueta(ETIQUETA_ESTADO_SOLICITUD, s.estado)}
+                      </StatusBadge>
                     </td>
                     <td className="px-3 py-2 text-sm text-gray-600">{s.observacion || '—'}</td>
-                    <td className="px-3 py-2 text-sm">
-                      {s.entrenadorAsignado?.nombreCompleto ?? '—'}
-                    </td>
-                    <td className="px-3 py-2 text-sm">
+                    <td className="px-3 py-2 text-sm">{s.entrenadorAsignado?.nombreCompleto ?? '—'}</td>
+                    <td className="px-3 py-2">
                       {s.estado === 'PENDIENTE' ? (
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="success"
                             onClick={() => {
                               setAprobando(s);
                               setDocumentoEntrenador('');
                             }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-md text-xs hover:bg-green-700"
                           >
-                            <FiCheck /> Aprobar
-                          </button>
-                          <button
-                            type="button"
+                            <FiUserCheck aria-hidden="true" /> Aprobar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
                             onClick={() => {
                               setRechazando(s);
                               setMotivoRechazo('');
                             }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md text-xs hover:bg-red-700"
                           >
-                            <FiX /> Rechazar
-                          </button>
+                            Rechazar
+                          </Button>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-xs">
-                          {s.fechaRespuesta ? `Respondida ${s.fechaRespuesta}` : '—'}
+                        <span className="text-xs text-gray-400">
+                          {s.fechaRespuesta ? `Respondida ${formatearFecha(s.fechaRespuesta)}` : '—'}
                         </span>
                       )}
                     </td>
@@ -230,89 +241,91 @@ export default function SolicitudesPlus() {
         )}
       </div>
 
-      {aprobando && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl space-y-4">
-            <h3 className="font-bold text-lg">Aprobar solicitud plus</h3>
+      <Modal
+        open={!!aprobando}
+        onClose={() => setAprobando(null)}
+        title="Aprobar solicitud Plus"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setAprobando(null)} disabled={guardando}>
+              Cancelar
+            </Button>
+            <Button variant="success" onClick={() => void confirmarAprobacion()} loading={guardando}>
+              Aprobar y asignar
+            </Button>
+          </>
+        }
+      >
+        {aprobando && (
+          <>
             <p className="text-sm text-gray-600">
-              Cliente: <strong>{aprobando.cliente?.nombreCompleto}</strong>
+              Cliente: <strong>{aprobando.cliente?.nombreCompleto ?? 'Cliente'}</strong>
+              {aprobando.cliente?.numeroDocumento
+                ? ` (${formatearNumero(aprobando.cliente.numeroDocumento)})`
+                : ''}
             </p>
-            <label className="block text-sm">
-              Entrenador
-              <select
+            <Field
+              label="Entrenador"
+              htmlFor="entrenador-plus"
+              help="Automático: el que tenga menos clientes activos y cupo disponible."
+            >
+              <Select
+                id="entrenador-plus"
                 value={documentoEntrenador}
                 onChange={(e) => setDocumentoEntrenador(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border rounded-md"
               >
-                <option value="">Automático (el que tenga menos clientes)</option>
+                <option value="">Automático (menos clientes, con cupo)</option>
                 {entrenadores.map((e) => (
                   <option key={e.idUsuarioSistema} value={e.numeroDeDocumento}>
-                    {e.nombreCompleto} — {e.numeroDeDocumento}
+                    {e.nombreCompleto} — {formatearNumero(e.numeroDeDocumento)}
                   </option>
                 ))}
-              </select>
-            </label>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setAprobando(null)}
-                className="px-4 py-2 border rounded"
-                disabled={guardando}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmarAprobacion}
-                disabled={guardando}
-                className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
-              >
-                Aprobar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </Select>
+            </Field>
+            {entrenadores.length === 0 && (
+              <p role="note" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                No hay entrenadores activos. En modo automático la solicitud no podrá aprobarse.
+              </p>
+            )}
+          </>
+        )}
+      </Modal>
 
-      {rechazando && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl space-y-4">
-            <h3 className="font-bold text-lg">Rechazar solicitud plus</h3>
+      <Modal
+        open={!!rechazando}
+        onClose={() => setRechazando(null)}
+        title="Rechazar solicitud Plus"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setRechazando(null)} disabled={guardando}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={() => void confirmarRechazo()} loading={guardando}>
+              Rechazar
+            </Button>
+          </>
+        }
+      >
+        {rechazando && (
+          <>
             <p className="text-sm text-gray-600">
-              Cliente: <strong>{rechazando.cliente?.nombreCompleto}</strong>
+              Cliente: <strong>{rechazando.cliente?.nombreCompleto ?? 'Cliente'}</strong>. El motivo
+              queda visible para el cliente en su portal.
             </p>
-            <label className="block text-sm">
-              Motivo
-              <textarea
+            <Field label="Motivo del rechazo" htmlFor="motivo-rechazo" required help="Sé claro: el cliente lo verá">
+              <Textarea
+                id="motivo-rechazo"
+                rows={3}
                 value={motivoRechazo}
                 onChange={(e) => setMotivoRechazo(e.target.value)}
-                rows={3}
-                className="mt-1 w-full px-3 py-2 border rounded-md"
-                placeholder="Explica por qué no se aprueba la solicitud"
+                placeholder="Ej: por ahora no hay cupos de entrenador disponibles"
                 required
               />
-            </label>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setRechazando(null)}
-                className="px-4 py-2 border rounded"
-                disabled={guardando}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmarRechazo}
-                disabled={guardando}
-                className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50"
-              >
-                Rechazar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </Field>
+          </>
+        )}
+      </Modal>
+
     </Layout>
   );
 }
