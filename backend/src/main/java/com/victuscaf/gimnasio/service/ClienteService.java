@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 
 import jakarta.persistence.EntityManager;
@@ -33,6 +35,7 @@ public class ClienteService {
     private final RemisionRepository remisionRepository;
     private final EntrenadorRepository entrenadorRepository;
     private final TarifaRepository tarifaRepository;
+    private final AsignacionEntrenadorService asignacionEntrenadorService;
 
     // ==================== REGISTRO DE CLIENTES ====================
 
@@ -81,8 +84,8 @@ public class ClienteService {
         saved.setContrato(contrato);
         particularMensualRepository.save(saved);
 
-        // Asignar entrenador automáticamente
-        asignarEntrenadorAutomatico(saved);
+        // Entrenador incluido durante el primer mes
+        asignarEntrenadorAutomatico(saved, OrigenAsignacion.PRIMER_MES, LocalDate.now().plusMonths(1));
 
         return saved;
     }
@@ -157,8 +160,8 @@ public class ClienteService {
         beneficiarioEpsRepository.save(saved);
 
         // Si tiene entrenador permanente, asignar
-        if (dto.tieneEntrenadorPermanente()) {
-            asignarEntrenadorAutomatico(saved);
+        if (Boolean.TRUE.equals(dto.tieneEntrenadorPermanente())) {
+            asignarEntrenadorAutomatico(saved, OrigenAsignacion.PLUS, null);
         }
 
         return saved;
@@ -405,35 +408,88 @@ public class ClienteService {
         return saved;
     }
 
-    // ==================== ASIGNACIÓN AUTOMÁTICA DE ENTRENADOR ====================
+    // ==================== ASIGNACIÓN DE ENTRENADOR ====================
 
-    private void asignarEntrenadorAutomatico(Usuario cliente) {
-        // Buscar entrenador con menos clientes activos (cantidadClientesActivos < 4)
-        List<Entrenador> entrenadores = entrenadorRepository.findByCantidadClientesActivosLessThan(4);
-        if (entrenadores.isEmpty()) {
-            throw new RuntimeException("No hay entrenadores disponibles en este momento. Contacte al administrador.");
-        }
-        // Elegir el que menos clientes tenga (para balancear carga)
-        Entrenador entrenador = entrenadores.stream()
-                .min((e1, e2) -> Integer.compare(e1.getCantidadClientesActivos(), e2.getCantidadClientesActivos()))
-                .orElseThrow();
+    /**
+     * Elige el entrenador activo con menos clientes y cupo disponible, y crea
+     * la asignacion. Para el primer mes la asignacion lleva fecha de fin; el
+     * servicio plus queda sin fecha de corte hasta que se cancele.
+     */
+    private void asignarEntrenadorAutomatico(Usuario cliente, OrigenAsignacion origen, LocalDate fechaFin) {
+        Entrenador entrenador = entrenadorRepository.findByEstadoTrue().stream()
+                .filter(e -> asignacionEntrenadorService.contarClientesActivos(e)
+                        < AsignacionEntrenadorService.MAX_CLIENTES_POR_ENTRENADOR)
+                .min(Comparator.comparingLong(asignacionEntrenadorService::contarClientesActivos))
+                .orElseThrow(() -> new RuntimeException(
+                        "No hay entrenadores disponibles en este momento. Contacte al administrador."));
 
-        // Incrementar su contador de clientes activos
-        entrenador.setCantidadClientesActivos(entrenador.getCantidadClientesActivos() + 1);
-        entrenadorRepository.save(entrenador);
+        asignacionEntrenadorService.asignar(cliente, entrenador, origen, fechaFin);
 
-        // Aquí se podría guardar la asignación en una tabla intermedia, pero
-        // como por ahora solo necesitamos saber que tiene entrenador, podemos
-        // marcar la bandera en el cliente (para particular mensual es `tieneEntrenador`,
-        // para EPS es `tieneEntrenadorPermanente`).
-        if (cliente instanceof ParticularMensual) {
-            ((ParticularMensual) cliente).setTieneEntrenador(true);
-            particularMensualRepository.save((ParticularMensual) cliente);
-        } else if (cliente instanceof BeneficiarioEps) {
-            ((BeneficiarioEps) cliente).setTieneEntrenadorPermanente(true);
-            beneficiarioEpsRepository.save((BeneficiarioEps) cliente);
+        if (cliente instanceof ParticularMensual mensual) {
+            mensual.setTieneEntrenador(true);
+            particularMensualRepository.save(mensual);
+        } else if (cliente instanceof BeneficiarioEps eps) {
+            eps.setTieneEntrenadorPermanente(true);
+            beneficiarioEpsRepository.save(eps);
         }
     }
+
+    /** Asigna un entrenador concreto a un beneficiario EPS (solo administrador). */
+    @Transactional
+    public BeneficiarioEps asignarEntrenadorABeneficiarioEPS(Long numeroDocumento, Long documentoEntrenador) {
+        BeneficiarioEps cliente = consultarBeneficiarioEPSPorDocumento(numeroDocumento);
+        if (!Boolean.TRUE.equals(cliente.getEstado())) {
+            throw new RuntimeException("El beneficiario EPS no esta activo");
+        }
+        Entrenador entrenador = entrenadorRepository.findByNumeroDeDocumento(documentoEntrenador)
+                .orElseThrow(() -> new RuntimeException("Entrenador no encontrado"));
+        asignacionEntrenadorService.asignar(cliente, entrenador, OrigenAsignacion.PLUS, null);
+        cliente.setTieneEntrenadorPermanente(true);
+        return beneficiarioEpsRepository.save(cliente);
+    }
+
+    /** Quita el entrenador de un beneficiario EPS y libera su cupo. */
+    @Transactional
+    public BeneficiarioEps liberarEntrenadorDeBeneficiarioEPS(Long numeroDocumento) {
+        BeneficiarioEps cliente = consultarBeneficiarioEPSPorDocumento(numeroDocumento);
+        asignacionEntrenadorService.liberar(cliente);
+        cliente.setTieneEntrenadorPermanente(false);
+        return beneficiarioEpsRepository.save(cliente);
+    }
+
+    /** Contrato del cliente mensual, para consulta de secretaria y admin. */
+    @Transactional(readOnly = true)
+    public Contrato consultarContratoMensual(Long numeroDocumento) {
+        ParticularMensual cliente = consultarParticularMensualPorDocumento(numeroDocumento);
+        if (cliente.getContrato() == null) {
+            throw new RuntimeException("El cliente no tiene un contrato registrado");
+        }
+        return cliente.getContrato();
+    }
+
+    /** Cancelacion anticipada del contrato EPS, con motivo y liberacion de cupo. */
+    @Transactional
+    public BeneficiarioEps cancelarBeneficiarioEPS(Long numeroDocumento, String motivo) {
+        BeneficiarioEps cliente = consultarBeneficiarioEPSPorDocumento(numeroDocumento);
+        if (cliente.getEstadoContrato() == EstadoContratoEps.CANCELADO_ANCTICIPADAMENTE) {
+            throw new RuntimeException("El contrato EPS ya fue cancelado");
+        }
+
+        cliente.setEstadoContrato(EstadoContratoEps.CANCELADO_ANCTICIPADAMENTE);
+        cliente.setEstado(false);
+        cliente.setTieneEntrenadorPermanente(false);
+
+        Remision remision = cliente.getRemision();
+        if (remision != null) {
+            remision.setEstado(EstadoRemision.CANCELADO_ANTICIPADAMENTE);
+            remision.setMotivoCancelacion(motivo);
+            remisionRepository.save(remision);
+        }
+
+        asignacionEntrenadorService.liberar(cliente);
+        return beneficiarioEpsRepository.save(cliente);
+    }
+
 
     // ==================== VALIDACIONES ====================
 
@@ -445,8 +501,19 @@ public class ClienteService {
 
     // ==================== REPORTES ====================
 
-    public List<ParticularMensual> consultarContratosVencidos() {
-        return particularMensualRepository.findByEstadoMembresia(EstadoMembresia.VENCIDO);
+    public List<ContratoVencidoDTO> consultarContratosVencidos() {
+        LocalDate hoy = LocalDate.now();
+        return contratoRepository.findByFechaVencimientoBefore(hoy).stream()
+                .filter(contrato -> contrato.getCliente() != null)
+                .map(contrato -> new ContratoVencidoDTO(
+                        contrato.getId(),
+                        contrato.getCliente().getNumeroDeDocumento(),
+                        contrato.getCliente().getNombreCompleto(),
+                        contrato.getTipoMembresia(),
+                        contrato.getFechaInicio(),
+                        contrato.getFechaVencimiento(),
+                        ChronoUnit.DAYS.between(contrato.getFechaVencimiento(), hoy)))
+                .toList();
     }
 
     public List<BeneficiarioEps> consultarBeneficiariosEPSActivos() {

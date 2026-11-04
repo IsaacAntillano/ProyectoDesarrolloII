@@ -42,9 +42,11 @@ export const registrarPagoMensualidad = (numeroDocumento: number, metodoPago: Me
 
 export const registrarPagoDiario = (numeroDocumento: number, metodoPago: MetodoPago, valor: number) =>
   api.post<ApiResponse<Pago>>(`/pagos/diario/${numeroDocumento}`, { metodoPago, valor }).then(unwrap);
-
 export const registrarCopagoEps = (numeroDocumento: number, metodoPago: MetodoPago, valor: number) =>
   api.post<ApiResponse<Pago>>(`/pagos/copago-eps/${numeroDocumento}`, { metodoPago, valor }).then(unwrap);
+
+export const registrarPagoPlus = (numeroDocumento: number, metodoPago: MetodoPago, valor: number) =>
+  api.post<ApiResponse<Pago>>(`/pagos/plus/${numeroDocumento}`, { metodoPago, valor }).then(unwrap);
 
 export const pagosDeCliente = (numeroDocumento: number) =>
   api.get<ApiResponse<Pago[]>>(`/pagos/cliente/${numeroDocumento}`).then(unwrap);
@@ -59,6 +61,10 @@ export const registrarNomina = (documentoEntrenador: number, valor: number, desc
 
 export const registrarMantenimiento = (idEquipo: number, valor: number, descripcion: string) =>
   api.post<ApiResponse<GastoOperativo>>(`/pagos/mantenimiento/${idEquipo}`, { valor, descripcion }).then(unwrap);
+
+/** Gastos operativos de una fecha (por defecto, hoy). Solo admin. */
+export const gastosDelDia = (fecha?: string) =>
+  api.get<ApiResponse<GastoOperativo[]>>('/pagos/gastos', { params: { fecha } }).then(unwrap);
 
 // ─── Flujo de caja ──────────────────────────────────────────────────
 

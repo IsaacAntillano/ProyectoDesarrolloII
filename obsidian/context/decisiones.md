@@ -4,6 +4,13 @@ Formato: fecha · decisión · motivo. Se añade una entrada al cerrar cada sesi
 
 | Fecha | Decisión | Motivo |
 | --- | --- | --- |
+| 2026-11-03 | Ocultar `contrasena` en las entidades con **`@JsonIgnore`** | Las respuestas de clientes, usuarios y solicitudes plus devolvían la contraseña en texto plano. El login y los DTO de entrada no se afectan |
+| 2026-11-03 | Modelar la relación entrenador-cliente en **`AsignacionEntrenador`** | El flag booleano del cliente no guardaba origen, fechas ni historial. Una tabla permite cupo, vencimiento a un mes y liberar el cupo al cancelar |
+| 2026-11-03 | **Primer mes incluido** (`origen=PRIMER_MES`, `fechaFin=hoy+1 mes`); el **plus** (`origen=PLUS`) no lleva fecha de corte | Es la regla del negocio: todo particular mensual arranca con entrenador un mes; después el servicio se solicita y se cobra aparte |
+| 2026-11-03 | **Cupo máximo de 4 clientes activos** por entrenador, validado en backend | La vista ya limitaba roles, pero el cupo de clientes es una regla de negocio y no puede depender del cliente |
+| 2026-11-03 | La solicitud plus requiere **aprobación del administrador** y puede elegir entrenador; si no, se escoge el de menos clientes con cupo | PC-0011 pide control administrativo. La asignación automática evita dejar solicitudes aprobadas sin entrenador |
+| 2026-11-03 | Los **contratos vencidos se buscan por fecha** (`fechaVencimiento < hoy`), no por `estadoMembresia` | Un contrato puede quedar `ACTIVO` si nadie lo renovó; el estado no refleja el vencimiento real |
+| 2026-11-03 | Conservar `CANCELADO_ANCTICIPADAMENTE` y corregir solo la etiqueta de la vista | El valor ya está persistido como `STRING`; renombrarlo rompería los registros existentes |
 | 2026-10-07 | Agregar el header **`X-Documento`** además de `X-Rol` | El selector de rol dejaba `numeroDocumento` en 0, así que los services de entrenador (que lo necesitan) no podían resolver quién llamaba. Ahora la identidad viaja en un header aparte y el backend la adjunta al principal |
 | 2026-10-07 | Corregir `migrarDiarioAMensual` convirtiendo el cliente en vez de crear uno nuevo | La versión anterior insertaba un nuevo usuario con el mismo `numeroDeDocumento`, que es único, así que siempre fallaba. Ahora se mueve la fila entre `particular_diario` y `particular_mensual` conservando el `usuario.id`, y se crea el contrato. Se hace con SQL nativo porque borrar la entidad del hijo eliminaba también la fila base por la herencia JOINED, que chocaba con las FKs de asistencia/pago |
 | 2026-10-07 | Los services de entrenador y evaluación reciben **documento, no id de base** | Antes usaban `idEntrenador` con `findById`. Lo que llega del cliente es un documento, y además así nadie puede actuar en nombre de otro entrenador |
@@ -38,6 +45,29 @@ Formato: fecha · decisión · motivo. Se añade una entrada al cerrar cada sesi
     clases que ya funcionan.
 - **Consecuencia asumida**: la autorización no prueba identidad. Documentado en
   el README y en `AGENTS.md` como advertencia explícita.
+
+---
+
+## 2026-11-03 — Asignación de entrenador y servicio plus
+
+- **Decisión**: toda relación entrenador-cliente pasa por `AsignacionEntrenador`;
+  el entrenador del primer mes se crea al registrar el particular mensual y el
+  servicio plus requiere `SolicitudEntrenadorPlus` aprobada por el admin.
+- **Motivo**: el cliente solo tenía un booleano. No había forma de saber si el
+  entrenador venía incluido, si era plus, cuándo vencía ni cuántos clientes
+  tenía cada entrenador. El cupo de 4 y la aprobación administrativa son reglas
+  del negocio que deben vivir en el backend.
+- **Consecuencias**:
+  - `AsignacionEntrenadorService` es la única puerta para asignar/liberar; cierra
+    la asignación anterior y resincroniza `cantidadClientesActivos`.
+  - Un cliente sin entrenador puede pedir plus solo después del primer mes.
+  - Cancelar el contrato EPS o liberar manualmente cierra la asignación y
+    devuelve el cupo.
+- **Alternativas descartadas**:
+  - *Seguir usando el flag `tieneEntrenador` del cliente*: no guarda historial ni
+    origen, y el cupo se volvería a contar mal.
+  - *Asignación automática sin aprobación*: contradice PC-0011.
+  - *Renombrar el enum EPS*: rompe los valores persistidos con `EnumType.STRING`.
 
 ---
 

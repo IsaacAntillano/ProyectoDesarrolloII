@@ -11,6 +11,9 @@ import RegistrarClienteDiario from './pages/RegistrarClienteDiario';
 import RegistrarClienteEps from './pages/RegistrarClienteEps';
 import RegistrarPago from './pages/RegistrarPago';
 import GestionClientes from './pages/GestionClientes';
+import GastosOperativos from './pages/GastosOperativos';
+import ContratosVencidos from './pages/ContratosVencidos';
+import SolicitudesPlus from './pages/SolicitudesPlus';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -60,6 +63,30 @@ function App() {
             element={
               <PrivateRoute allowedRoles={['ADMINISTRADOR', 'SECRETARIA']}>
                 <RegistrarPago />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/gastos-operativos"
+            element={
+              <PrivateRoute allowedRoles={['ADMINISTRADOR']}>
+                <GastosOperativos />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/contratos-vencidos"
+            element={
+              <PrivateRoute allowedRoles={['ADMINISTRADOR']}>
+                <ContratosVencidos />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/solicitudes-plus"
+            element={
+              <PrivateRoute allowedRoles={['ADMINISTRADOR']}>
+                <SolicitudesPlus />
               </PrivateRoute>
             }
           />

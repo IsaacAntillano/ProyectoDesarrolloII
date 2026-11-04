@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.victuscaf.gimnasio.dto.ApiResponse;
+import com.victuscaf.gimnasio.dto.ClienteAsignadoDTO;
 import com.victuscaf.gimnasio.dto.HorarioDTO;
 import com.victuscaf.gimnasio.dto.MedidasDTO;
 import com.victuscaf.gimnasio.dto.MetaEPSDTO;
@@ -54,6 +55,13 @@ public class EntrenadorController {
     public ResponseEntity<ApiResponse<Object>> miPerfil() {
         return ResponseEntity.ok(ApiResponse.success("Perfil del entrenador",
                 usuarioSistemaService.buscarPorDocumento(documentoActual())));
+    }
+
+    /** Clientes activos que tiene asignados el entrenador autenticado. */
+    @GetMapping("/clientes")
+    public ResponseEntity<ApiResponse<List<ClienteAsignadoDTO>>> misClientes() {
+        return ResponseEntity.ok(ApiResponse.success("Clientes asignados",
+                entrenadorService.listarClientesAsignados(documentoActual())));
     }
 
     // ─── Horarios ────────────────────────────────────────────────────

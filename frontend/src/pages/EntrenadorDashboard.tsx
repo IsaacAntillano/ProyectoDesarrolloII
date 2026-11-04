@@ -8,14 +8,27 @@ import {
   crearHorario,
   listarMisRutinas,
   crearRutina,
+  listarClientesAsignados,
   registrarEvaluacionPeriodica,
   type Horario,
   type Entrenador,
   type Rutina,
+  type ClienteAsignado,
 } from '../services/entrenadorService';
 import { isServerUnreachable, getApiErrorMessage, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
 
 const HOY = () => new Date().toISOString().slice(0, 10);
+
+const ETIQUETA_TIPO: Record<string, string> = {
+  PARTICULAR_MENSUAL: 'Particular mensual',
+  PARTICULAR_DIARIO: 'Particular diario',
+  BENEFICIARIO_EPS: 'Beneficiario EPS',
+};
+
+const ETIQUETA_ORIGEN: Record<string, string> = {
+  PRIMER_MES: 'Primer mes',
+  PLUS: 'Servicio plus',
+};
 
 function esPresionValida(v: string) {
   return /^\d{2,3}\/\d{2,3}$/.test(v.trim());
@@ -25,6 +38,7 @@ export default function EntrenadorDashboard() {
   const [perfil, setPerfil] = useState<Entrenador | null>(null);
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [rutinas, setRutinas] = useState<Rutina[]>([]);
+  const [clientes, setClientes] = useState<ClienteAsignado[]>([]);
   const [loading, setLoading] = useState(true);
   const [agregando, setAgregando] = useState(false);
   const [clienteDoc, setClienteDoc] = useState('');
@@ -102,10 +116,16 @@ export default function EntrenadorDashboard() {
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, h, r] = await Promise.all([miPerfil(), listarMisHorarios(), listarMisRutinas()]);
+      const [p, h, r, c] = await Promise.all([
+        miPerfil(),
+        listarMisHorarios(),
+        listarMisRutinas(),
+        listarClientesAsignados(),
+      ]);
       setPerfil(p);
       setHorarios(h);
       setRutinas(r);
+      setClientes(c);
     } catch (err) {
       toast.error(
         isServerUnreachable(err)
@@ -155,6 +175,41 @@ export default function EntrenadorDashboard() {
             <p className="text-gray-600 mt-1">
               Documento {perfil?.numeroDeDocumento ?? '—'} · manages horarios, rutinas y seguimiento físico
             </p>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-800">
+                Mis clientes ({clientes.length})
+              </h3>
+              <p className="text-xs text-gray-500">Cupo máximo: 4 clientes activos</p>
+            </div>
+            {clientes.length === 0 ? (
+              <p className="text-gray-500 italic">
+                No tienes clientes asignados en este momento.
+              </p>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {clientes.map((c) => (
+                  <li key={c.numeroDocumento}>
+                    <button
+                      type="button"
+                      onClick={() => setClienteDoc(String(c.numeroDocumento))}
+                      className="w-full text-left border border-gray-200 rounded-md p-3 hover:border-blue-400 hover:bg-blue-50 transition"
+                      title="Usar este documento en la gestión de abajo"
+                    >
+                      <p className="font-medium text-gray-800">{c.nombreCompleto}</p>
+                      <p className="text-xs text-gray-500">
+                        {c.numeroDocumento} · {ETIQUETA_TIPO[c.tipoDeCliente] ?? c.tipoDeCliente}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {ETIQUETA_ORIGEN[c.origen] ?? c.origen} · desde {c.fechaAsignacion}
+                      </p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

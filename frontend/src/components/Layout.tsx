@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiLogOut, FiUsers, FiUserPlus, FiHome, FiMenu, FiX, FiDollarSign } from 'react-icons/fi';
+import { FiLogOut, FiUsers, FiUserPlus, FiHome, FiMenu, FiX, FiDollarSign, FiTrendingDown, FiAlertTriangle, FiUserCheck } from 'react-icons/fi';
 
 interface LayoutProps {
   children: ReactNode;
@@ -68,6 +68,15 @@ export default function Layout({ children, title }: LayoutProps) {
               </Link>
               <Link to="/registrar-pago" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded transition">
                 <FiDollarSign /> <span>Registrar Pago</span>
+              </Link>
+              <Link to="/gastos-operativos" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded transition">
+                <FiTrendingDown /> <span>Gastos Operativos</span>
+              </Link>
+              <Link to="/contratos-vencidos" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded transition">
+                <FiAlertTriangle /> <span>Contratos Vencidos</span>
+              </Link>
+              <Link to="/solicitudes-plus" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded transition">
+                <FiUserCheck /> <span>Solicitudes Plus</span>
               </Link>
             </>
           )}

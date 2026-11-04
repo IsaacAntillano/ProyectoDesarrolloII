@@ -189,9 +189,42 @@ public class ClienteController {
                 clienteService.listarTodosBeneficiariosEPS()));
     }
 
+    @GetMapping("/mensual/{numeroDocumento}/contrato")
+    @PreAuthorize("hasRole('SECRETARIA') or hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<Contrato>> consultarContratoMensual(@PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Contrato del cliente",
+                clienteService.consultarContratoMensual(numeroDocumento)));
+    }
+
+    @PutMapping("/eps/{numeroDocumento}/cancelar")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<BeneficiarioEps>> cancelarBeneficiarioEPS(
+            @PathVariable Long numeroDocumento,
+            @Valid @RequestBody CancelarContratoDTO dto) {
+        return ResponseEntity.ok(ApiResponse.success("Contrato EPS cancelado anticipadamente",
+                clienteService.cancelarBeneficiarioEPS(numeroDocumento, dto.motivo())));
+    }
+
+    @PutMapping("/eps/{numeroDocumento}/entrenador/{documentoEntrenador}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<BeneficiarioEps>> asignarEntrenadorBeneficiarioEPS(
+            @PathVariable Long numeroDocumento,
+            @PathVariable Long documentoEntrenador) {
+        return ResponseEntity.ok(ApiResponse.success("Entrenador asignado al beneficiario EPS",
+                clienteService.asignarEntrenadorABeneficiarioEPS(numeroDocumento, documentoEntrenador)));
+    }
+
+    @DeleteMapping("/eps/{numeroDocumento}/entrenador")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<BeneficiarioEps>> liberarEntrenadorBeneficiarioEPS(
+            @PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Entrenador liberado del beneficiario EPS",
+                clienteService.liberarEntrenadorDeBeneficiarioEPS(numeroDocumento)));
+    }
+
     @GetMapping("/contratos/vencidos")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ResponseEntity<ApiResponse<List<ParticularMensual>>> listarContratosVencidos() {
+    public ResponseEntity<ApiResponse<List<ContratoVencidoDTO>>> listarContratosVencidos() {
         return ResponseEntity.ok(ApiResponse.success("Clientes con contrato vencido",
                 clienteService.consultarContratosVencidos()));
     }

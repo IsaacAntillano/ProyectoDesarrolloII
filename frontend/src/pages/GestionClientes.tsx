@@ -2,10 +2,21 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import { FiEdit2, FiSearch, FiTrash2, FiUserPlus, FiRefreshCw } from 'react-icons/fi';
+import {
+  FiEdit2,
+  FiSearch,
+  FiTrash2,
+  FiUserPlus,
+  FiRefreshCw,
+  FiFileText,
+  FiXCircle,
+  FiUserCheck,
+  FiUserX,
+} from 'react-icons/fi';
 import {
   type ClienteBase,
   type ActualizarClienteDTO,
+  type Contrato,
   listarMensualesActivos,
   listarMensualesTodos,
   listarDiariosActivos,
@@ -24,11 +35,24 @@ import {
   buscarClienteMensual,
   buscarClienteDiario,
   buscarBeneficiarioEps,
+  consultarContratoMensual,
+  cancelarBeneficiarioEps,
+  asignarEntrenadorEps,
+  liberarEntrenadorEps,
   getApiErrorMessage,
 } from '../services/clienteService';
+import { listarUsuarios, type UsuarioSistema } from '../services/usuarioSistemaService';
 import { isServerUnreachable, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
 
 type Tab = 'mensual' | 'diario' | 'eps';
+
+const ESTADO_EPS: Record<string, string> = {
+  ACTIVO: 'Activo',
+  BLOQUEADO: 'Bloqueado',
+  FINALIZADO: 'Finalizado',
+  // El valor guardado conserva el typo historico del enum; la etiqueta no.
+  CANCELADO_ANCTICIPADAMENTE: 'Cancelado anticipadamente',
+};
 
 export default function GestionClientes() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -41,6 +65,18 @@ export default function GestionClientes() {
   const [busqueda, setBusqueda] = useState('');
   const [editando, setEditando] = useState<ClienteBase | null>(null);
   const [formEdit, setFormEdit] = useState<ActualizarClienteDTO>({});
+  const [entrenadores, setEntrenadores] = useState<UsuarioSistema[]>([]);
+
+  // Modales de contrato, cancelacion y asignacion de entrenador (EPS).
+  const [contratoDetalle, setContratoDetalle] = useState<{
+    cliente: ClienteBase;
+    contrato: Contrato;
+  } | null>(null);
+  const [cancelando, setCancelando] = useState<ClienteBase | null>(null);
+  const [motivoCancelacion, setMotivoCancelacion] = useState('');
+  const [asignando, setAsignando] = useState<ClienteBase | null>(null);
+  const [documentoEntrenador, setDocumentoEntrenador] = useState('');
+  const [guardando, setGuardando] = useState(false);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -64,11 +100,19 @@ export default function GestionClientes() {
   }, [tab, verTodos, esAdmin]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargar();
     const handleFocus = () => cargar();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [cargar]);
+
+  useEffect(() => {
+    if (!esAdmin) return;
+    listarUsuarios()
+      .then((usuarios) => setEntrenadores(usuarios.filter((u) => u.rol === 'ENTRENADOR' && u.estado)))
+      .catch(() => setEntrenadores([]));
+  }, [esAdmin]);
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -108,12 +152,18 @@ export default function GestionClientes() {
 
   const abrirEditar = (c: ClienteBase) => {
     setEditando(c);
-    setFormEdit({
-      nombreCompleto: c.nombreCompleto,
-      fechaDeNacimiento: c.fechaDeNacimiento?.slice(0, 10),
-      telefono: c.telefono,
-      correoElectronico: c.correoElectronico,
-    });
+    // CLT-0016: en EPS el nombre y la fecha de nacimiento no son editables;
+    // el formulario solo envia los datos de contacto y la contrasena.
+    setFormEdit(
+      tab === 'eps'
+        ? { telefono: c.telefono, correoElectronico: c.correoElectronico }
+        : {
+            nombreCompleto: c.nombreCompleto,
+            fechaDeNacimiento: c.fechaDeNacimiento?.slice(0, 10),
+            telefono: c.telefono,
+            correoElectronico: c.correoElectronico,
+          }
+    );
   };
 
   const guardarEdicion = async (e: React.FormEvent) => {
@@ -157,11 +207,75 @@ export default function GestionClientes() {
     }
   };
 
+  const verContrato = async (c: ClienteBase) => {
+    try {
+      const contrato = await consultarContratoMensual(c.numeroDeDocumento);
+      setContratoDetalle({ cliente: c, contrato });
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo consultar el contrato'));
+    }
+  };
+
+  const confirmarCancelacion = async () => {
+    if (!cancelando) return;
+    if (!motivoCancelacion.trim()) {
+      toast.error('Escribe el motivo de la cancelación');
+      return;
+    }
+    setGuardando(true);
+    try {
+      await cancelarBeneficiarioEps(cancelando.numeroDeDocumento, motivoCancelacion.trim());
+      toast.success('Contrato EPS cancelado anticipadamente');
+      setCancelando(null);
+      setMotivoCancelacion('');
+      cargar();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo cancelar el contrato'));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const confirmarAsignacion = async () => {
+    if (!asignando) return;
+    const documento = Number(documentoEntrenador);
+    if (!documento) {
+      toast.error('Selecciona un entrenador');
+      return;
+    }
+    setGuardando(true);
+    try {
+      await asignarEntrenadorEps(asignando.numeroDeDocumento, documento);
+      toast.success('Entrenador asignado');
+      setAsignando(null);
+      setDocumentoEntrenador('');
+      cargar();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo asignar el entrenador'));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const quitarEntrenador = async (c: ClienteBase) => {
+    if (!window.confirm(`¿Liberar el entrenador de ${c.nombreCompleto}?`)) return;
+    try {
+      await liberarEntrenadorEps(c.numeroDeDocumento);
+      toast.success('Entrenador liberado');
+      cargar();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo liberar el entrenador'));
+    }
+  };
+
   const estadoLabel = (c: ClienteBase) => {
     if (tab === 'mensual') return c.estadoMembresia ?? (c.estado ? 'ACTIVO' : 'INACTIVO');
-    if (tab === 'eps') return c.estadoContrato ?? '-';
+    if (tab === 'eps') return ESTADO_EPS[c.estadoContrato ?? ''] ?? c.estadoContrato ?? '-';
     return c.estado ? 'Activo' : 'Inactivo';
   };
+
+  const epsCancelado = (c: ClienteBase) =>
+    c.estadoContrato === 'CANCELADO_ANCTICIPADAMENTE' || c.estadoContrato === 'FINALIZADO';
 
   return (
     <Layout title="Gestión de Clientes">
@@ -237,8 +351,67 @@ export default function GestionClientes() {
                     </td>
                     <td className="px-4 py-3 text-sm">{c.nombreCompleto}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{c.correoElectronico}</td>
-                    <td className="px-4 py-3 text-sm">{estadoLabel(c)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span>{estadoLabel(c)}</span>
+                      {tab === 'eps' && (
+                        <span
+                          className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                            c.tieneEntrenadorPermanente
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {c.tieneEntrenadorPermanente ? 'Con entrenador' : 'Sin entrenador'}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right space-x-2">
+                      {tab === 'mensual' && (
+                        <button
+                          type="button"
+                          onClick={() => verContrato(c)}
+                          className="text-slate-600 hover:text-slate-900"
+                          title="Ver contrato"
+                        >
+                          <FiFileText size={18} />
+                        </button>
+                      )}
+                      {tab === 'eps' && esAdmin && !epsCancelado(c) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAsignando(c);
+                            setDocumentoEntrenador('');
+                          }}
+                          className="text-blue-600 hover:text-blue-800"
+                          title={c.tieneEntrenadorPermanente ? 'Reasignar entrenador' : 'Asignar entrenador'}
+                        >
+                          <FiUserCheck size={18} />
+                        </button>
+                      )}
+                      {tab === 'eps' && esAdmin && c.tieneEntrenadorPermanente && !epsCancelado(c) && (
+                        <button
+                          type="button"
+                          onClick={() => quitarEntrenador(c)}
+                          className="text-amber-600 hover:text-amber-800"
+                          title="Liberar entrenador"
+                        >
+                          <FiUserX size={18} />
+                        </button>
+                      )}
+                      {tab === 'eps' && esAdmin && c.estado && !epsCancelado(c) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCancelando(c);
+                            setMotivoCancelacion('');
+                          }}
+                          className="text-red-600 hover:text-red-800"
+                          title="Cancelar contrato anticipadamente"
+                        >
+                          <FiXCircle size={18} />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => abrirEditar(c)}
@@ -283,19 +456,25 @@ export default function GestionClientes() {
             className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl grid gap-4"
           >
             <h3 className="font-bold text-lg">Actualizar {editando.nombreCompleto}</h3>
-            <input
-              className="border rounded px-3 py-2"
-              placeholder="Nombre completo"
-              value={formEdit.nombreCompleto ?? ''}
-              onChange={(e) => setFormEdit({ ...formEdit, nombreCompleto: e.target.value })}
-              required
-            />
-            <input
-              type="date"
-              className="border rounded px-3 py-2"
-              value={formEdit.fechaDeNacimiento ?? ''}
-              onChange={(e) => setFormEdit({ ...formEdit, fechaDeNacimiento: e.target.value })}
-            />
+            {/* CLT-0016: en EPS el nombre y la fecha de nacimiento vienen del
+                contrato y no se editan desde aca. */}
+            {tab !== 'eps' && (
+              <>
+                <input
+                  className="border rounded px-3 py-2"
+                  placeholder="Nombre completo"
+                  value={formEdit.nombreCompleto ?? ''}
+                  onChange={(e) => setFormEdit({ ...formEdit, nombreCompleto: e.target.value })}
+                  required
+                />
+                <input
+                  type="date"
+                  className="border rounded px-3 py-2"
+                  value={formEdit.fechaDeNacimiento ?? ''}
+                  onChange={(e) => setFormEdit({ ...formEdit, fechaDeNacimiento: e.target.value })}
+                />
+              </>
+            )}
             <input
               type="number"
               className="border rounded px-3 py-2"
@@ -342,6 +521,143 @@ export default function GestionClientes() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+      {contratoDetalle && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl space-y-4">
+            <h3 className="font-bold text-lg">
+              Contrato de {contratoDetalle.cliente.nombreCompleto}
+            </h3>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt className="text-gray-500">Documento</dt>
+                <dd>{contratoDetalle.cliente.numeroDeDocumento}</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">Membresía</dt>
+                <dd>{contratoDetalle.contrato.tipoMembresia}</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">Fecha de inicio</dt>
+                <dd>{contratoDetalle.contrato.fechaInicio}</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">Fecha de vencimiento</dt>
+                <dd>{contratoDetalle.contrato.fechaVencimiento}</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">Estado</dt>
+                <dd>{contratoDetalle.contrato.estado.replaceAll('_', ' ')}</dd>
+              </div>
+            </dl>
+            <div className="flex justify-end gap-2">
+              <Link
+                to={`/registrar-pago?documento=${contratoDetalle.cliente.numeroDeDocumento}`}
+                className="px-4 py-2 bg-green-600 text-white rounded text-sm"
+              >
+                Registrar pago
+              </Link>
+              <button
+                type="button"
+                onClick={() => setContratoDetalle(null)}
+                className="px-4 py-2 border rounded"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelando && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl space-y-4">
+            <h3 className="font-bold text-lg">Cancelar contrato anticipadamente</h3>
+            <p className="text-sm text-gray-600">
+              Cliente: <strong>{cancelando.nombreCompleto}</strong>. El beneficiario quedará
+              inactivo y se liberará su entrenador.
+            </p>
+            <label className="block text-sm">
+              Motivo
+              <textarea
+                value={motivoCancelacion}
+                onChange={(e) => setMotivoCancelacion(e.target.value)}
+                rows={3}
+                className="mt-1 w-full px-3 py-2 border rounded-md"
+                placeholder="Motivo de la cancelación (queda en la remisión)"
+                required
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCancelando(null)}
+                className="px-4 py-2 border rounded"
+                disabled={guardando}
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={confirmarCancelacion}
+                disabled={guardando}
+                className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50"
+              >
+                Cancelar contrato
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {asignando && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl space-y-4">
+            <h3 className="font-bold text-lg">Asignar entrenador</h3>
+            <p className="text-sm text-gray-600">
+              Beneficiario EPS: <strong>{asignando.nombreCompleto}</strong>
+            </p>
+            <label className="block text-sm">
+              Entrenador
+              <select
+                value={documentoEntrenador}
+                onChange={(e) => setDocumentoEntrenador(e.target.value)}
+                className="mt-1 w-full px-3 py-2 border rounded-md"
+                required
+              >
+                <option value="">Selecciona un entrenador</option>
+                {entrenadores.map((e) => (
+                  <option key={e.idUsuarioSistema} value={e.numeroDeDocumento}>
+                    {e.nombreCompleto} — {e.numeroDeDocumento}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {entrenadores.length === 0 && (
+              <p className="text-xs text-amber-700">
+                No hay entrenadores activos registrados.
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAsignando(null)}
+                className="px-4 py-2 border rounded"
+                disabled={guardando}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarAsignacion}
+                disabled={guardando || entrenadores.length === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+              >
+                Asignar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </Layout>

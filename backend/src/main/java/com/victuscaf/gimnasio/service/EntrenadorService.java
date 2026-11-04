@@ -7,6 +7,7 @@ import com.victuscaf.gimnasio.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -18,6 +19,7 @@ public class EntrenadorService {
     private final RutinaRepository rutinaRepository;
     private final HorarioEntrenadorRepository horarioRepository;
     private final MensajeRepository mensajeRepository;
+    private final AsignacionEntrenadorService asignacionService;
 
     // CRUD Entrenador (solo admin)
     @Transactional
@@ -117,15 +119,77 @@ public class EntrenadorService {
         return horarioRepository.findByEntrenador(entrenador);
     }
 
-    /** Clientes que este entrenador tiene asignados (con rutina o horario). */
+    /** Clientes activos que este entrenador tiene asignados. */
     @Transactional(readOnly = true)
-    public List<Usuario> listarClientesAsignados(Long documentoEntrenador) {
+    public List<ClienteAsignadoDTO> listarClientesAsignados(Long documentoEntrenador) {
         Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
-        return rutinaRepository.findByEntrenador(entrenador).stream()
-                .map(Rutina::getUsuario)
-                .filter(java.util.Objects::nonNull)
-                .distinct()
+        return asignacionService.listarActivasPorEntrenador(entrenador).stream()
+                .map(asignacion -> {
+                    Usuario cliente = asignacion.getCliente();
+                    return new ClienteAsignadoDTO(
+                            cliente.getNumeroDeDocumento(),
+                            cliente.getNombreCompleto(),
+                            cliente.getTipoDeCliente(),
+                            cliente.getEstado(),
+                            asignacion.getFechaAsignacion(),
+                            asignacion.getOrigen());
+                })
                 .toList();
+    }
+
+    /** Cupos libres del entrenador asignado al cliente, para reservar desde su portal. */
+    @Transactional
+    public List<HorarioDisponibleDTO> listarHorariosDisponiblesParaCliente(Long numeroDocumento) {
+        Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        Entrenador entrenador = asignacionService.asignacionActiva(cliente)
+                .map(AsignacionEntrenador::getEntrenador)
+                .orElseThrow(() -> new RuntimeException("El cliente no tiene un entrenador asignado"));
+
+        LocalDate hoy = LocalDate.now();
+        return horarioRepository.findByEntrenadorAndDisponibleTrue(entrenador).stream()
+                .filter(horario -> !horario.getFechaDisponible().isBefore(hoy))
+                .map(horario -> new HorarioDisponibleDTO(
+                        horario.getId(),
+                        horario.getFechaDisponible(),
+                        horario.getHoraInicio(),
+                        horario.getHoraFin(),
+                        entrenador.getNombreCompleto()))
+                .toList();
+    }
+
+    /** Reserva un cupo del entrenador asignado al cliente. */
+    @Transactional
+    public HorarioDisponibleDTO reservarHorario(Long idHorario, Long numeroDocumento) {
+        Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        AsignacionEntrenador asignacion = asignacionService.asignacionActiva(cliente)
+                .orElseThrow(() -> new RuntimeException("El cliente no tiene un entrenador asignado"));
+
+        HorarioEntrenador horario = horarioRepository.findById(idHorario)
+                .orElseThrow(() -> new RuntimeException("Horario no encontrado"));
+        if (!horario.isDisponible()) {
+            throw new RuntimeException("El horario ya no esta disponible");
+        }
+        if (horario.getEntrenador() == null
+                || !horario.getEntrenador().getIdUsuarioSistema()
+                        .equals(asignacion.getEntrenador().getIdUsuarioSistema())) {
+            throw new RuntimeException("El horario no pertenece al entrenador asignado");
+        }
+        if (horario.getFechaDisponible().isBefore(LocalDate.now())) {
+            throw new RuntimeException("No se puede reservar un horario pasado");
+        }
+
+        horario.setIdClienteAsignado(cliente.getId());
+        horario.setDisponible(false);
+        HorarioEntrenador guardado = horarioRepository.save(horario);
+
+        return new HorarioDisponibleDTO(
+                guardado.getId(),
+                guardado.getFechaDisponible(),
+                guardado.getHoraInicio(),
+                guardado.getHoraFin(),
+                asignacion.getEntrenador().getNombreCompleto());
     }
 
     /** Rutinas que este entrenador creo. */

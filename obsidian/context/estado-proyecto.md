@@ -1,6 +1,67 @@
 # Estado del proyecto
 
-> Snapshot al inicio/cierre de cada sesión. Última actualización: 2026-10-07.
+> Snapshot al inicio/cierre de cada sesión. Última actualización: 2026-11-03.
+
+## Sesión: 2026-11-03 (cierre · 16 HU de Victus CAF)
+
+### Último commit
+
+Pendiente: el árbol de trabajo sigue sucio, no se hizo commit en esta sesión.
+
+### Qué se hizo
+
+- **16 historias de usuario implementadas** de punta a punta (backend + frontend):
+  contratos mensuales y vencidos, cancelación anticipada EPS, asignación y cupo
+  de entrenadores, servicio plus con aprobación, horarios/reservas, gastos
+  operativos y ajustes de registro/edición.
+- **Modelo nuevo:** `AsignacionEntrenador` (cliente ↔ entrenador, `origen`
+  `PRIMER_MES`/`PLUS`, cupo de 4 activos) y `SolicitudEntrenadorPlus`
+  (`PENDIENTE`/`APROBADA`/`RECHAZADA`). Se agregan
+  `AsignacionEntrenadorService` y `SolicitudPlusService`.
+- **Endpoints nuevos:** contrato mensual, cancelar EPS, asignar/liberar
+  entrenador EPS, contratos vencidos, clientes asignados del entrenador,
+  horarios disponibles y reserva, solicitud plus (cliente y admin), pago plus y
+  gastos operativos por fecha.
+- **Frontend nuevo:** `GastosOperativos.tsx` (PA-0005/6/7),
+  `ContratosVencidos.tsx` (CO-0003) y `SolicitudesPlus.tsx` (PC-0011), con sus
+  rutas y enlaces de sidebar solo para admin. `RegistrarPago` suma el tipo
+  "Entrenador Plus" y acepta `?documento=`.
+- **Vistas actualizadas:** `GestionClientes` con modal de contrato, cancelación
+  EPS, asignación/liberación de entrenador y etiqueta corregida del enum;
+  `EntrenadorDashboard` con "Mis clientes"; `ClienteDashboard` con horarios y
+  solicitud plus.
+- **Documentación:** `Readme.md` y `AGENTS.md` corregidos de "autorización por
+  header" a JWT real; se documentan endpoints, roles, credenciales del seed y
+  las reglas de asignación/plus.
+
+### Verificación
+
+- `backend/./mvnw -q compile` ✅
+- `frontend/npm run build` ✅ (tsc + vite)
+- `frontend/npm run lint` ✅
+- Pruebas manuales con `curl`: **pendientes**. MariaDB está inactiva y no hay
+  `sudo` para levantarla, así que el backend no se pudo arrancar.
+
+### Qué quedó en WIP / problemas conocidos
+
+- `SeleccionarRol.tsx` sigue montado en `/seleccionar-rol`, pero ya no emite
+  token: es código obsoleto.
+- Los cambios no están commiteados.
+
+### Resuelto en esta sesión
+
+- Las contraseñas de clientes y usuarios del sistema dejaron de viajar en las
+  respuestas JSON: `Usuario.contrasena` y `UsuarioSistema.contrasena` llevan
+  `@JsonIgnore`. El login y los DTO de entrada no se ven afectados.
+
+### Próximos pasos
+
+- Levantar MariaDB y hacer la pasada manual de los flujos nuevos con `curl`.
+- Evaluar un DTO público para solicitudes plus (sin contraseña).
+- Eliminar o archivar `SeleccionarRol.tsx`.
+- Commit del trabajo.
+
+---
 
 ## Sesión: 2026-10-07 (cierre · monorepo + backend revivido)
 

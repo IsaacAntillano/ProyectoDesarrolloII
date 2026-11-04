@@ -3,6 +3,7 @@ package com.victuscaf.gimnasio.controller;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -75,6 +76,15 @@ public class PagoController {
                 pagoService.registrarCopagoEPS(numeroDocumento, dto.metodoPago(), dto.valor())));
     }
 
+    /** Servicio de entrenador plus de un cliente mensual. */
+    @PostMapping("/plus/{numeroDocumento}")
+    public ResponseEntity<ApiResponse<Pago>> registrarPlus(
+            @PathVariable Long numeroDocumento,
+            @Valid @RequestBody PagoDTO dto) {
+        return ResponseEntity.ok(ApiResponse.success("Pago del servicio plus registrado",
+                pagoService.registrarPagoPlus(numeroDocumento, dto.metodoPago(), dto.valor())));
+    }
+
     // ─── Gastos operativos ───────────────────────────────────────────
 
     @PostMapping("/nomina/{numeroDocumento}")
@@ -135,5 +145,15 @@ public class PagoController {
     public ResponseEntity<ApiResponse<List<Pago>>> pagosDeCliente(@PathVariable Long numeroDocumento) {
         return ResponseEntity.ok(ApiResponse.success("Pagos del cliente",
                 pagoService.consultarPagosDeCliente(numeroDocumento)));
+    }
+
+    /** Gastos operativos de una fecha (nomina, arriendo, mantenimiento). */
+    @GetMapping("/gastos")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<List<GastoOperativo>>> gastosDelDia(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        LocalDate dia = fecha == null ? LocalDate.now() : fecha;
+        return ResponseEntity.ok(ApiResponse.success("Gastos operativos del dia",
+                pagoService.consultarGastosPorFecha(dia)));
     }
 }

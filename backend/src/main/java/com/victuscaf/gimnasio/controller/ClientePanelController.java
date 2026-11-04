@@ -6,20 +6,27 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.victuscaf.gimnasio.dto.ApiResponse;
+import com.victuscaf.gimnasio.dto.HorarioDisponibleDTO;
 import com.victuscaf.gimnasio.dto.ProgresoDTO;
+import com.victuscaf.gimnasio.dto.SolicitudPlusRequestDTO;
 import com.victuscaf.gimnasio.models.Asistencia;
 import com.victuscaf.gimnasio.models.EvaluacionFisica;
 import com.victuscaf.gimnasio.models.MetaFisica;
 import com.victuscaf.gimnasio.models.Rutina;
+import com.victuscaf.gimnasio.models.SolicitudEntrenadorPlus;
 import com.victuscaf.security.RolHeaderFilter;
 import com.victuscaf.gimnasio.service.AsistenciaService;
 import com.victuscaf.gimnasio.service.ClienteService;
+import com.victuscaf.gimnasio.service.EntrenadorService;
 import com.victuscaf.gimnasio.service.EvaluacionService;
 import com.victuscaf.gimnasio.service.RutinaService;
+import com.victuscaf.gimnasio.service.SolicitudPlusService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,6 +50,8 @@ public class ClientePanelController {
     private final EvaluacionService evaluacionService;
     private final RutinaService rutinaService;
     private final AsistenciaService asistenciaService;
+    private final EntrenadorService entrenadorService;
+    private final SolicitudPlusService solicitudPlusService;
 
     /** Datos basicos del cliente autenticado, con estado de membresia. */
     @GetMapping("/perfil")
@@ -77,6 +86,36 @@ public class ClientePanelController {
     public ResponseEntity<ApiResponse<List<Asistencia>>> misAsistencias() {
         return ResponseEntity.ok(ApiResponse.success("Historial de asistencias",
                 asistenciaService.listarPorUsuario(documentoActual())));
+    }
+
+    /** Cupos disponibles del entrenador asignado al cliente. */
+    @GetMapping("/horarios-disponibles")
+    public ResponseEntity<ApiResponse<List<HorarioDisponibleDTO>>> misHorariosDisponibles() {
+        return ResponseEntity.ok(ApiResponse.success("Horarios disponibles",
+                entrenadorService.listarHorariosDisponiblesParaCliente(documentoActual())));
+    }
+
+    /** Reserva un cupo del entrenador asignado. */
+    @PostMapping("/horarios/{idHorario}/reservar")
+    public ResponseEntity<ApiResponse<HorarioDisponibleDTO>> reservarHorario(@PathVariable Long idHorario) {
+        return ResponseEntity.ok(ApiResponse.success("Horario reservado",
+                entrenadorService.reservarHorario(idHorario, documentoActual())));
+    }
+
+    /** Solicita el servicio de entrenador plus. */
+    @PostMapping("/solicitud-plus")
+    public ResponseEntity<ApiResponse<SolicitudEntrenadorPlus>> solicitarPlus(
+            @RequestBody(required = false) SolicitudPlusRequestDTO dto) {
+        String observacion = dto == null ? null : dto.observacion();
+        return ResponseEntity.ok(ApiResponse.success("Solicitud de entrenador plus enviada",
+                solicitudPlusService.solicitar(documentoActual(), observacion)));
+    }
+
+    /** Estado de las solicitudes plus del cliente. */
+    @GetMapping("/solicitud-plus")
+    public ResponseEntity<ApiResponse<List<SolicitudEntrenadorPlus>>> misSolicitudesPlus() {
+        return ResponseEntity.ok(ApiResponse.success("Solicitudes plus del cliente",
+                solicitudPlusService.listarDeCliente(documentoActual())));
     }
 
     private Long documentoActual() {

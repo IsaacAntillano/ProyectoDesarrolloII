@@ -74,9 +74,10 @@ public class PagoService {
         BeneficiarioEps cliente = beneficiarioEpsRepository.findByNumeroDeDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException("Beneficiario no encontrado"));
 
-        // Validar que el contrato no esté ya finalizado
-        if (cliente.getEstadoContrato() == EstadoContratoEps.FINALIZADO) {
-            throw new RuntimeException("Contrato ya finalizado. No se puede registrar copago.");
+        // Validar que el contrato no esté ya finalizado ni cancelado
+        if (cliente.getEstadoContrato() == EstadoContratoEps.FINALIZADO
+                || cliente.getEstadoContrato() == EstadoContratoEps.CANCELADO_ANCTICIPADAMENTE) {
+            throw new RuntimeException("Contrato finalizado o cancelado. No se puede registrar copago.");
         }
 
         Tarifa tarifa = tarifaRepository.findByTipoDeCliente(TipoDeCliente.BENEFICIARIO_EPS)
@@ -98,8 +99,20 @@ public class PagoService {
         return pago;
     }
 
-    private Pago crearPago(Usuario usuario, double valor, MetodoDePago metodo, TipoDePago tipo, EstadoPago estado) {
-        Pago pago = new Pago();
+    /** Pago del servicio de entrenador plus, validado contra la tarifa configurada. */
+    @Transactional
+    public Pago registrarPagoPlus(Long numeroDocumento, MetodoDePago metodo, double valor) {
+        ParticularMensual cliente = particularMensualRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        Tarifa tarifa = tarifaRepository.findByTipoDeCliente(TipoDeCliente.PARTICULAR_MENSUAL)
+                .orElseThrow(() -> new RuntimeException("Tarifa no configurada"));
+        if (Math.abs(valor - tarifa.getValorPlus()) > 0.01) {
+            throw new RuntimeException("El valor debe ser igual al servicio plus vigente: " + tarifa.getValorPlus());
+        }
+        return crearPago(cliente, valor, metodo, TipoDePago.PLUS, EstadoPago.EXITOSO);
+    }
+
+    private Pago crearPago(Usuario usuario, double valor, MetodoDePago metodo, TipoDePago tipo, EstadoPago estado) {        Pago pago = new Pago();
         pago.setUsuario(usuario);
         pago.setValor(valor);
         pago.setMetodoPago(metodo);
@@ -250,5 +263,11 @@ public class PagoService {
     @Transactional(readOnly = true)
     public List<Pago> consultarPagosPorFecha(LocalDate fecha) {
         return pagoRepository.findByFechaPago(fecha);
+    }
+
+    /** Gastos operativos de una fecha (nomina, arriendo, mantenimiento). */
+    @Transactional(readOnly = true)
+    public List<GastoOperativo> consultarGastosPorFecha(LocalDate fecha) {
+        return gastoOperativoRepository.findByFecha(fecha);
     }
 }

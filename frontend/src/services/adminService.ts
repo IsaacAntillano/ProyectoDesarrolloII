@@ -62,3 +62,34 @@ export const crearEquipo = (data: EquipoDTO) =>
 
 export const consultarFlujoCaja = (fecha: string) =>
   api.get<ApiResponse<FlujoCaja>>('/admin/flujo-caja', { params: { fecha } }).then(unwrap);
+
+// ─── Solicitudes de entrenador plus ─────────────────────────────────
+
+export type EstadoSolicitudPlus = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+
+export interface SolicitudPlus {
+  id: number;
+  fechaSolicitud: string;
+  estado: EstadoSolicitudPlus;
+  observacion?: string;
+  fechaRespuesta?: string;
+  cliente?: { numeroDocumento: number; nombreCompleto: string };
+  entrenadorAsignado?: { nombreCompleto: string } | null;
+}
+
+export const listarSolicitudesPlus = (estado?: EstadoSolicitudPlus) =>
+  api
+    .get<ApiResponse<SolicitudPlus[]>>('/admin/solicitudes-plus', { params: { estado } })
+    .then(unwrap);
+
+export const aprobarSolicitudPlus = (id: number, documentoEntrenador?: number) =>
+  api
+    .put<ApiResponse<SolicitudPlus>>(`/admin/solicitudes-plus/${id}/aprobar`, {
+      documentoEntrenador,
+    })
+    .then(unwrap);
+
+export const rechazarSolicitudPlus = (id: number, observacion: string) =>
+  api
+    .put<ApiResponse<SolicitudPlus>>(`/admin/solicitudes-plus/${id}/rechazar`, { observacion })
+    .then(unwrap);

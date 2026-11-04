@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FiPlus, FiRefreshCw } from 'react-icons/fi';
 import Layout from '../components/Layout';
@@ -7,25 +8,29 @@ import {
   registrarPagoMensualidad,
   registrarPagoDiario,
   registrarCopagoEps,
+  registrarPagoPlus,
   pagosDeCliente,
   type MetodoPago,
   type Pago,
 } from '../services/pagoService';
 import { getApiErrorMessage, isServerUnreachable, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
 
-type Tipo = 'mensualidad' | 'diario' | 'copago';
+type Tipo = 'mensualidad' | 'diario' | 'copago' | 'plus';
 
 const TIPOS: { value: Tipo; label: string }[] = [
   { value: 'mensualidad', label: 'Mensualidad (particular mensual)' },
   { value: 'diario', label: 'Acceso diario' },
   { value: 'copago', label: 'Copago EPS' },
+  { value: 'plus', label: 'Entrenador Plus' },
 ];
 
 const METODOS: MetodoPago[] = ['EFECTIVO', 'TARJETA_DEBITO', 'TARJETA_CREDITO', 'TRANSFERENCIA'];
 
 export default function RegistrarPago() {
+  const [searchParams] = useSearchParams();
+  const documentoParam = searchParams.get('documento') ?? '';
   const [tipo, setTipo] = useState<Tipo>('mensualidad');
-  const [documento, setDocumento] = useState('');
+  const [documento, setDocumento] = useState(documentoParam);
   const [tipoDoc, setTipoDoc] = useState('CC');
   const [metodo, setMetodo] = useState<MetodoPago>('EFECTIVO');
   const [valor, setValor] = useState('');
@@ -51,6 +56,14 @@ export default function RegistrarPago() {
     cargarHistorial();
   }, [cargarHistorial]);
 
+  useEffect(() => {
+    // Llega desde la vista de contratos vencidos con ?documento=...
+    if (documentoParam) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDocumento(documentoParam);
+    }
+  }, [documentoParam]);
+
   const registrar = async (e: React.FormEvent) => {
     e.preventDefault();
     const doc = parseInt(documento, 10);
@@ -67,7 +80,8 @@ export default function RegistrarPago() {
     try {
       if (tipo === 'mensualidad') await registrarPagoMensualidad(doc, metodo, monto);
       else if (tipo === 'diario') await registrarPagoDiario(doc, metodo, monto);
-      else await registrarCopagoEps(doc, metodo, monto);
+      else if (tipo === 'copago') await registrarCopagoEps(doc, metodo, monto);
+      else await registrarPagoPlus(doc, metodo, monto);
 
       toast.success('Pago registrado');
       setValor('');

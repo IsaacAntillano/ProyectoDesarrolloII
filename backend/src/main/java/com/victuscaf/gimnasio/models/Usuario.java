@@ -3,6 +3,8 @@ package com.victuscaf.gimnasio.models;
 import jakarta.persistence.*;
 import lombok.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.LocalDate;
 
 @Entity
@@ -21,6 +23,8 @@ public abstract class  Usuario {
     private String nombreCompleto;
     private LocalDate fechaDeNacimiento;
     private Long telefono;
+    // La contrasena nunca debe salir en una respuesta JSON.
+    @JsonIgnore
     private String contrasena;
     private String correoElectronico;
     private Boolean estado;

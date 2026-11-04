@@ -16,14 +16,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.victuscaf.gimnasio.dto.ApiResponse;
+import com.victuscaf.gimnasio.dto.AprobarSolicitudPlusDTO;
 import com.victuscaf.gimnasio.dto.EquipoDTO;
+import com.victuscaf.gimnasio.dto.RespuestaSolicitudPlusDTO;
 import com.victuscaf.gimnasio.dto.TarifaUpdateDTO;
 import com.victuscaf.gimnasio.models.Equipo;
+import com.victuscaf.gimnasio.models.EstadoSolicitudPlus;
 import com.victuscaf.gimnasio.models.FlujoDeCaja;
+import com.victuscaf.gimnasio.models.SolicitudEntrenadorPlus;
 import com.victuscaf.gimnasio.models.Tarifa;
 import com.victuscaf.gimnasio.models.TipoDeCliente;
 import com.victuscaf.gimnasio.service.AdminService;
 import com.victuscaf.gimnasio.service.InventarioService;
+import com.victuscaf.gimnasio.service.SolicitudPlusService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +47,7 @@ public class AdminController {
 
     private final AdminService adminService;
     private final InventarioService inventarioService;
+    private final SolicitudPlusService solicitudPlusService;
 
     // ─── Tarifas ─────────────────────────────────────────────────────
 
@@ -82,8 +88,34 @@ public class AdminController {
                 ApiResponse.success("Equipo creado", inventarioService.crearEquipo(dto)));
     }
 
-    // ─── Flujo de caja ──────────────────────────────────────────────
+    // ─── Solicitudes de entrenador plus ─────────────────────────────
 
+    @GetMapping("/solicitudes-plus")
+    public ResponseEntity<ApiResponse<List<SolicitudEntrenadorPlus>>> listarSolicitudesPlus(
+            @RequestParam(required = false) EstadoSolicitudPlus estado) {
+        return ResponseEntity.ok(ApiResponse.success("Solicitudes de entrenador plus",
+                solicitudPlusService.listar(estado)));
+    }
+
+    @PutMapping("/solicitudes-plus/{id}/aprobar")
+    public ResponseEntity<ApiResponse<SolicitudEntrenadorPlus>> aprobarSolicitudPlus(
+            @PathVariable Long id,
+            @RequestBody(required = false) AprobarSolicitudPlusDTO dto) {
+        Long documentoEntrenador = dto == null ? null : dto.documentoEntrenador();
+        return ResponseEntity.ok(ApiResponse.success("Solicitud plus aprobada",
+                solicitudPlusService.aprobar(id, documentoEntrenador)));
+    }
+
+    @PutMapping("/solicitudes-plus/{id}/rechazar")
+    public ResponseEntity<ApiResponse<SolicitudEntrenadorPlus>> rechazarSolicitudPlus(
+            @PathVariable Long id,
+            @RequestBody(required = false) RespuestaSolicitudPlusDTO dto) {
+        String observacion = dto == null ? null : dto.observacion();
+        return ResponseEntity.ok(ApiResponse.success("Solicitud plus rechazada",
+                solicitudPlusService.rechazar(id, observacion)));
+    }
+
+    // ─── Flujo de caja ──────────────────────────────────────────────
     @GetMapping("/flujo-caja")
     public ResponseEntity<ApiResponse<FlujoDeCaja>> consultarFlujoCaja(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {

@@ -38,9 +38,10 @@ crea el admin, la secretaria, el entrenador, las tarifas y un equipo de
 ejemplo, **solo si la base no tiene usuarios todavía**. No pisa datos
 existentes.
 
-Credenciales del seed (documentadas, solo locales): `ana@victus.co/admin123`
-(admin), `sara@victus.co/secretaria123` (secretaria), `enzo@victus.co/entrenador123`
-(entrenador).
+Credenciales del seed (documento/contraseña, solo locales):
+`100000001` / `admin123` (admin), `100000002` / `secretaria123` (secretaria),
+`100000003` / `entrenador123` (entrenador). El login se hace con el número de
+documento, no con el correo.
 
 Spring Boot se conecta por TCP, así que MariaDB debe escuchar en `3306`. En
 distribuciones que vienen con `skip-networking` o sin `bind-address`, hay que
@@ -82,53 +83,46 @@ cd backend && ./mvnw compile
 
 ---
 
-## Autorización por header
+## Autenticación JWT
 
-> **Esto no es autenticación.** Ver la advertencia al final de la sección.
-
-La vista no maneja token. Al abrir la app se elige un rol
-(`SeleccionarRol.tsx`), que queda en `localStorage['user']` y se reenvía en cada
-petición como header `X-Rol`. El backend (`RolHeaderFilter`) lee ese header,
-valida el valor contra el enum `Rol` y construye el contexto de seguridad con
-`ROLE_<rol>`. Los `@PreAuthorize` de los controllers siguen siendo la única
-fuente de verdad sobre quién puede llamar a cada endpoint.
+El backend es **stateless** y exige `Authorization: Bearer <token>` en todas las
+rutas, salvo el login. El login se hace con **documento y contraseña**:
 
 ```bash
-curl -H "X-Rol: ADMINISTRADOR" http://localhost:8080/api/admin/tarifas
+curl -X POST http://localhost:8080/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"documento":"100000001","contrasena":"admin123"}'
 ```
 
-Sin header, la respuesta es `401`.
+La respuesta incluye `token`, `rol`, `documento` y `nombreCompleto`. El frontend
+(`Login.tsx`) guarda todo en `localStorage['user']`; el interceptor de
+`src/services/api.ts` añade el header `Authorization: Bearer ...` en cada
+petición.
+
+`JwtAuthFilter` valida el token, y construye el `SecurityContext` con
+`ROLE_<rol>`. El documento viaja como sujeto del token y queda en el principal
+como `ROL:documento`; los controllers que necesitan saber quién llama usan
+`RolHeaderFilter.documentoActual()`, que lee el principal (el nombre de la clase
+es histórico: ya no lee headers). Por eso los endpoints de entrenador y de panel
+de cliente **no reciben el id por la ruta**: un entrenador no puede actuar en
+nombre de otro.
 
 **Roles:** `ADMINISTRADOR` · `SECRETARIA` · `ENTRENADOR` · `CLIENTE`
 
-Además del rol, la vista manda **`X-Documento`** con el número de documento del
-usuario. El backend lo adjunta al principal de seguridad (`RolHeaderFilter`) y lo
-usa para saber a qué entrenador o cliente pertenece la llamada. Por eso los
-endpoints de entrenador y de panel de cliente **no reciben el id por la ruta**: un
-entrenador no puede actuar en nombre de otro.
-
-```bash
-curl -H "X-Rol: ENTRENADOR" -H "X-Documento: 100000003" \
-     http://localhost:8080/api/entrenador/perfil
-```
-
 | Perfil de acceso | Endpoints |
 | --- | --- |
-| `SECRETARIA`, `ADMINISTRADOR` | registrar, consultar, listar, actualizar y reactivar clientes |
-| `ADMINISTRADOR` | desactivar clientes, CRUD de usuarios del sistema, todo `/api/admin` |
-| `SECRETARIA`, `ADMINISTRADOR` | registrar ingreso |
-| `SECRETARIA`, `ADMINISTRADOR` | registrar pagos, nomina, arriendo, mantenimiento |
-| `ADMINISTRADOR` | generar flujo de caja, factura EPS |
+| `SECRETARIA`, `ADMINISTRADOR` | registrar, consultar, listar, actualizar y reactivar clientes; registrar ingresos y pagos |
+| `ADMINISTRADOR` | desactivar clientes, CRUD de usuarios del sistema, tarifas, equipos, flujo de caja, contratos vencidos, cancelación/cupos de entrenador y solicitudes plus |
 | `ENTRENADOR`, `ADMINISTRADOR` | panel del entrenador (`/api/entrenador`) |
 | `CLIENTE`, `ADMINISTRADOR` | panel del cliente (`/api/cliente`) |
 
 ### Advertencia
 
-No hay prueba de identidad: cualquier persona o proceso que alcance el puerto
-8080 puede declarar `X-Rol: ADMINISTRADOR` y obtener permisos de administrador.
-Es aceptable **únicamente en desarrollo local**. No expongas el backend en red
-con esta configuración. Para un despliegue real hay que volver a autenticación
-(sesión con cookie o token firmado).
+El token se firma con `app.jwtSecret` (variable `JWT_SECRET`) y expira en 24 h
+por defecto (`JWT_EXPIRATION_MS`). En desarrollo la clave por defecto está en
+`application.properties`, así que **no expongas el backend en red** sin
+configurar un secreto propio.
+
 
 ---
 
@@ -158,7 +152,11 @@ Base: `/api`
 | `GET` | `/mensuales/activos` · `/mensuales/todos` | secretaria, admin |
 | `GET` | `/diarios/activos` · `/diarios/todos` | secretaria, admin |
 | `GET` | `/eps/activos` · `/eps/todos` | secretaria, admin |
-| `GET` | `/contratos/vencidos` | secretaria, admin |
+| `GET` | `/mensual/{numeroDocumento}/contrato` | secretaria, admin |
+| `PUT` | `/eps/{numeroDocumento}/cancelar` | admin |
+| `PUT` | `/eps/{numeroDocumento}/entrenador/{documentoEntrenador}` | admin |
+| `DELETE` | `/eps/{numeroDocumento}/entrenador` | admin |
+| `GET` | `/contratos/vencidos` | admin |
 | `POST` | `/diario/migrar/{numeroDocumento}` | secretaria, admin |
 
 ### Usuarios del sistema — `/usuarios-sistema` (solo admin)
@@ -182,6 +180,9 @@ Base: `/api`
 | `GET` | `/equipos/mantenimiento-proximo` | mantenimiento en los próximos 5 días |
 | `POST` | `/equipos` | registra un equipo |
 | `GET` | `/flujo-caja?fecha=AAAA-MM-DD` | flujo de caja de una fecha |
+| `GET` | `/solicitudes-plus?estado=` | solicitudes de entrenador plus |
+| `PUT` | `/solicitudes-plus/{id}/aprobar` | aprueba y asigna entrenador |
+| `PUT` | `/solicitudes-plus/{id}/rechazar` | rechaza con observación |
 
 ### Pagos y caja — `/pagos` (secretaría y admin)
 
@@ -190,9 +191,11 @@ Base: `/api`
 | `POST` | `/mensualidad/{documento}` | mensualidad; renueva el contrato un mes |
 | `POST` | `/diario/{documento}` | acceso de cliente diario |
 | `POST` | `/copago-eps/{documento}` | copago de beneficiario EPS |
+| `POST` | `/plus/{documento}` | servicio de entrenador plus |
 | `POST` | `/nomina/{documento}` | pago a entrenador |
 | `POST` | `/arriendo` | gasto de arriendo |
 | `POST` | `/mantenimiento/{idEquipo}` | gasto de mantenimiento |
+| `GET` | `/gastos?fecha=AAAA-MM-DD` | gastos operativos (solo admin) |
 | `POST` | `/flujo-caja?fecha=` | consolida pagos y gastos (solo admin) |
 | `GET` | `/facturas-eps?periodo=` | factura EPS (solo admin) |
 | `GET` | `/cliente/{documento}` | historial de pagos |
@@ -206,6 +209,7 @@ coincide: es imposible cobrar un monto arbitrario.
 | Método | Ruta | Descripción |
 | --- | --- | --- |
 | `GET` | `/perfil` | datos del entrenador que llama |
+| `GET` | `/clientes` | clientes activos asignados al entrenador |
 | `GET` | `/horarios` | sus horarios declarados |
 | `POST` | `/horarios` | declara un horario |
 | `POST` | `/horarios/{id}/asignar/{documento}` | asigna horario a cliente Plus |
@@ -225,6 +229,10 @@ coincide: es imposible cobrar un monto arbitrario.
 | `GET` | `/rutinas` | rutinas activas |
 | `GET` | `/evaluaciones` | historial de evaluaciones |
 | `GET` | `/asistencias` | historial de ingresos |
+| `GET` | `/horarios-disponibles` | cupos del entrenador asignado |
+| `POST` | `/horarios/{id}/reservar` | reserva un cupo |
+| `POST` | `/solicitud-plus` | solicita entrenador plus |
+| `GET` | `/solicitud-plus` | estado de sus solicitudes plus |
 
 ### Notificaciones — `/notificaciones` (admin y secretaria)
 
@@ -269,7 +277,7 @@ victus-caf/
 │       │   ├── models/
 │       │   ├── dto/
 │       │   └── exception/
-│       └── security/      # SecurityConfig, RolHeaderFilter
+│       └── security/      # SecurityConfig, JwtAuthFilter, AuthController
 └── obsidian/              # notas de contexto y lienzo del proyecto
 ```
 
@@ -277,10 +285,10 @@ victus-caf/
 
 | Rol | Vista | Qué puede hacer |
 | --- | --- | --- |
-| `ADMINISTRADOR` | `/admin` | usuarios del sistema, tarifas, equipos, flujo de caja, clientes |
+| `ADMINISTRADOR` | `/admin` | usuarios del sistema, tarifas, equipos, flujo de caja, clientes, gastos operativos, contratos vencidos y solicitudes plus |
 | `SECRETARIA` | `/secretaria`, `/registrar-pago` | clientes, ingresos, pagos |
-| `ENTRENADOR` | `/entrenador` | horarios, rutinas, evaluaciones y metas sobre sus clientes |
-| `CLIENTE` | `/cliente` | membresía, progreso, rutina, evaluaciones, ingresos |
+| `ENTRENADOR` | `/entrenador` | sus clientes asignados, horarios, rutinas, evaluaciones y metas |
+| `CLIENTE` | `/cliente` | membresía, progreso, rutina, evaluaciones, ingresos, horarios y solicitud plus |
 
 ---
 
@@ -301,6 +309,25 @@ y `BeneficiarioEps` ↔ `Remision` (1:1). Ambas usan
 `@JsonManagedReference` / `@JsonBackReference` para evitar recursión al
 serializar a JSON.
 
+### Asignación de entrenador
+
+`AsignacionEntrenador` relaciona un cliente (`Usuario`) con un `Entrenador`:
+
+- Un cliente tiene **una sola asignación activa** a la vez.
+- Un entrenador atiende como máximo **4 clientes activos** (cupo validado en
+  `AsignacionEntrenadorService`; `Entrenador.cantidadClientesActivos` se
+  resincroniza desde las asignaciones).
+- `origen` distingue `PRIMER_MES` (entrenador incluido al registrarse, con
+  `fechaFin` a un mes) de `PLUS` (servicio solicitado por el cliente y aprobado
+  por el administrador, sin fecha de corte).
+- Al cancelar el contrato EPS o liberar el entrenador, la asignación se cierra y
+  el cupo queda disponible.
+
+`SolicitudEntrenadorPlus` registra la petición del servicio plus: `PENDIENTE`,
+`APROBADA` o `RECHAZADA`. Solo se permite después del primer mes de contrato y
+sin un entrenador activo; al aprobarla se crea la asignación `PLUS` y se marca
+`ParticularMensual.tieneEntrenador`.
+
 ---
 
 ## Notas técnicas
@@ -311,6 +338,15 @@ serializar a JSON.
   valores al enum no corrompa los registros existentes.
 - **No hay tests.** No hay datasource de prueba ni framework de test en el
   frontend. La verificación es `compile`, `npm run build` y `npm run lint`.
+- **`SeleccionarRol.tsx` es código obsoleto.** Sigue montado en
+  `/seleccionar-rol`, pero ya no emite token; el ingreso real es `Login.tsx`.
+- **El enum EPS conserva un typo histórico:**
+  `CANCELADO_ANCTICIPADAMENTE` (sic). No se renombra porque está persistido con
+  `@Enumerated(EnumType.STRING)`; la vista lo muestra como "Cancelado
+  anticipadamente".
+- **Las contraseñas no se serializan.** `Usuario.contrasena` y
+  `UsuarioSistema.contrasena` llevan `@JsonIgnore`; el login lee el campo en el
+  backend, pero nunca viaja en una respuesta.
 - **Las credenciales** viven en `backend/.env`, que está en `.gitignore`.
   `backend/.env.example` documenta las variables.
 

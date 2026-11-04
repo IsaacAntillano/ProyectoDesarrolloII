@@ -68,6 +68,23 @@ export interface MiAsistencia {
   horaIngreso: string;
 }
 
+export interface HorarioDisponible {
+  idHorario: number;
+  fechaDisponible: string;
+  horaInicio: string;
+  horaFin: string;
+  entrenador: string;
+}
+
+export interface SolicitudPlus {
+  id: number;
+  fechaSolicitud: string;
+  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+  observacion?: string;
+  fechaRespuesta?: string;
+  entrenadorAsignado?: { nombreCompleto: string } | null;
+}
+
 export const miPerfil = () => api.get<ApiResponse<MiPerfil>>('/cliente/perfil').then(unwrap);
 
 export const miProgreso = () => api.get<ApiResponse<Progreso>>('/cliente/progreso').then(unwrap);
@@ -77,3 +94,15 @@ export const misRutinas = () => api.get<ApiResponse<MiRutina[]>>('/cliente/rutin
 export const misEvaluaciones = () => api.get<ApiResponse<MiEvaluacion[]>>('/cliente/evaluaciones').then(unwrap);
 
 export const misAsistencias = () => api.get<ApiResponse<MiAsistencia[]>>('/cliente/asistencias').then(unwrap);
+
+export const misHorariosDisponibles = () =>
+  api.get<ApiResponse<HorarioDisponible[]>>('/cliente/horarios-disponibles').then(unwrap);
+
+export const reservarHorario = (idHorario: number) =>
+  api.post<ApiResponse<HorarioDisponible>>(`/cliente/horarios/${idHorario}/reservar`).then(unwrap);
+
+export const misSolicitudesPlus = () =>
+  api.get<ApiResponse<SolicitudPlus[]>>('/cliente/solicitud-plus').then(unwrap);
+
+export const solicitarPlus = (observacion?: string) =>
+  api.post<ApiResponse<SolicitudPlus>>('/cliente/solicitud-plus', { observacion }).then(unwrap);

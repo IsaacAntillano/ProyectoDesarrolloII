@@ -70,6 +70,28 @@ export interface ClienteBase {
   tipoDeCliente?: string;
   estadoMembresia?: string;
   estadoContrato?: string;
+  tieneEntrenador?: boolean;
+  tieneEntrenadorPermanente?: boolean;
+}
+
+// ─── Contratos ──────────────────────────────────────────────────────
+
+export interface Contrato {
+  id: number;
+  fechaInicio: string;
+  fechaVencimiento: string;
+  tipoMembresia: 'MENSUAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+  estado: 'ACTIVO' | 'VENCIDO' | 'POR_RENOVAR';
+}
+
+export interface ContratoVencido {
+  idContrato: number;
+  numeroDocumento: number;
+  nombreCompleto: string;
+  tipoMembresia: Contrato['tipoMembresia'];
+  fechaInicio: string;
+  fechaVencimiento: string;
+  diasVencido: number;
 }
 
 // ─── DTOs de entrada ────────────────────────────────────────────────
@@ -222,3 +244,28 @@ export const reactivarBeneficiarioEps = (numeroDocumento: number) =>
   api
     .put<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}/reactivar`)
     .then(unwrap);
+
+export const cancelarBeneficiarioEps = (numeroDocumento: number, motivo: string) =>
+  api
+    .put<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}/cancelar`, { motivo })
+    .then(unwrap);
+
+export const asignarEntrenadorEps = (numeroDocumento: number, documentoEntrenador: number) =>
+  api
+    .put<ApiResponse<BeneficiarioEps>>(
+      `/clientes/eps/${numeroDocumento}/entrenador/${documentoEntrenador}`
+    )
+    .then(unwrap);
+
+export const liberarEntrenadorEps = (numeroDocumento: number) =>
+  api
+    .delete<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}/entrenador`)
+    .then(unwrap);
+
+// ─── Contratos ──────────────────────────────────────────────────────
+
+export const consultarContratoMensual = (numeroDocumento: number) =>
+  api.get<ApiResponse<Contrato>>(`/clientes/mensual/${numeroDocumento}/contrato`).then(unwrap);
+
+export const listarContratosVencidos = () =>
+  api.get<ApiResponse<ContratoVencido[]>>('/clientes/contratos/vencidos').then(unwrap);

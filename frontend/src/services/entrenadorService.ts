@@ -31,6 +31,15 @@ export interface Rutina {
   activa: boolean;
 }
 
+export interface ClienteAsignado {
+  numeroDocumento: number;
+  nombreCompleto: string;
+  tipoDeCliente: 'PARTICULAR_MENSUAL' | 'PARTICULAR_DIARIO' | 'BENEFICIARIO_EPS';
+  estado: boolean;
+  fechaAsignacion: string;
+  origen: 'PRIMER_MES' | 'PLUS';
+}
+
 export interface Medidas {
   peso: number;
   talla: number;
@@ -83,6 +92,10 @@ export const asignarHorario = (idHorario: number, numeroDocumento: number) =>
 
 export const listarMisRutinas = () =>
   api.get<ApiResponse<Rutina[]>>('/entrenador/rutinas').then(unwrap);
+
+/** Clientes activos que el backend tiene asignados a este entrenador. */
+export const listarClientesAsignados = () =>
+  api.get<ApiResponse<ClienteAsignado[]>>('/entrenador/clientes').then(unwrap);
 
 export const crearRutina = (numeroDocumento: number, data: { nombre: string; descripcion: string; fechaVencimiento: string }) =>
   api.post<ApiResponse<Rutina>>(`/entrenador/rutinas/${numeroDocumento}`, data).then(unwrap);

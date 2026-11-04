@@ -920,6 +920,123 @@
 			"width": 960,
 			"height": 110,
 			"color": "5"
+		},
+		{
+			"id": "g-sesion-2026-11-03",
+			"type": "group",
+			"x": 2200,
+			"y": -1560,
+			"width": 1220,
+			"height": 1380,
+			"label": "Sesión 2026-11-03 · 16 HU"
+		},
+		{
+			"id": "s2026-11-03",
+			"type": "text",
+			"text": "# SESIÓN 2026-11-03\n\n## 16 historias de usuario\nde punta a punta (backend + frontend)",
+			"x": 2240,
+			"y": -1520,
+			"width": 760,
+			"height": 60
+		},
+		{
+			"id": "n-16hu",
+			"type": "text",
+			"text": "**16 HU implementadas**\nContratos, EPS, entrenadores,\nplus, horarios, gastos y ajustes\nde registro/edición.\n\nVerificación: compile + build + lint.",
+			"x": 2240,
+			"y": -1430,
+			"width": 360,
+			"height": 150
+		},
+		{
+			"id": "n-modelo-asig",
+			"type": "text",
+			"text": "**AsignacionEntrenador**\ncliente ↔ entrenador\n\norigen: PRIMER_MES (fechaFin +1 mes)\n· PLUS (sin fecha de corte)\nCupo: 4 clientes activos",
+			"x": 2630,
+			"y": -1430,
+			"width": 360,
+			"height": 150
+		},
+		{
+			"id": "n-solicitud-plus",
+			"type": "text",
+			"text": "**SolicitudEntrenadorPlus**\nPENDIENTE · APROBADA · RECHAZADA\n\nSolo tras el primer mes\ny sin entrenador activo.\nAprobación del administrador.",
+			"x": 3020,
+			"y": -1430,
+			"width": 360,
+			"height": 150
+		},
+		{
+			"id": "n-contratos",
+			"type": "text",
+			"text": "**Contratos**\nGET /clientes/mensual/{doc}/contrato\nGET /clientes/contratos/vencidos\n\nVencido = fechaVencimiento < hoy,\nno estadoMembresia.",
+			"x": 2240,
+			"y": -1250,
+			"width": 360,
+			"height": 140
+		},
+		{
+			"id": "n-horarios",
+			"type": "text",
+			"text": "**Horarios y reservas**\nGET /entrenador/clientes\nGET /cliente/horarios-disponibles\nPOST /cliente/horarios/{id}/reservar",
+			"x": 2630,
+			"y": -1250,
+			"width": 360,
+			"height": 140
+		},
+		{
+			"id": "n-gastos",
+			"type": "text",
+			"text": "**Gastos operativos**\nNómina · arriendo · mantenimiento\nGET /pagos/gastos?fecha=\nFlujo de caja los descuenta.",
+			"x": 3020,
+			"y": -1250,
+			"width": 360,
+			"height": 140
+		},
+		{
+			"id": "n-fe-nuevo",
+			"type": "text",
+			"text": "**Frontend nuevo**\n`GastosOperativos.tsx` (PA-0005/6/7) · `ContratosVencidos.tsx` (CO-0003) · `SolicitudesPlus.tsx` (PC-0011)\n`GestionClientes` (contrato, cancelación EPS, asignar/liberar entrenador) · `EntrenadorDashboard` (Mis clientes) · `ClienteDashboard` (horarios, plus) · `RegistrarPago` (tipo Plus)\nRutas admin nuevas: `/gastos-operativos`, `/contratos-vencidos`, `/solicitudes-plus`.",
+			"x": 2240,
+			"y": -1080,
+			"width": 1140,
+			"height": 130
+		},
+		{
+			"id": "n-endpoints-new",
+			"type": "text",
+			"text": "**Endpoints nuevos**\n`PUT /clientes/eps/{doc}/cancelar` · `PUT|DELETE /clientes/eps/{doc}/entrenador[/{docEntrenador}]`\n`GET /admin/solicitudes-plus` · `PUT /admin/solicitudes-plus/{id}/aprobar|rechazar`\n`POST /pagos/plus/{doc}` · `GET /pagos/gastos` · `POST|GET /cliente/solicitud-plus`",
+			"x": 2240,
+			"y": -920,
+			"width": 1140,
+			"height": 120
+		},
+		{
+			"id": "n-docs-jwt",
+			"type": "text",
+			"text": "**Documentación corregida**\nReadme.md y AGENTS.md ya no dicen \"autorización por header\":\nla autenticación real es JWT (`POST /api/auth/login` con documento + contraseña).\n`RolHeaderFilter` solo expone `documentoActual()` desde el principal.",
+			"x": 2240,
+			"y": -770,
+			"width": 1140,
+			"height": 110
+		},
+		{
+			"id": "n-verif",
+			"type": "text",
+			"text": "**Verificación**\n`./mvnw -q compile` ✅ · `npm run build` ✅ · `npm run lint` ✅\nPruebas manuales con `curl`: pendientes (MariaDB inactiva, sin sudo).",
+			"x": 2240,
+			"y": -630,
+			"width": 1140,
+			"height": 90
+		},
+		{
+			"id": "n-pend",
+			"type": "text",
+			"text": "**Pendiente / WIP**\n`SeleccionarRol.tsx` obsoleto (sin token).\nSin commit: árbol de trabajo sucio.\nResuelto: contraseñas ocultas con `@JsonIgnore`.",
+			"x": 2240,
+			"y": -510,
+			"width": 1140,
+			"height": 90
 		}
 	],
 	"edges": [
@@ -1390,6 +1507,116 @@
 			"id": "e-n-documento-n-paneles",
 			"fromNode": "n-documento",
 			"toNode": "n-paneles"
+		},
+		{
+			"id": "e-20261103-1",
+			"fromNode": "s2026-11-03",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-16hu",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-2",
+			"fromNode": "s2026-11-03",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-modelo-asig",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-3",
+			"fromNode": "s2026-11-03",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-solicitud-plus",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-4",
+			"fromNode": "n-16hu",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-contratos",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-5",
+			"fromNode": "n-16hu",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-horarios",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-6",
+			"fromNode": "n-16hu",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-gastos",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-7",
+			"fromNode": "n-16hu",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-fe-nuevo",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-8",
+			"fromNode": "n-fe-nuevo",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-endpoints-new",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-9",
+			"fromNode": "n-endpoints-new",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-docs-jwt",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-10",
+			"fromNode": "n-docs-jwt",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-verif",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-11",
+			"fromNode": "n-verif",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-pend",
+			"toSide": "top",
+			"toEnd": "arrow"
+		},
+		{
+			"id": "e-20261103-12",
+			"fromNode": "n-auth",
+			"fromSide": "bottom",
+			"fromEnd": "none",
+			"toNode": "n-docs-jwt",
+			"toSide": "top",
+			"toEnd": "arrow",
+			"color": "1",
+			"label": "revierte: ahora JWT"
 		}
 	]
 }
