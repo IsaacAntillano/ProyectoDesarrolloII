@@ -3,11 +3,29 @@ import { useNavigate } from 'react-router-dom';
 import { crearClienteDiario, type ClienteDiarioDTO, getApiErrorMessage } from '../services/clienteService';
 import Layout from '../components/Layout';
 import DocumentTypeBar from '../components/DocumentTypeBar';
+import { Field, Input, PasswordInput } from '../components/ui/Field';
+import Button from '../components/ui/Button';
+import HelpTip from '../components/ui/HelpTip';
 import toast from 'react-hot-toast';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validar(form: ClienteDiarioDTO): Record<string, string> {
+  const errores: Record<string, string> = {};
+  if (!['CC', 'TI', 'CE'].includes(form.tipoDeDocumento)) errores.tipoDeDocumento = 'Elige un tipo de documento';
+  if (!form.numeroDeDocumento || form.numeroDeDocumento <= 0) errores.numeroDeDocumento = 'Debe ser un número positivo';
+  if (!form.nombreCompleto.trim()) errores.nombreCompleto = 'El nombre es obligatorio';
+  if (!form.telefono || form.telefono <= 0) errores.telefono = 'Debe ser un número positivo';
+  if (form.correoElectronico && !EMAIL_RE.test(form.correoElectronico)) errores.correoElectronico = 'Ingresa un correo válido';
+  if (form.contrasena && form.contrasena.length < 6) errores.contrasena = 'Mínimo 6 caracteres';
+  return errores;
+}
 
 export default function RegistrarClienteDiario() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [errores, setErrores] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState<ClienteDiarioDTO>({
     tipoDeDocumento: 'CC',
     numeroDeDocumento: 0,
@@ -18,121 +36,127 @@ export default function RegistrarClienteDiario() {
     contrasena: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'numeroDeDocumento' || name === 'telefono' ? Number(value) : value,
-    }));
+  const actualizar = <K extends keyof ClienteDiarioDTO>(campo: K, valor: ClienteDiarioDTO[K]) => {
+    setFormData((prev) => ({ ...prev, [campo]: valor }));
+    setErrores((prev) => ({ ...prev, [campo]: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.numeroDeDocumento <= 0) {
-      toast.error('El número de documento debe ser positivo');
+    const fallos = validar(formData);
+    if (Object.values(fallos).some(Boolean)) {
+      setErrores(fallos);
+      toast.error('Revisa los campos marcados en rojo');
       return;
     }
-    setLoading(true);
+    setGuardando(true);
     try {
       await crearClienteDiario(formData);
-      toast.success('Cliente diario registrado');
+      toast.success(`${formData.nombreCompleto} registrado`);
       navigate('/gestion-clientes');
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Error al registrar cliente'));
+      toast.error(getApiErrorMessage(err, 'No se pudo registrar el cliente'));
     } finally {
-      setLoading(false);
+      setGuardando(false);
     }
   };
 
   return (
-    <Layout title="Registrar Cliente Diario">
-      <div className="bg-white p-8 rounded-lg shadow-sm border max-w-3xl mx-auto">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+    <Layout title="Registrar Cliente Diario" description="Acceso de un día; el ingreso se marca después del pago">
+      <div className="mx-auto max-w-3xl rounded-lg border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <h2 className="text-xl font-bold text-gray-800">Formulario de registro</h2>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="rounded-md px-2 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-blue-500"
+          >
+            ← Volver
+          </button>
+        </div>
+
+        <HelpTip title="¿Cómo funciona el cliente diario?">
+          <p>
+            Se registra el cliente, se cobra el acceso de un día y luego se marca su ingreso. El
+            acceso expira al final del mismo día y no incluye entrenador.
+          </p>
+        </HelpTip>
+
+        <form onSubmit={handleSubmit} noValidate className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2">
+          <Field label="Tipo de documento" htmlFor="tipo-doc" required error={errores.tipoDeDocumento}>
             <DocumentTypeBar
+              id="tipo-doc"
               value={formData.tipoDeDocumento}
-              onChange={(v) => setFormData((p) => ({ ...p, tipoDeDocumento: v }))}
+              onChange={(v) => actualizar('tipoDeDocumento', v)}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Número Documento</label>
-            <input
+          </Field>
+
+          <Field label="Número de documento" htmlFor="num-doc" required help="Solo números, sin puntos ni espacios" error={errores.numeroDeDocumento}>
+            <Input
+              id="num-doc"
               type="number"
-              name="numeroDeDocumento"
-              value={formData.numeroDeDocumento || ''}
-              onChange={handleChange}
-              required
+              inputMode="numeric"
               min={1}
-              className="w-full px-3 py-2 border rounded-md"
+              value={formData.numeroDeDocumento || ''}
+              onChange={(e) => actualizar('numeroDeDocumento', Number(e.target.value))}
+              required
+              error={!!errores.numeroDeDocumento}
             />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-            <input
+          </Field>
+
+          <Field label="Nombre completo" htmlFor="nombre" required className="md:col-span-2" error={errores.nombreCompleto}>
+            <Input
+              id="nombre"
               type="text"
-              name="nombreCompleto"
+              autoComplete="name"
               value={formData.nombreCompleto}
-              onChange={handleChange}
+              onChange={(e) => actualizar('nombreCompleto', e.target.value)}
               required
-              className="w-full px-3 py-2 border rounded-md"
+              error={!!errores.nombreCompleto}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
-            <input
-              type="date"
-              name="fechaDeNacimiento"
-              value={formData.fechaDeNacimiento}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-            <input
-              type="number"
-              name="telefono"
+          </Field>
+
+          <Field label="Teléfono" htmlFor="telefono" required help="Solo números" error={errores.telefono}>
+            <Input
+              id="telefono"
+              type="tel"
+              inputMode="numeric"
+              min={1}
               value={formData.telefono || ''}
-              onChange={handleChange}
+              onChange={(e) => actualizar('telefono', Number(e.target.value))}
               required
-              className="w-full px-3 py-2 border rounded-md"
+              error={!!errores.telefono}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Correo</label>
-            <input
+          </Field>
+
+          <Field label="Correo electrónico (opcional)" htmlFor="correo" error={errores.correoElectronico}>
+            <Input
+              id="correo"
               type="email"
-              name="correoElectronico"
+              autoComplete="email"
               value={formData.correoElectronico}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border rounded-md"
+              onChange={(e) => actualizar('correoElectronico', e.target.value)}
+              error={!!errores.correoElectronico}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <input
-              type="password"
-              name="contrasena"
+          </Field>
+
+          <Field label="Contraseña (opcional)" htmlFor="contrasena" help="Mínimo 6 caracteres. Sin contraseña no podrá usar el portal del cliente." error={errores.contrasena}>
+            <PasswordInput
+              id="contrasena"
+              autoComplete="new-password"
               value={formData.contrasena}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border rounded-md"
+              onChange={(e) => actualizar('contrasena', e.target.value)}
+              error={!!errores.contrasena}
             />
-          </div>
-          <div className="md:col-span-2 flex justify-end gap-2">
-            <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 border rounded-md">
+          </Field>
+
+          <div className="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4 md:col-span-2">
+            <Button variant="secondary" onClick={() => navigate(-1)}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
-            >
-              {loading ? 'Registrando...' : 'Registrar'}
-            </button>
+            </Button>
+            <Button type="submit" loading={guardando}>
+              {guardando ? 'Registrando...' : 'Registrar cliente'}
+            </Button>
           </div>
         </form>
       </div>
