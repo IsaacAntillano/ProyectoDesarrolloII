@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
-import SeleccionarRol from './pages/SeleccionarRol';
 import AdminDashboard from './pages/AdminDashboard';
 import SecretariaDashboard from './pages/SecretariaDashboard';
 import EntrenadorDashboard from './pages/EntrenadorDashboard';
@@ -15,17 +14,22 @@ import GastosOperativos from './pages/GastosOperativos';
 import ContratosVencidos from './pages/ContratosVencidos';
 import SolicitudesPlus from './pages/SolicitudesPlus';
 import { Toaster } from 'react-hot-toast';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 
 function App() {
   const basename = import.meta.env.BASE_URL;
 
   return (
-    <>
-      <Toaster position="top-right" />
+    <ErrorBoundary>
+      <Toaster
+        position="top-right"
+        toastOptions={{ duration: 4000 }}
+        containerStyle={{ zIndex: 100 }}
+        aria-live="polite"
+      />
       <BrowserRouter basename={basename}>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/seleccionar-rol" element={<SeleccionarRol />} />
           <Route
             path="/admin"
             element={
@@ -125,7 +129,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
-    </>
+    </ErrorBoundary>
   );
 }
 

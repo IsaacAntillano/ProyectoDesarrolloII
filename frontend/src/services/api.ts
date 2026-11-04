@@ -20,6 +20,23 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+/**
+ * Sesión expirada o inválida (401): se limpia el almacenamiento y se vuelve
+ * al inicio con un aviso, en vez de dejar errores sueltos en cada pantalla.
+ */
+api.interceptors.response.use(
+    (res) => res,
+    (err) => {
+        if (axios.isAxiosError(err) && err.response?.status === 401 && localStorage.getItem('user')) {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            sessionStorage.setItem('sesionExpirada', '1');
+            window.location.assign(import.meta.env.BASE_URL);
+        }
+        return Promise.reject(err);
+    }
+);
+
 function readUserFromStorage(): { token?: string } | null {
     try {
         const raw = localStorage.getItem('user');
