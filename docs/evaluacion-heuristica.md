@@ -105,7 +105,7 @@ completa aquí.
 | **Solicitudes Plus** | Modales accesibles para aprobar/rechazar; explicación del modo automático (menos clientes, cupo 4) y de la consecuencia; fechas formateadas; filtros accesibles; motivo de rechazo visible para el cliente. | ✅ |
 | **Portal del Cliente** | Confirmación de reserva con detalle del horario; barra de progreso de sesiones EPS con restantes; elegibilidad Plus explicada (después del primer mes) y estados diferenciados (pendiente/aprobada/sin entrenador); estados vacíos con siguiente paso en rutinas, evaluaciones e ingresos; fechas formateadas. | ✅ |
 | **Portal del Entrenador** | Selector de clientes asignados en lugar de escribir el documento a mano (clic en la lista + desplegable); etiquetas reales en la evaluación (antes solo placeholders); validación por rangos (peso, talla, grasa, FC, presión `120/80`) e inicio < fin; cupo con barra de progreso y aviso al completarse; texto en inglés corregido. | ✅ |
-| **Administrador** | Inactivar usuario con diálogo accesible confirmado; botones de guardado con carga y sin doble envío; `aria-label` en acciones de icono; admin protegido de auto-inactivación. | ✅ |
+| **Administrador — Gestión de recursos** | Tarifas/equipos/flujo de caja con `labels.ts`, fechas y moneda formateadas, botones con carga, tablas accesibles y error inline con reintento. | ✅ |
 
 ### Balance final
 
