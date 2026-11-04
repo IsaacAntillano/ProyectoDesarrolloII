@@ -22,6 +22,7 @@ import {
 } from '../services/adminService';
 import Layout from '../components/Layout';
 import DocumentTypeBar from '../components/DocumentTypeBar';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { cupoDisponible, mensajeCupo, ROL_LIMITS } from '../constants/rolLimits';
 import { isServerUnreachable, getApiErrorMessage, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
 import toast from 'react-hot-toast';
@@ -45,6 +46,9 @@ export default function AdminDashboard() {
 
   const [section, setSection] = useState<'usuarios' | 'recursos'>('usuarios');
   const [resourceTab, setResourceTab] = useState<'tarifas' | 'equipos' | 'flujoCaja'>('tarifas');
+  const [inactivando, setInactivando] = useState<UsuarioSistema | null>(null);
+  const [procesandoInactivar, setProcesandoInactivar] = useState(false);
+  const [guardando, setGuardando] = useState(false);
   const [tarifas, setTarifas] = useState<Tarifa[]>([]);
   const [tarifaEdits, setTarifaEdits] = useState<Record<Tarifa['tipoDeCliente'], { valorMensual: number; valorDiario: number; valorPlus: number }>>({
     PARTICULAR_MENSUAL: { valorMensual: 0, valorDiario: 0, valorPlus: 0 },
@@ -214,6 +218,7 @@ export default function AdminDashboard() {
   };
 
   const handleActualizarTarifa = async (tipo: Tarifa['tipoDeCliente']) => {
+    setGuardando(true);
     try {
       const tarifa = tarifaEdits[tipo];
       await actualizarTarifa(tipo, {
@@ -227,6 +232,8 @@ export default function AdminDashboard() {
       cargarTarifas();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Error al actualizar tarifa'));
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -236,6 +243,7 @@ export default function AdminDashboard() {
       toast.error('Completa los campos obligatorios del equipo');
       return;
     }
+    setGuardando(true);
     try {
       const nuevo = await crearEquipo(equipoForm as EquipoDTO);
       setEquipos((prev) => [...prev, nuevo]);
@@ -249,6 +257,8 @@ export default function AdminDashboard() {
       });
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Error al crear equipo'));
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -262,6 +272,7 @@ export default function AdminDashboard() {
       toast.error(mensajeCupo(formData.rol));
       return;
     }
+    setGuardando(true);
     try {
       await crearUsuario({
         ...formData,
@@ -273,12 +284,15 @@ export default function AdminDashboard() {
       resetForm();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Error al crear usuario'));
+    } finally {
+      setGuardando(false);
     }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
+    setGuardando(true);
     try {
       await actualizarUsuario(currentUser.idUsuarioSistema, {
         tipoDeDocumento: formData.tipoDeDocumento,
@@ -296,27 +310,36 @@ export default function AdminDashboard() {
       resetForm();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Error al actualizar usuario'));
+    } finally {
+      setGuardando(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de inactivar este usuario?')) return;
+  const confirmarInactivar = async () => {
+    if (!inactivando) return;
+    setProcesandoInactivar(true);
     try {
-      await desactivarUsuario(id);
-      toast.success('Usuario inactivado');
+      await desactivarUsuario(inactivando.idUsuarioSistema);
+      toast.success(`${inactivando.nombreCompleto} inactivado`);
+      setInactivando(null);
       cargarUsuarios();
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Error al inactivar usuario'));
+      toast.error(getApiErrorMessage(err, 'No se pudo inactivar el usuario'));
+    } finally {
+      setProcesandoInactivar(false);
     }
   };
 
   const handleReactivar = async (id: number) => {
+    setGuardando(true);
     try {
       await reactivarUsuario(id);
       toast.success('Usuario reactivado');
       cargarUsuarios();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Error al reactivar usuario'));
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -357,6 +380,23 @@ export default function AdminDashboard() {
 
   return (
     <Layout title="Panel de Administrador">
+      <ConfirmDialog
+        open={!!inactivando}
+        onClose={() => setInactivando(null)}
+        onConfirm={() => void confirmarInactivar()}
+        loading={procesandoInactivar}
+        title="Inactivar usuario"
+        confirmLabel="Inactivar"
+        message={
+          inactivando ? (
+            <>
+              <strong>{inactivando.nombreCompleto}</strong> dejará de poder ingresar al sistema.
+              Podrás reactivarlo después desde esta misma lista.
+            </>
+          ) : null
+        }
+      />
+
       <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-900">
         <strong>Cupos:</strong> Administrador {conteoPorRol.adminTotal}/{ROL_LIMITS.ADMINISTRADOR}
         {' · '}Secretarias activas {conteoPorRol.secActivas}/{ROL_LIMITS.SECRETARIA}
@@ -488,20 +528,25 @@ export default function AdminDashboard() {
                           </button>
                           {user.estado ? (
                             <button
-                              onClick={() => handleDelete(user.idUsuarioSistema)}
+                              type="button"
+                              onClick={() => setInactivando(user)}
                               disabled={user.rol === 'ADMINISTRADOR'}
-                              className={`inline-flex ${user.rol === 'ADMINISTRADOR' ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:text-red-900'}`}
+                              className={`inline-flex rounded-md p-1 ${user.rol === 'ADMINISTRADOR' ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:text-red-900 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-red-500'}`}
                               title="Inactivar"
+                              aria-label={`Inactivar a ${user.nombreCompleto}`}
                             >
-                              <FiTrash2 size={18} />
+                              <FiTrash2 size={18} aria-hidden="true" />
                             </button>
                           ) : (
                             <button
+                              type="button"
                               onClick={() => handleReactivar(user.idUsuarioSistema)}
-                              className="text-green-600 hover:text-green-900 inline-flex"
+                              disabled={guardando}
+                              className="inline-flex rounded-md p-1 text-green-600 hover:text-green-900 disabled:opacity-50 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-green-500"
                               title="Reactivar"
+                              aria-label={`Reactivar a ${user.nombreCompleto}`}
                             >
-                              <FiRefreshCw size={18} />
+                              <FiRefreshCw size={18} aria-hidden="true" />
                             </button>
                           )}
                         </td>
@@ -610,12 +655,18 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => setModo('list')}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+                disabled={guardando}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancelar
               </button>
-              <button type="submit" className="px-4 py-2 rounded-md text-sm text-white bg-blue-600 hover:bg-blue-700">
-                {modo === 'create' ? 'Crear Usuario' : 'Guardar Cambios'}
+              <button
+                type="submit"
+                disabled={guardando}
+                aria-busy={guardando || undefined}
+                className="px-4 py-2 rounded-md text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+              >
+                {guardando ? 'Guardando...' : modo === 'create' ? 'Crear Usuario' : 'Guardar Cambios'}
               </button>
             </div>
           </form>
