@@ -26,6 +26,11 @@ public class PagoService {
     private final EquipoRepository equipoRepository;          // necesario para mantenimiento
     private final EntrenadorRepository entrenadorRepository;  // necesario para nómina
 
+    /** Tarifas vigentes, para mostrar el valor esperado antes de cobrar. */
+    public List<Tarifa> listarTarifas() {
+        return tarifaRepository.findAll();
+    }
+
     // ========== REGISTRO DE PAGOS ==========
 
     @Transactional

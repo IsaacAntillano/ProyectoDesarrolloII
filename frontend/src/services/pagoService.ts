@@ -51,6 +51,17 @@ export const registrarPagoPlus = (numeroDocumento: number, metodoPago: MetodoPag
 export const pagosDeCliente = (numeroDocumento: number) =>
   api.get<ApiResponse<Pago[]>>(`/pagos/cliente/${numeroDocumento}`).then(unwrap);
 
+/** Tarifas vigentes en solo lectura (admin y secretaria). */
+export interface TarifaVigente {
+  tipoDeCliente: 'PARTICULAR_MENSUAL' | 'PARTICULAR_DIARIO' | 'BENEFICIARIO_EPS';
+  valorMensual: number;
+  valorDiario: number;
+  valorPlus: number;
+}
+
+export const listarTarifasVigentes = () =>
+  api.get<ApiResponse<TarifaVigente[]>>('/pagos/tarifas').then(unwrap);
+
 // ─── Gastos ─────────────────────────────────────────────────────────
 
 export const registrarArriendo = (valor: number, descripcion: string) =>

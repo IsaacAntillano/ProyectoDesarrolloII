@@ -147,6 +147,17 @@ public class PagoController {
                 pagoService.consultarPagosDeCliente(numeroDocumento)));
     }
 
+    /**
+     * Tarifas vigentes en solo lectura (admin y secretaria).
+     * Permite mostrar el valor esperado antes de cobrar, en vez de obligar a
+     * adivinarlo y recibir un rechazo del backend.
+     */
+    @GetMapping("/tarifas")
+    public ResponseEntity<ApiResponse<List<Tarifa>>> listarTarifas() {
+        return ResponseEntity.ok(ApiResponse.success("Tarifas vigentes",
+                pagoService.listarTarifas()));
+    }
+
     /** Gastos operativos de una fecha (nomina, arriendo, mantenimiento). */
     @GetMapping("/gastos")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
