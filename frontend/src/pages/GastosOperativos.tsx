@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiPlus, FiRefreshCw } from 'react-icons/fi';
+import { FiRefreshCw, FiPlus } from 'react-icons/fi';
 import Layout from '../components/Layout';
+import PageHeader from '../components/ui/PageHeader';
+import Button from '../components/ui/Button';
+import StatusBadge from '../components/ui/StatusBadge';
+import EmptyState from '../components/ui/EmptyState';
+import LoadingState from '../components/ui/LoadingState';
+import ErrorState from '../components/ui/ErrorState';
+import { Field, Input, Select } from '../components/ui/Field';
+import HelpTip from '../components/ui/HelpTip';
 import { listarEquipos, type Equipo } from '../services/adminService';
 import {
   gastosDelDia,
@@ -12,21 +20,17 @@ import {
 } from '../services/pagoService';
 import { listarUsuarios, type UsuarioSistema } from '../services/usuarioSistemaService';
 import { getApiErrorMessage, isServerUnreachable, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
-
-const HOY = () => new Date().toISOString().slice(0, 10);
-
-const ETIQUETA_GASTO: Record<string, string> = {
-  NOMINA: 'Nómina',
-  ARRIENDO: 'Arriendo',
-  MANTENIMIENTO: 'Mantenimiento',
-};
+import { etiqueta, ETIQUETA_TIPO_GASTO } from '../constants/labels';
+import { formatearFecha, formatearMoneda, hoyISO } from '../utils/format';
 
 export default function GastosOperativos() {
-  const [fecha, setFecha] = useState(HOY());
+  const [fecha, setFecha] = useState(hoyISO());
   const [gastos, setGastos] = useState<GastoOperativo[]>([]);
   const [entrenadores, setEntrenadores] = useState<UsuarioSistema[]>([]);
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [guardando, setGuardando] = useState(false);
 
   const [nomina, setNomina] = useState({ documento: '', valor: '', descripcion: 'Pago de nómina' });
   const [arriendo, setArriendo] = useState({ valor: '', descripcion: 'Arriendo del local' });
@@ -38,6 +42,7 @@ export default function GastosOperativos() {
 
   const cargar = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [g, usuarios, eq] = await Promise.all([
         gastosDelDia(fecha),
@@ -48,7 +53,7 @@ export default function GastosOperativos() {
       setEntrenadores(usuarios.filter((u) => u.rol === 'ENTRENADOR' && u.estado));
       setEquipos(eq);
     } catch (err) {
-      toast.error(
+      setError(
         isServerUnreachable(err)
           ? SERVER_UNREACHABLE_MESSAGE
           : getApiErrorMessage(err, 'No se pudieron cargar los gastos')
@@ -63,10 +68,13 @@ export default function GastosOperativos() {
     cargar();
   }, [cargar]);
 
-  const totalGastos = useMemo(
-    () => gastos.reduce((suma, gasto) => suma + gasto.valor, 0),
-    [gastos]
-  );
+  const totalGastos = useMemo(() => gastos.reduce((s, g) => s + g.valor, 0), [gastos]);
+
+  const totalesPorTipo = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const g of gastos) mapa.set(g.tipoGasto, (mapa.get(g.tipoGasto) ?? 0) + g.valor);
+    return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
+  }, [gastos]);
 
   const guardarNomina = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,13 +84,16 @@ export default function GastosOperativos() {
       toast.error('Selecciona un entrenador e ingresa un valor válido');
       return;
     }
+    setGuardando(true);
     try {
       await registrarNomina(documento, valor, nomina.descripcion || 'Pago de nómina');
-      toast.success('Nómina registrada');
+      toast.success(`Nómina de ${formatearMoneda(valor)} registrada`);
       setNomina({ documento: '', valor: '', descripcion: 'Pago de nómina' });
       cargar();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'No se pudo registrar la nómina'));
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -90,16 +101,19 @@ export default function GastosOperativos() {
     e.preventDefault();
     const valor = Number(arriendo.valor);
     if (valor <= 0) {
-      toast.error('Ingresa un valor válido');
+      toast.error('Ingresa un valor válido para el arriendo');
       return;
     }
+    setGuardando(true);
     try {
       await registrarArriendo(valor, arriendo.descripcion || 'Arriendo del local');
-      toast.success('Arriendo registrado');
+      toast.success(`Arriendo de ${formatearMoneda(valor)} registrado`);
       setArriendo({ valor: '', descripcion: 'Arriendo del local' });
       cargar();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'No se pudo registrar el arriendo'));
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -111,101 +125,121 @@ export default function GastosOperativos() {
       toast.error('Selecciona un equipo e ingresa un valor válido');
       return;
     }
+    setGuardando(true);
     try {
-      await registrarMantenimiento(
-        idEquipo,
-        valor,
-        mantenimiento.descripcion || 'Mantenimiento'
-      );
-      toast.success('Mantenimiento registrado');
+      await registrarMantenimiento(idEquipo, valor, mantenimiento.descripcion || 'Mantenimiento');
+      toast.success(`Mantenimiento de ${formatearMoneda(valor)} registrado`);
       setMantenimiento({ idEquipo: '', valor: '', descripcion: 'Mantenimiento' });
       cargar();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'No se pudo registrar el mantenimiento'));
+    } finally {
+      setGuardando(false);
     }
   };
 
   return (
-    <Layout title="Gastos Operativos">
-      <div className="grid gap-6 lg:grid-cols-3">
-        <form onSubmit={guardarNomina} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-3 h-fit">
+    <Layout title="Gastos Operativos" description="Nómina, arriendo y mantenimiento del día; descuentan del flujo de caja">
+      <PageHeader
+        title="Gastos operativos"
+        description="Registra los egresos del día. Quedan asociados a la fecha seleccionada y se descuentan de los ingresos en el flujo de caja."
+        actions={
+          <div className="flex items-center gap-2">
+            <Field label="Fecha" htmlFor="fecha-gastos">
+              <Input type="date" id="fecha-gastos" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+            </Field>
+            <div className="self-end">
+              <Button variant="secondary" onClick={() => void cargar()} aria-label="Actualizar gastos">
+                <FiRefreshCw aria-hidden="true" /> Actualizar
+              </Button>
+            </div>
+          </div>
+        }
+      />
+
+      <HelpTip title="¿Cómo se calcula el flujo de caja?">
+        <p>
+          Los ingresos del día (mensualidades, acceso diario, copagos EPS y servicio Plus) menos
+          los gastos registrados aquí dan la utilidad neta. Los gastos se registran por fecha; para
+          consolidarlos usa "Generar flujo de caja" en el panel de administración.
+        </p>
+      </HelpTip>
+
+      <div className="mt-4 grid gap-6 lg:grid-cols-3">
+        <form onSubmit={guardarNomina} className="space-y-3 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="font-semibold text-gray-800">Pago de nómina</h3>
-          <label className="block text-sm">
-            Entrenador
-            <select
+          <Field label="Entrenador" htmlFor="nomina-entrenador" required>
+            <Select
+              id="nomina-entrenador"
               value={nomina.documento}
               onChange={(e) => setNomina({ ...nomina, documento: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border rounded-md"
               required
             >
               <option value="">Selecciona un entrenador</option>
               {entrenadores.map((e) => (
                 <option key={e.idUsuarioSistema} value={e.numeroDeDocumento}>
-                  {e.nombreCompleto} — {e.numeroDeDocumento}
+                  {e.nombreCompleto}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="block text-sm">
-            Valor
-            <input
+            </Select>
+          </Field>
+          <Field label="Valor" htmlFor="nomina-valor" required help="En pesos, sin puntos">
+            <Input
+              id="nomina-valor"
               type="number"
-              min="1"
+              inputMode="decimal"
+              min={1}
               value={nomina.valor}
               onChange={(e) => setNomina({ ...nomina, valor: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border rounded-md"
               required
             />
-          </label>
-          <label className="block text-sm">
-            Descripción
-            <input
+          </Field>
+          <Field label="Descripción" htmlFor="nomina-desc">
+            <Input
+              id="nomina-desc"
               type="text"
               value={nomina.descripcion}
               onChange={(e) => setNomina({ ...nomina, descripcion: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border rounded-md"
             />
-          </label>
-          <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            <FiPlus /> Registrar nómina
-          </button>
+          </Field>
+          <Button type="submit" className="w-full" loading={guardando}>
+            <FiPlus aria-hidden="true" /> Registrar nómina
+          </Button>
         </form>
 
-        <form onSubmit={guardarArriendo} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-3 h-fit">
+        <form onSubmit={guardarArriendo} className="space-y-3 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="font-semibold text-gray-800">Pago de arriendo</h3>
-          <label className="block text-sm">
-            Valor
-            <input
+          <Field label="Valor" htmlFor="arriendo-valor" required help="En pesos, sin puntos">
+            <Input
+              id="arriendo-valor"
               type="number"
-              min="1"
+              inputMode="decimal"
+              min={1}
               value={arriendo.valor}
               onChange={(e) => setArriendo({ ...arriendo, valor: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border rounded-md"
               required
             />
-          </label>
-          <label className="block text-sm">
-            Descripción
-            <input
+          </Field>
+          <Field label="Descripción" htmlFor="arriendo-desc">
+            <Input
+              id="arriendo-desc"
               type="text"
               value={arriendo.descripcion}
               onChange={(e) => setArriendo({ ...arriendo, descripcion: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border rounded-md"
             />
-          </label>
-          <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-            <FiPlus /> Registrar arriendo
-          </button>
+          </Field>
+          <Button type="submit" variant="success" className="w-full" loading={guardando}>
+            <FiPlus aria-hidden="true" /> Registrar arriendo
+          </Button>
         </form>
 
-        <form onSubmit={guardarMantenimiento} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-3 h-fit">
+        <form onSubmit={guardarMantenimiento} className="space-y-3 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="font-semibold text-gray-800">Pago de mantenimiento</h3>
-          <label className="block text-sm">
-            Equipo
-            <select
+          <Field label="Equipo" htmlFor="mantenimiento-equipo" required>
+            <Select
+              id="mantenimiento-equipo"
               value={mantenimiento.idEquipo}
               onChange={(e) => setMantenimiento({ ...mantenimiento, idEquipo: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border rounded-md"
               required
             >
               <option value="">Selecciona un equipo</option>
@@ -214,67 +248,68 @@ export default function GastosOperativos() {
                   {eq.nombre}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="block text-sm">
-            Valor
-            <input
+            </Select>
+          </Field>
+          <Field label="Valor" htmlFor="mantenimiento-valor" required help="En pesos, sin puntos">
+            <Input
+              id="mantenimiento-valor"
               type="number"
-              min="1"
+              inputMode="decimal"
+              min={1}
               value={mantenimiento.valor}
               onChange={(e) => setMantenimiento({ ...mantenimiento, valor: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border rounded-md"
               required
             />
-          </label>
-          <label className="block text-sm">
-            Descripción
-            <input
+          </Field>
+          <Field label="Descripción" htmlFor="mantenimiento-desc">
+            <Input
+              id="mantenimiento-desc"
               type="text"
               value={mantenimiento.descripcion}
               onChange={(e) => setMantenimiento({ ...mantenimiento, descripcion: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border rounded-md"
             />
-          </label>
-          <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700">
-            <FiPlus /> Registrar mantenimiento
-          </button>
+          </Field>
+          <Button type="submit" className="w-full !bg-amber-600 !text-white hover:!bg-amber-700" loading={guardando}>
+            <FiPlus aria-hidden="true" /> Registrar mantenimiento
+          </Button>
         </form>
       </div>
 
-      <div className="mt-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-gray-800">
-            Gastos del día {totalGastos > 0 && `· $${totalGastos.toLocaleString('es-CO')}`}
-          </h3>
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="px-3 py-1.5 border rounded-md text-sm"
-            />
-            <button
-              type="button"
-              onClick={cargar}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-md hover:bg-gray-50"
-            >
-              <FiRefreshCw /> Actualizar
-            </button>
+      <section aria-labelledby="resumen-gastos" className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 id="resumen-gastos" className="mb-4 font-semibold text-gray-800">
+          Gastos del {formatearFecha(fecha)}
+          {totalGastos > 0 && (
+            <span className="ml-2 text-base font-bold text-gray-900">{formatearMoneda(totalGastos)}</span>
+          )}
+        </h3>
+
+        {!loading && !error && gastos.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {totalesPorTipo.map(([tipo, total]) => (
+              <StatusBadge key={tipo} tone="gray">
+                {etiqueta(ETIQUETA_TIPO_GASTO, tipo)}: {formatearMoneda(total)}
+              </StatusBadge>
+            ))}
           </div>
-        </div>
+        )}
 
         {loading ? (
-          <p className="text-gray-500">Cargando...</p>
+          <LoadingState message="Cargando gastos..." />
+        ) : error ? (
+          <ErrorState message={error} onRetry={() => void cargar()} />
         ) : gastos.length === 0 ? (
-          <p className="text-gray-500 italic">No hay gastos registrados para esa fecha.</p>
+          <EmptyState
+            title="Sin gastos para esa fecha"
+            message="Todavía no registraste nómina, arriendo ni mantenimiento para este día. Usa los formularios de arriba."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
+              <caption className="sr-only">Gastos operativos registrados</caption>
               <thead className="bg-gray-50">
                 <tr>
                   {['Fecha', 'Tipo', 'Descripción', 'Valor'].map((h) => (
-                    <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th key={h} scope="col" className="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">
                       {h}
                     </th>
                   ))}
@@ -283,17 +318,17 @@ export default function GastosOperativos() {
               <tbody className="divide-y divide-gray-200">
                 {gastos.map((g) => (
                   <tr key={g.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-sm">{g.fecha}</td>
-                    <td className="px-3 py-2 text-sm">{ETIQUETA_GASTO[g.tipoGasto] ?? g.tipoGasto}</td>
-                    <td className="px-3 py-2 text-sm">{g.descripcion}</td>
-                    <td className="px-3 py-2 text-sm">${g.valor.toLocaleString('es-CO')}</td>
+                    <td className="px-3 py-2 text-sm">{formatearFecha(g.fecha)}</td>
+                    <td className="px-3 py-2 text-sm">{etiqueta(ETIQUETA_TIPO_GASTO, g.tipoGasto)}</td>
+                    <td className="px-3 py-2 text-sm text-gray-600">{g.descripcion}</td>
+                    <td className="px-3 py-2 text-sm font-medium">{formatearMoneda(g.valor)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </section>
     </Layout>
   );
 }
