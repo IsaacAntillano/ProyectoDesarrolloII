@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios</title>
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="panel-body">
+
+    <div class="breadcrumb">
+        <a th:href="@{/}">Sistema</a>
+        <span>›</span>
+        <strong>Usuarios</strong>
+    </div>
+
+    <main class="panel-container">
+
+        <div class="page-header">
+            <div>
+                <h1>Módulo de Usuarios</h1>
+                <p>Gestión de usuarios del sistema</p>
+            </div>
+
+            <a class="btn-primary" th:href="@{/usuarios/nuevo}">
+                + Registrar Usuario
+            </a>
+        </div>
+
+        <section class="search-card">
+            <form th:action="@{/usuarios}" method="get" class="search-form">
+                <input type="text" name="search" placeholder="Buscar usuario...">
+                <button type="submit">Buscar</button>
+            </form>
+
+            <div class="filter-links">
+                <a th:href="@{/usuarios}">Solo activos</a>
+                <a th:href="@{/usuarios(mostrarTodos=true)}">Mostrar todos</a>
+            </div>
+        </section>
+
+        <section class="table-card">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr th:each="u : ${usuarios}">
+                        <td>
+                            <strong th:text="${u.username}"></strong>
+                            <small th:text="'ID: ' + ${u.id}"></small>
+                        </td>
+
+                        <td>
+                            <span class="badge" th:classappend="${u.rol.name() == 'INGENIERO'} ? ' purple' :  (${u.rol.name() == 'SUPERVISOR'} ? ' blue' : ' green')" th:text="${u.rol}">
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="status" th:classappend="${u.activo} ? ' active' : ' inactive'"
+                                th:text="${u.activo ? 'Activo' : 'Inactivo'}">
+                            </span>
+                        </td>
+
+                        <td class="actions">
+                            <a th:href="@{/usuarios/editar/{id}(id=${u.id})}" title="Editar">✎</a>
+
+                            <a th:if="${u.activo}" th:href="@{/usuarios/desactivar/{id}(id=${u.id})}"
+                                onclick="return confirm('¿Desactivar usuario?')" title="Desactivar">♙</a>
+
+                            <a th:unless="${u.activo}" th:href="@{/usuarios/reactivar/{id}(id=${u.id})}"
+                                onclick="return confirm('¿Reactivar usuario?')" title="Reactivar">↻</a>
+
+                            <a class="danger" th:href="@{/usuarios/eliminar/{id}(id=${u.id})}"
+                                onclick="return confirm('¿Eliminar usuario definitivamente? Esta acción no se puede deshacer.')"
+                                title="Eliminar">✕</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</body>
+
+</html>

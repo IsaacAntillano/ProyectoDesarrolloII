@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS usuarios (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    rol VARCHAR(20) NOT NULL,
+    activo BOOLEAN DEFAULT TRUE,
+    intentos_fallidos INTEGER DEFAULT 0
+);
