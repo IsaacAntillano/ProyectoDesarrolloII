@@ -11,6 +11,12 @@ Formato: fecha · decisión · motivo. Se añade una entrada al cerrar cada sesi
 | 2026-11-03 | La solicitud plus requiere **aprobación del administrador** y puede elegir entrenador; si no, se escoge el de menos clientes con cupo | PC-0011 pide control administrativo. La asignación automática evita dejar solicitudes aprobadas sin entrenador |
 | 2026-11-03 | Los **contratos vencidos se buscan por fecha** (`fechaVencimiento < hoy`), no por `estadoMembresia` | Un contrato puede quedar `ACTIVO` si nadie lo renovó; el estado no refleja el vencimiento real |
 | 2026-11-03 | Conservar `CANCELADO_ANCTICIPADAMENTE` y corregir solo la etiqueta de la vista | El valor ya está persistido como `STRING`; renombrarlo rompería los registros existentes |
+| 2026-11-04 | **Eliminar `RolHeaderFilter` y cualquier header de rol** | `JwtAuthFilter` arma el principal `"ROL:documento"`; el filtro viejo seguía autenticando por `X-Rol` como fallback. El JWT es la única fuente de verdad |
+| 2026-11-04 | **Expiración JWT: 4 h, sin denylist** | RS-0012 se cierra con tokens cortos y borrado local; una tabla de revocación añadiría complejidad sin beneficio para un proyecto académico |
+| 2026-11-04 | **Factura EPS = sesiones EPS × (tarifa EPS ÷ 20) + copagos del período** | La mensualidad EPS prorratea el valor por sesión estándar; el total no puede salir de copagos únicamente porque "los servicios prestados" son las terapias |
+| 2026-11-04 | **`/registro` público para particular mensual** | CO-0001 exige que el cliente seleccione su membresía; se reutiliza el flujo de creación del particular mensual sin romper el cupo ni exigir login previo |
+| 2026-11-04 | **Bloqueo automático por vencimiento de contrato** para mensuales, y por copago en 30 días para EPS | Rechazar ingreso no basta: el estado debe reflejarlo sin depender de que alguien lo pulse. Es la misma regla menos rígida que el stub de 30 días |
+
 | 2026-10-07 | Agregar el header **`X-Documento`** además de `X-Rol` | El selector de rol dejaba `numeroDocumento` en 0, así que los services de entrenador (que lo necesitan) no podían resolver quién llamaba. Ahora la identidad viaja en un header aparte y el backend la adjunta al principal |
 | 2026-10-07 | Corregir `migrarDiarioAMensual` convirtiendo el cliente en vez de crear uno nuevo | La versión anterior insertaba un nuevo usuario con el mismo `numeroDeDocumento`, que es único, así que siempre fallaba. Ahora se mueve la fila entre `particular_diario` y `particular_mensual` conservando el `usuario.id`, y se crea el contrato. Se hace con SQL nativo porque borrar la entidad del hijo eliminaba también la fila base por la herencia JOINED, que chocaba con las FKs de asistencia/pago |
 | 2026-10-07 | Los services de entrenador y evaluación reciben **documento, no id de base** | Antes usaban `idEntrenador` con `findById`. Lo que llega del cliente es un documento, y además así nadie puede actuar en nombre de otro entrenador |
@@ -45,6 +51,21 @@ Formato: fecha · decisión · motivo. Se añade una entrada al cerrar cada sesi
     clases que ya funcionan.
 - **Consecuencia asumida**: la autorización no prueba identidad. Documentado en
   el README y en `AGENTS.md` como advertencia explícita.
+
+---
+
+## 2026-11-04 — Cierre de brechas para las 48 HU
+
+- **Decisión**: el sistema pasa de “funciona para la mayoría” a “48 HU
+  auditadas sin brechas”. `FacturaEps`, auto-registro, ingreso, migración,
+  bloqueo automático y permisos de gastos quedan operativos.
+- **Motivo**: auditoría destapó huecos reales: factura EPS placeholder,
+  "Registrar ingreso" invisible, `/api/auth/registro-cliente` inexistente,
+  blocker por secretaria o permiso inexistente.
+- **Consecuencias**:
+  - MariaDB apagada impidió el curl final; se reportará siempre.
+  - Los JWT duran 4 h; sin revocación explícita.
+  - La migración diario → mensual usa BCrypt, no texto plano.
 
 ---
 

@@ -370,10 +370,12 @@ export default function ClienteDashboard() {
             </section>
 
             <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-3 font-semibold text-gray-800">Mis ingresos</h3>
+              <h3 className="mb-3 font-semibold text-gray-800">
+                {perfil?.tipoDeCliente === 'PARTICULAR_DIARIO' ? 'Mis sesiones diarias' : 'Mis ingresos'}
+              </h3>
               {asistencias.length === 0 ? (
                 <EmptyState
-                  title="Todavía no has registrado ingresos"
+                  title={perfil?.tipoDeCliente === 'PARTICULAR_DIARIO' ? 'Todavía no tienes sesiones registradas' : 'Todavía no has registrado ingresos'}
                   message="Cuando ingreses al gimnasio, la secretaría marcará tu asistencia y aparecerá aquí."
                 />
               ) : (

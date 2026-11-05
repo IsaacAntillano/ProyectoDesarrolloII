@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("No autenticado: falta el header X-Rol o su valor no es valido"));
+                .body(ApiResponse.error("No autenticado: falta el token JWT o no es valido"));
     }
 
     /** Fallo de validacion de un @Valid en el body o en los parametros. */

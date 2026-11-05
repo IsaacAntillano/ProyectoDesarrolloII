@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
@@ -25,6 +27,10 @@ public class PagoService {
     private final BitacoraAccionRepository bitacoraRepository;
     private final EquipoRepository equipoRepository;          // necesario para mantenimiento
     private final EntrenadorRepository entrenadorRepository;  // necesario para nómina
+    private final AsistenciaRepository asistenciaRepository;  // necesario para la factura EPS
+
+    /** Sesiones estándar inclusas en la mensualidad EPS, para prorratear por sesión. */
+    private static final double SESIONES_MENSUALES_ESTIMADAS = 20.0;
 
     /** Tarifas vigentes, para mostrar el valor esperado antes de cobrar. */
     public List<Tarifa> listarTarifas() {
@@ -221,20 +227,61 @@ public class PagoService {
 
     // ========== FACTURACIÓN EPS ==========
 
+    /**
+     * Factura mensual para la EPS (PA-0009).
+     *
+     * <p>Fórmula: {@code (sesiones EPS asistidas en el período × tarifa EPS vigente / 20 sesiones)
+     * + copagos EPS exitosos del período}. Período esperado: {@code YYYY-MM}.
+     *
+     * <p>La factura es única por período (verificada contra {@code periodoConsolidado})
+     * y, al no haber discriminación por entidad en las remisiones, se emite como consolidada
+     * global ({@code entidadEps = "GLOBAL"}).
+     */
     @Transactional
     public FacturaEps generarFacturaEPS(String periodo) {
         if (facturaEpsRepository.findByPeriodoConsolidado(periodo).isPresent()) {
             throw new RuntimeException("La factura para este período ya existe.");
         }
 
-        // Aquí deberías calcular el valor total basado en las asistencias de EPS en ese período.
-        // Por ahora es placeholder.
+        final YearMonth ym;
+        try {
+            ym = YearMonth.parse(periodo);
+        } catch (DateTimeParseException e) {
+            throw new RuntimeException("Período inválido: usa el formato YYYY-MM, por ejemplo 2026-10");
+        }
+        LocalDate inicio = ym.atDay(1);
+        LocalDate fin = ym.atEndOfMonth();
+
+        // Sesiones EPS asistidas en el período (clientes con tipo de cliente BENEFICIARIO_EPS).
+        List<Asistencia> asistencias = asistenciaRepository
+                .findByUsuarioTipoDeClienteAndFechaIngresoBetween(TipoDeCliente.BENEFICIARIO_EPS, inicio, fin);
+
+        Tarifa tarifaEps = tarifaRepository.findByTipoDeCliente(TipoDeCliente.BENEFICIARIO_EPS)
+                .orElseThrow(() -> new RuntimeException("Tarifa para EPS no configurada"));
+        double valorPorSesion = tarifaEps.getValorMensual() / SESIONES_MENSUALES_ESTIMADAS;
+        double valorSesiones = asistencias.size() * valorPorSesion;
+
+        // Copagos EPS exitosos del período.
+        List<Pago> pagosDelPeriodo = pagoRepository.findByFechaPagoBetween(inicio, fin);
+        double copagos = pagosDelPeriodo.stream()
+                .filter(p -> p.getTipoPago() == TipoDePago.COPAGO && p.getEstadoPago() == EstadoPago.EXITOSO)
+                .mapToDouble(Pago::getValor)
+                .sum();
+
         FacturaEps factura = new FacturaEps();
         factura.setPeriodoConsolidado(periodo);
         factura.setFechaGeneracion(LocalDate.now());
         factura.setEstado(EstadoFacturaEps.PENDIENTE);
-        factura.setValorTotal(0.0); // TODO: calcular
+        factura.setEntidadEps("GLOBAL");
+        factura.setValorTotal(Math.round((valorSesiones + copagos) * 100.0) / 100.0);
         return facturaEpsRepository.save(factura);
+    }
+
+    /** Facturas EPS ya generadas, más recientes primero. */
+    public List<FacturaEps> listarFacturasEPS() {
+        return facturaEpsRepository.findAll().stream()
+                .sorted((a, b) -> b.getPeriodoConsolidado().compareTo(a.getPeriodoConsolidado()))
+                .toList();
     }
 
     // ========== TARIFAS ==========

@@ -276,14 +276,16 @@ public class ClienteService {
     // ==================== DESACTIVACIÓN ====================
 
     /**
-     * Desactiva un cliente particular mensual (solo si no tiene saldo pendiente).
+     * Desactiva un cliente particular mensual.
+     *
+     * <p>Sin cartera ni cuentas por cobrar en el sistema, no hay saldo pendiente
+     * calculable; la desvinculación administrativa siempre procede. El saldo se
+     * salda en el momento del pago (secretaria) y la membresía depende del
+     * vencimiento del contrato.
      */
     @Transactional
     public void desactivarParticularMensual(Long numeroDocumento) {
         ParticularMensual cliente = consultarParticularMensualPorDocumento(numeroDocumento);
-        if (tieneSaldoPendiente(cliente)) {
-            throw new RuntimeException("No se puede desactivar el cliente porque tiene saldo pendiente.");
-        }
         cliente.setEstado(false);
         cliente.setEstadoMembresia(EstadoMembresia.VENCIDO);
         particularMensualRepository.save(cliente);
@@ -380,7 +382,7 @@ public class ClienteService {
         em.createNativeQuery("UPDATE usuario SET tipo_de_cliente = :tipo, correo_electronico = :correo, contrasena = :contrasena WHERE id = :id")
                 .setParameter("tipo", "PARTICULAR_MENSUAL")
                 .setParameter("correo", dto.correoElectronico())
-                .setParameter("contrasena", dto.contrasena())
+                .setParameter("contrasena", passwordEncoder.encode(dto.contrasena()))
                 .setParameter("id", idUsuario)
                 .executeUpdate();
         em.flush();
@@ -457,6 +459,30 @@ public class ClienteService {
         return beneficiarioEpsRepository.save(cliente);
     }
 
+    /**
+     * Asigna o cambia el entrenador de cualquier tipo de cliente (mensual,
+     * diario o EPS). Cierra la asignación anterior y respeta el cupo de 4.
+     * Solo administrador.
+     */
+    @Transactional
+    public Usuario asignarEntrenadorACliente(Long numeroDocumento, Long documentoEntrenador) {
+        Usuario cliente = consultarClientePorDocumento(numeroDocumento);
+        if (!Boolean.TRUE.equals(cliente.getEstado())) {
+            throw new RuntimeException("El cliente no esta activo");
+        }
+        Entrenador entrenador = entrenadorRepository.findByNumeroDeDocumento(documentoEntrenador)
+                .orElseThrow(() -> new RuntimeException("Entrenador no encontrado"));
+        asignacionEntrenadorService.asignar(cliente, entrenador, OrigenAsignacion.PLUS, null);
+        if (cliente instanceof ParticularMensual mensual) {
+            mensual.setTieneEntrenador(true);
+            particularMensualRepository.save(mensual);
+        } else if (cliente instanceof BeneficiarioEps eps) {
+            eps.setTieneEntrenadorPermanente(true);
+            beneficiarioEpsRepository.save(eps);
+        }
+        return cliente;
+    }
+
     /** Contrato del cliente mensual, para consulta de secretaria y admin. */
     @Transactional(readOnly = true)
     public Contrato consultarContratoMensual(Long numeroDocumento) {
@@ -492,13 +518,6 @@ public class ClienteService {
 
 
     // ==================== VALIDACIONES ====================
-
-    private boolean tieneSaldoPendiente(Usuario cliente) {
-        // Lógica real: consultar pagos no completados o facturas vencidas
-        // Por simplicidad, retornamos false
-        return false;
-    }
-
     // ==================== REPORTES ====================
 
     public List<ContratoVencidoDTO> consultarContratosVencidos() {

@@ -63,6 +63,25 @@ export const crearEquipo = (data: EquipoDTO) =>
 export const consultarFlujoCaja = (fecha: string) =>
   api.get<ApiResponse<FlujoCaja>>('/admin/flujo-caja', { params: { fecha } }).then(unwrap);
 
+// ─── Factura EPS (PA-0009) ──────────────────────────────────────────
+
+export interface FacturaEps {
+  id: number;
+  periodoConsolidado: string;
+  fechaGeneracion: string;
+  fechaRadicacion?: string | null;
+  fechaPago?: string | null;
+  valorTotal: number;
+  entidadEps: string;
+  estado: 'PENDIENTE' | 'RADICADA' | 'PAGADA';
+}
+
+export const generarFacturaEps = (periodo: string) =>
+  api.post<ApiResponse<FacturaEps>>('/pagos/facturas-eps', null, { params: { periodo } }).then(unwrap);
+
+export const listarFacturasEps = () =>
+  api.get<ApiResponse<FacturaEps[]>>('/pagos/facturas-eps').then(unwrap);
+
 // ─── Solicitudes de entrenador plus ─────────────────────────────────
 
 export type EstadoSolicitudPlus = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';

@@ -69,7 +69,12 @@ export default function RegistrarPago() {
   const valorEsperado = () => {
     const mapa = CAMPOS_TARIFA[tipo];
     const tarifa = tarifas.find((t) => t.tipoDeCliente === mapa.tipoCliente);
-    return tarifa?.[mapa.campo] ?? null;
+    const valorBase = tarifa?.[mapa.campo] ?? null;
+    // El copago EPS es el 3% de la tarifa mensual vigente.
+    if (tipo === 'copago' && valorBase != null) {
+      return Math.round((valorBase * 0.03) * 100) / 100;
+    }
+    return valorBase;
   };
 
   const cargarHistorial = useCallback(async () => {
@@ -139,7 +144,15 @@ export default function RegistrarPago() {
       else if (tipo === 'copago') await registrarCopagoEps(doc, metodo, monto);
       else await registrarPagoPlus(doc, metodo, monto);
 
-      toast.success(`Pago de ${etiqueta(ETIQUETA_TIPO_PAGO, tipo === 'mensualidad' ? 'MEMBRESIA' : tipo === 'diario' ? 'DIARIO' : tipo === 'copago' ? 'COPAGO' : 'PLUS')} registrado por ${formatearMoneda(monto)}`);
+      toast.success(
+        tipo === 'copago'
+          ? `Copago EPS de ${formatearMoneda(monto)} registrado para el documento ${doc}.`
+          : tipo === 'mensualidad'
+            ? `Mensualidad de ${formatearMoneda(monto)} registrada para el documento ${doc}. Contrato renovado.`
+            : tipo === 'diario'
+              ? `Acceso diario de ${formatearMoneda(monto)} registrado para el documento ${doc}.`
+              : `Pago de entrenador Plus de ${formatearMoneda(monto)} registrado para el documento ${doc}.`
+      );
       setConfirmando(false);
       cargarHistorial();
     } catch (err) {
@@ -155,6 +168,11 @@ export default function RegistrarPago() {
 
   const tipoSeleccionado = TIPOS.find((t) => t.value === tipo)!;
   const esperado = valorEsperado();
+
+  // Valor base de la tarifa para mostrar en la ayuda del copago (antes del 3%).
+  const tarifaBase = tipo === 'copago'
+    ? tarifas.find((t) => t.tipoDeCliente === CAMPOS_TARIFA.copago.tipoCliente)?.[CAMPOS_TARIFA.copago.campo] ?? 0
+    : 0;
 
   return (
     <Layout title="Registrar Pago" description="El valor debe coincidir con la tarifa vigente; verás el monto esperado antes de confirmar">
@@ -230,7 +248,9 @@ export default function RegistrarPago() {
             required
             help={
               esperado != null
-                ? `Tarifa vigente: ${formatearMoneda(esperado)}. Debe coincidir exactamente. Si editas el valor, dejará de pre-rellenarse al cambiar de tipo.`
+                ? tipo === 'copago'
+                  ? `Copago EPS = 3% de la tarifa mensual vigente (${formatearMoneda(tarifaBase)}): debe pagar exactamente ${formatearMoneda(esperado)}.`
+                  : `Tarifa vigente: ${formatearMoneda(esperado)}. Debe coincidir exactamente. Si editas el valor, dejará de pre-rellenarse al cambiar de tipo.`
                 : 'Debe coincidir con la tarifa vigente configurada por el administrador.'
             }
           >
@@ -250,7 +270,7 @@ export default function RegistrarPago() {
             />
           </Field>
 
-          <Button type="submit" className="w-full" size="lg">
+          <Button type="submit" className="w-full" size="lg" disabled={esperado != null && parseFloat(valor) !== esperado}>
             <FiDollarSign aria-hidden="true" /> Revisar y registrar
           </Button>
         </form>
@@ -317,7 +337,7 @@ export default function RegistrarPago() {
             <Button variant="secondary" onClick={() => setConfirmando(false)} disabled={guardando}>
               Volver
             </Button>
-            <Button variant="success" onClick={() => void registrar()} loading={guardando}>
+            <Button variant="success" onClick={() => void registrar()} loading={guardando} disabled={esperado != null && parseFloat(valor) !== esperado}>
               {guardando ? 'Registrando...' : 'Confirmar pago'}
             </Button>
           </>
@@ -340,6 +360,14 @@ export default function RegistrarPago() {
             <dt className="text-gray-500">Valor</dt>
             <dd className="font-semibold text-gray-900">{formatearMoneda(parseFloat(valor) || 0)}</dd>
           </div>
+          {tipo === 'copago' && esperado != null && (
+            <div className="flex justify-between gap-4">
+              <dt className="text-gray-500">Fórmula</dt>
+              <dd className="font-medium text-sm text-gray-600">
+                3% × tarifa mensual EPS ({formatearMoneda(tarifaBase)}) = {formatearMoneda(esperado)}
+              </dd>
+            </div>
+          )}
         </dl>
         {esperado != null && parseFloat(valor) !== esperado && (
           <p role="alert" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">

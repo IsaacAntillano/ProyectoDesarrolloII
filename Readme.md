@@ -86,13 +86,18 @@ cd backend && ./mvnw compile
 ## Autenticación JWT
 
 El backend es **stateless** y exige `Authorization: Bearer <token>` en todas las
-rutas, salvo el login. El login se hace con **documento y contraseña**:
+rutas, salvo el login y el registro público de cliente. El login se hace con
+**documento y contraseña**:
 
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
      -H "Content-Type: application/json" \
      -d '{"documento":"100000001","contrasena":"admin123"}'
 ```
+
+También es público `POST /api/auth/registro-cliente`, usado por `/registro`
+para que un particular mensual cree su cuenta eligiendo el tipo de membresía.
+Genera el contrato y asigna el entrenador de primer mes.
 
 La respuesta incluye `token`, `rol`, `documento` y `nombreCompleto`. El frontend
 (`Login.tsx`) guarda todo en `localStorage['user']`; el interceptor de
@@ -112,13 +117,13 @@ nombre de otro.
 | Perfil de acceso | Endpoints |
 | --- | --- |
 | `SECRETARIA`, `ADMINISTRADOR` | registrar, consultar, listar, actualizar y reactivar clientes; registrar ingresos y pagos |
-| `ADMINISTRADOR` | desactivar clientes, CRUD de usuarios del sistema, tarifas, equipos, flujo de caja, contratos vencidos, cancelación/cupos de entrenador y solicitudes plus |
+| `ADMINISTRADOR` | desactivar clientes, CRUD de usuarios del sistema, tarifas, equipos, flujo de caja, contratos vencidos, cancelación/cupos de entrenador, solicitudes plus y factura EPS |
 | `ENTRENADOR`, `ADMINISTRADOR` | panel del entrenador (`/api/entrenador`) |
 | `CLIENTE`, `ADMINISTRADOR` | panel del cliente (`/api/cliente`) |
 
 ### Advertencia
 
-El token se firma con `app.jwtSecret` (variable `JWT_SECRET`) y expira en 24 h
+El token se firma con `app.jwtSecret` (variable `JWT_SECRET`) y expira en 4 h
 por defecto (`JWT_EXPIRATION_MS`). En desarrollo la clave por defecto está en
 `application.properties`, así que **no expongas el backend en red** sin
 configurar un secreto propio.
@@ -129,6 +134,13 @@ configurar un secreto propio.
 ## Endpoints
 
 Base: `/api`
+
+### Autenticación — `/auth`
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| `POST` | `/login` | público |
+| `POST` | `/registro-cliente` | público (particular mensual) |
 
 ### Clientes — `/clientes`
 
@@ -184,7 +196,10 @@ Base: `/api`
 | `PUT` | `/solicitudes-plus/{id}/aprobar` | aprueba y asigna entrenador |
 | `PUT` | `/solicitudes-plus/{id}/rechazar` | rechaza con observación |
 
-### Pagos y caja — `/pagos` (secretaría y admin)
+### Pagos y caja — `/pagos`
+
+Los pagos y la consulta de tarifas son para **secretaría y admin**; los gastos
+operativos y la factura EPS son **solo admin**.
 
 | Método | Ruta | Descripción |
 | --- | --- | --- |
@@ -192,12 +207,13 @@ Base: `/api`
 | `POST` | `/diario/{documento}` | acceso de cliente diario |
 | `POST` | `/copago-eps/{documento}` | copago de beneficiario EPS |
 | `POST` | `/plus/{documento}` | servicio de entrenador plus |
-| `POST` | `/nomina/{documento}` | pago a entrenador |
-| `POST` | `/arriendo` | gasto de arriendo |
-| `POST` | `/mantenimiento/{idEquipo}` | gasto de mantenimiento |
+| `POST` | `/nomina/{documento}` | pago a entrenador (solo admin) |
+| `POST` | `/arriendo` | gasto de arriendo (solo admin) |
+| `POST` | `/mantenimiento/{idEquipo}` | gasto de mantenimiento (solo admin) |
 | `GET` | `/gastos?fecha=AAAA-MM-DD` | gastos operativos (solo admin) |
 | `POST` | `/flujo-caja?fecha=` | consolida pagos y gastos (solo admin) |
-| `GET` | `/facturas-eps?periodo=` | factura EPS (solo admin) |
+| `GET` | `/facturas-eps` | lista facturas EPS (solo admin) |
+| `POST` | `/facturas-eps?periodo=YYYY-MM` | genera la factura consolidada del período (solo admin) |
 | `GET` | `/cliente/{documento}` | historial de pagos |
 | `PUT` | `/tarifas/{tipo}` | actualiza tarifa (solo admin) |
 
@@ -347,6 +363,12 @@ sin un entrenador activo; al aprobarla se crea la asignación `PLUS` y se marca
 - **Las contraseñas no se serializan.** `Usuario.contrasena` y
   `UsuarioSistema.contrasena` llevan `@JsonIgnore`; el login lee el campo en el
   backend, pero nunca viaja en una respuesta.
+- **Bloqueo automático**: un job horario marca como `VENCIDO` a los
+  mensuales con contrato vencido y como `BLOQUEADO` a los EPS sin copago
+  exitoso en 30 días. El ingreso mensual bloquea por contrato, no por una
+  ventana fija de 30 días.
+- **La factura EPS** se calcula desde las asistencias EPS del período y los
+  copagos exitosos; la mensualidad EPS se prorratea en 20 sesiones.
 - **Las credenciales** viven en `backend/.env`, que está en `.gitignore`.
   `backend/.env.example` documenta las variables.
 

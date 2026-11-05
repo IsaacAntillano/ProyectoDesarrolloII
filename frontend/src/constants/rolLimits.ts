@@ -1,9 +1,9 @@
 import type { UsuarioSistema } from '../services/usuarioSistemaService';
 
 export const ROL_LIMITS: Record<UsuarioSistema['rol'], number> = {
-  ADMINISTRADOR: 1,
-  SECRETARIA: 2,
-  ENTRENADOR: 3,
+  ADMINISTRADOR: 2,
+  SECRETARIA: 4,
+  ENTRENADOR: 6,
 };
 
 export function cupoDisponible(

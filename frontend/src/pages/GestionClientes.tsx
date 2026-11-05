@@ -21,11 +21,14 @@ import {
   FiXCircle,
   FiUserCheck,
   FiUserX,
+  FiLogIn,
+  FiArrowRight,
 } from 'react-icons/fi';
 import {
   type ClienteBase,
   type ActualizarClienteDTO,
   type Contrato,
+  type MigracionDTO,
   listarMensualesActivos,
   listarMensualesTodos,
   listarDiariosActivos,
@@ -46,11 +49,13 @@ import {
   buscarBeneficiarioEps,
   consultarContratoMensual,
   cancelarBeneficiarioEps,
-  asignarEntrenadorEps,
+  asignarEntrenadorCliente,
   liberarEntrenadorEps,
   getApiErrorMessage,
+  migrarDiarioAMensual,
 } from '../services/clienteService';
 import { listarUsuarios, type UsuarioSistema } from '../services/usuarioSistemaService';
+import { registrarIngreso } from '../services/secretariaService';
 import { isServerUnreachable, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
 import {
   etiqueta,
@@ -66,7 +71,7 @@ type Tab = 'mensual' | 'diario' | 'eps';
 const CUPO_ENTRENADOR = 4;
 
 interface AccionConfirmable {
-  tipo: 'inactivar' | 'reactivar' | 'liberar';
+  tipo: 'inactivar' | 'reactivar' | 'liberar' | 'ingreso';
   cliente: ClienteBase;
 }
 
@@ -94,6 +99,14 @@ export default function GestionClientes() {
   const [motivoCancelacion, setMotivoCancelacion] = useState('');
   const [asignando, setAsignando] = useState<ClienteBase | null>(null);
   const [documentoEntrenador, setDocumentoEntrenador] = useState('');
+
+  // Modal de migración diario -> mensual.
+  const [migrando, setMigrando] = useState<ClienteBase | null>(null);
+  const [migForm, setMigForm] = useState<MigracionDTO>({
+    correoElectronico: '',
+    contrasena: '',
+    tipoMembresia: 'MENSUAL',
+  });
 
   // Confirmaciones destructivas (reemplazan window.confirm).
   const [accion, setAccion] = useState<AccionConfirmable | null>(null);
@@ -218,9 +231,12 @@ export default function GestionClientes() {
         else if (tab === 'diario') await reactivarClienteDiario(c.numeroDeDocumento);
         else await reactivarBeneficiarioEps(c.numeroDeDocumento);
         toast.success(`${c.nombreCompleto} reactivado`);
-      } else {
+      } else if (accion.tipo === 'liberar') {
         await liberarEntrenadorEps(c.numeroDeDocumento);
         toast.success(`Entrenador liberado de ${c.nombreCompleto}`);
+      } else {
+        await registrarIngreso(c.numeroDeDocumento);
+        toast.success(`Ingreso registrado para ${c.nombreCompleto}`);
       }
       setAccion(null);
       cargar();
@@ -268,7 +284,7 @@ export default function GestionClientes() {
     }
     setGuardando(true);
     try {
-      await asignarEntrenadorEps(asignando.numeroDeDocumento, Number(documentoEntrenador));
+      await asignarEntrenadorCliente(asignando.numeroDeDocumento, Number(documentoEntrenador));
       toast.success(`Entrenador asignado a ${asignando.nombreCompleto}`);
       setAsignando(null);
       setDocumentoEntrenador('');
@@ -278,6 +294,43 @@ export default function GestionClientes() {
     } finally {
       setGuardando(false);
     }
+  };
+
+  const confirmarMigracion = async () => {
+    if (!migrando) return;
+    if (!migForm.correoElectronico.trim()) {
+      toast.error('El correo es obligatorio');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(migForm.correoElectronico)) {
+      toast.error('Ingresa un correo válido');
+      return;
+    }
+    if (migForm.contrasena.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    setGuardando(true);
+    try {
+      await migrarDiarioAMensual(migrando.numeroDeDocumento, migForm);
+      toast.success(`${migrando.nombreCompleto} migrado a particular mensual. Ya puede ingresar con su membresía.`);
+      setMigrando(null);
+      setTab('mensual');
+      cargar();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo migrar el cliente'));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const abrirMigracion = (c: ClienteBase) => {
+    setMigForm({
+      correoElectronico: c.correoElectronico ?? '',
+      contrasena: '',
+      tipoMembresia: 'MENSUAL',
+    });
+    setMigrando(c);
   };
 
   const epsCancelado = (c: ClienteBase) =>
@@ -426,6 +479,26 @@ export default function GestionClientes() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex flex-wrap justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setAccion({ tipo: 'ingreso', cliente: c })}
+                        className="rounded-md p-2 text-teal-600 hover:bg-teal-50 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-teal-500"
+                        aria-label={`Registrar ingreso de ${c.nombreCompleto}`}
+                        title="Registrar ingreso"
+                      >
+                        <FiLogIn aria-hidden="true" />
+                      </button>
+                      {tab === 'diario' && (
+                        <button
+                          type="button"
+                          onClick={() => abrirMigracion(c)}
+                          className="rounded-md p-2 text-indigo-600 hover:bg-indigo-50 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-indigo-500"
+                          aria-label={`Migrar a mensual a ${c.nombreCompleto}`}
+                          title="Migrar a mensual"
+                        >
+                          <FiArrowRight aria-hidden="true" />
+                        </button>
+                      )}
                       {tab === 'mensual' && (
                         <button
                           type="button"
@@ -437,7 +510,7 @@ export default function GestionClientes() {
                           <FiFileText aria-hidden="true" />
                         </button>
                       )}
-                      {tab === 'eps' && esAdmin && !epsCancelado(c) && (
+                      {esAdmin && (
                         <button
                           type="button"
                           onClick={() => {
@@ -445,8 +518,8 @@ export default function GestionClientes() {
                             setDocumentoEntrenador('');
                           }}
                           className="rounded-md p-2 text-blue-600 hover:bg-blue-50 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-blue-500"
-                          aria-label={`${c.tieneEntrenadorPermanente ? 'Reasignar' : 'Asignar'} entrenador a ${c.nombreCompleto}`}
-                          title={c.tieneEntrenadorPermanente ? 'Reasignar entrenador' : 'Asignar entrenador'}
+                          aria-label={`Asignar o cambiar el entrenador de ${c.nombreCompleto}`}
+                          title="Asignar o cambiar entrenador"
                         >
                           <FiUserCheck aria-hidden="true" />
                         </button>
@@ -685,11 +758,11 @@ export default function GestionClientes() {
         )}
       </Modal>
 
-      {/* Asignar entrenador */}
+      {/* Asignar o cambiar entrenador */}
       <Modal
         open={!!asignando}
         onClose={() => setAsignando(null)}
-        title="Asignar entrenador"
+        title="Asignar o cambiar entrenador"
         footer={
           <>
             <Button variant="secondary" onClick={() => setAsignando(null)} disabled={guardando}>
@@ -704,8 +777,9 @@ export default function GestionClientes() {
         {asignando && (
           <>
             <p className="text-sm text-gray-600">
-              Beneficiario EPS: <strong>{asignando.nombreCompleto}</strong>. Cada entrenador atiende un
-              máximo de {CUPO_ENTRENADOR} clientes activos.
+              Cliente: <strong>{asignando.nombreCompleto}</strong>. Si ya tenía un entrenador, la
+              asignación anterior se cerrará automáticamente. Cada entrenador atiende un máximo de{' '}
+              {CUPO_ENTRENADOR} clientes activos.
             </p>
             <Field label="Entrenador" htmlFor="entrenador-select" required>
               <Select
@@ -731,6 +805,65 @@ export default function GestionClientes() {
         )}
       </Modal>
 
+      {/* Migración diario -> mensual */}
+      <Modal
+        open={!!migrando}
+        onClose={() => setMigrando(null)}
+        title={migrando ? `Migrar a mensual: ${migrando.nombreCompleto}` : 'Migrar a mensual'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setMigrando(null)} disabled={guardando}>
+              Volver
+            </Button>
+            <Button type="submit" form="form-migracion" loading={guardando}>
+              Migrar cliente
+            </Button>
+          </>
+        }
+      >
+        {migrando && (
+          <form id="form-migracion" onSubmit={(e) => { e.preventDefault(); void confirmarMigracion(); }} className="grid gap-4">
+            <p className="text-sm text-gray-600">
+              Se convertirá el registro diario de <strong>{migrando.nombreCompleto}</strong> a particular
+              mensual. Su documento y historial se conservan, se genera el contrato de la mensualidad
+              elegida y se fija su contraseña de acceso.
+            </p>
+            <Field label="Tipo de membresía" htmlFor="mig-membresia" required>
+              <Select
+                id="mig-membresia"
+                value={migForm.tipoMembresia}
+                onChange={(e) => setMigForm({ ...migForm, tipoMembresia: e.target.value as MigracionDTO['tipoMembresia'] })}
+                required
+              >
+                <option value="MENSUAL">Mensual</option>
+                <option value="TRIMESTRAL">Trimestral</option>
+                <option value="SEMESTRAL">Semestral</option>
+                <option value="ANUAL">Anual</option>
+              </Select>
+            </Field>
+            <Field label="Correo electrónico" htmlFor="mig-correo" required>
+              <Input
+                id="mig-correo"
+                type="email"
+                autoComplete="email"
+                value={migForm.correoElectronico}
+                onChange={(e) => setMigForm({ ...migForm, correoElectronico: e.target.value })}
+                required
+              />
+            </Field>
+            <Field label="Contraseña" htmlFor="mig-contrasena" required help="Mínimo 6 caracteres; la usará para entrar al portal">
+              <PasswordInput
+                id="mig-contrasena"
+                autoComplete="new-password"
+                value={migForm.contrasena}
+                onChange={(e) => setMigForm({ ...migForm, contrasena: e.target.value })}
+                required
+              />
+            </Field>
+          </form>
+        )}
+      </Modal>
+
       {/* Confirmación de acciones destructivas */}
       <ConfirmDialog
         open={!!accion}
@@ -742,7 +875,9 @@ export default function GestionClientes() {
             ? 'Liberar entrenador'
             : accion?.tipo === 'reactivar'
               ? 'Reactivar cliente'
-              : 'Inactivar cliente'
+              : accion?.tipo === 'ingreso'
+                ? 'Registrar ingreso'
+                : 'Inactivar cliente'
         }
         message={
           accion ? (
@@ -759,6 +894,13 @@ export default function GestionClientes() {
                   ingresar al gimnasio.
                 </>
               )}
+              {accion.tipo === 'ingreso' && (
+                <>
+                  Se marcará la asistencia de <strong>{accion.cliente.nombreCompleto}</strong> en
+                  el gimnasio. Si pasa las validaciones (membresía activa, pago al día o sesión
+                  disponible), el ingreso quedará registrado.
+                </>
+              )}
               {accion.tipo === 'inactivar' && (
                 <>
                   <strong>{accion.cliente.nombreCompleto}</strong> quedará inactivo y no podrá
@@ -773,7 +915,9 @@ export default function GestionClientes() {
             ? 'Liberar'
             : accion?.tipo === 'reactivar'
               ? 'Reactivar'
-              : 'Inactivar'
+              : accion?.tipo === 'ingreso'
+                ? 'Registrar ingreso'
+                : 'Inactivar'
         }
       />
     </Layout>

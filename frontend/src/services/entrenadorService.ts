@@ -124,5 +124,22 @@ export const crearMetaParticular = (
   }
 ) => api.post<ApiResponse<MetaFisica>>(`/entrenador/metas/particular/${numeroDocumento}`, data).then(unwrap);
 
+// ─── Progreso y rutinas del cliente ─────────────────────────────────
+
+export interface Progreso {
+  pesoPerdido: number;
+  imcActual: number;
+  porcentajeGrasaActual: number;
+  mensaje: string;
+}
+
+/** Progreso físico de un cliente asignado a este entrenador (EF-0007). */
+export const progresoCliente = (numeroDocumento: number) =>
+  api.get<ApiResponse<Progreso>>(`/entrenador/clientes/${numeroDocumento}/progreso`).then(unwrap);
+
+/** Rutinas activas de un cliente asignado a este entrenador (GE-0008). */
+export const rutinasCliente = (numeroDocumento: number) =>
+  api.get<ApiResponse<Rutina[]>>(`/entrenador/clientes/${numeroDocumento}/rutinas`).then(unwrap);
+
 export const crearMetaEps = (numeroDocumento: number, data: { objetivoClinico: string; observacionMedica?: string }) =>
   api.post<ApiResponse<MetaFisica>>(`/entrenador/metas/eps/${numeroDocumento}`, data).then(unwrap);

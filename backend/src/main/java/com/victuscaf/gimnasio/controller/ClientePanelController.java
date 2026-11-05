@@ -33,9 +33,9 @@ import lombok.RequiredArgsConstructor;
 /**
  * Panel del cliente: su membresia, rutina, progreso e historial de ingresos.
  *
- * <p>El cliente se identifica por {@code X-Documento}. Solo puede consultar sus
- * propios datos: el documento sale del header, no de la ruta, asi que no hay
- * forma de ver el progreso de otra persona.
+ * <p>El cliente se identifica por el documento incluido en el token JWT
+ * (el principal es {@code "ROL:documento"}); no hay forma de ver el progreso
+ * de otra persona.
  *
  * <p>El rol ADMINISTRADOR tambien entra, por si necesita consultar el estado de
  * un cliente sin pasar por otro endpoint.
@@ -122,7 +122,7 @@ public class ClientePanelController {
         String documento = RolHeaderFilter.documentoActual();
         if (documento == null) {
             throw new RuntimeException(
-                    "Falta el header X-Documento: la vista debe enviar el documento del cliente");
+                    "Falta el documento del cliente en el token JWT");
         }
         try {
             return Long.parseLong(documento);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FiLogIn, FiEye, FiEyeOff } from 'react-icons/fi';
 import api from '../services/api';
@@ -59,7 +59,10 @@ export default function Login() {
       if (!axiosErr.response) {
         setError('No se pudo conectar con el servidor. Verifica que el backend esté activo (puerto 8080).');
       } else if (axiosErr.response.status === 401) {
-        setError('Documento o contraseña incorrectos. Revisa tus datos e inténtalo de nuevo.');
+        setError(
+          axiosErr.response.data?.message ||
+          'Documento o contraseña incorrectos. Revisa tus datos e inténtalo de nuevo.'
+        );
       } else {
         setError(axiosErr.response.data?.message || 'Ocurrió un error inesperado. Inténtalo de nuevo.');
       }
@@ -153,6 +156,13 @@ export default function Login() {
         >
           {cargando ? 'Ingresando...' : 'Ingresar'}
         </button>
+
+        <p className="text-center text-sm text-gray-500">
+          ¿Aún no eres cliente?{' '}
+          <Link to="/registro" className="font-medium text-blue-600 hover:text-blue-800">
+            Regístrate aquí
+          </Link>
+        </p>
 
         <details className="rounded-md border border-gray-200 px-3 py-2 text-xs text-gray-500">
           <summary className="cursor-pointer font-medium text-gray-700 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-blue-500">

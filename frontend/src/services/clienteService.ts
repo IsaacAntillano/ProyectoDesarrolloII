@@ -250,6 +250,12 @@ export const cancelarBeneficiarioEps = (numeroDocumento: number, motivo: string)
     .put<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}/cancelar`, { motivo })
     .then(unwrap);
 
+/** Asigna o cambia el entrenador de cualquier tipo de cliente (solo admin). */
+export const asignarEntrenadorCliente = (numeroDocumento: number, documentoEntrenador: number) =>
+  api
+    .put<ApiResponse<ClienteBase>>(`/clientes/${numeroDocumento}/entrenador`, { documentoEntrenador })
+    .then(unwrap);
+
 export const asignarEntrenadorEps = (numeroDocumento: number, documentoEntrenador: number) =>
   api
     .put<ApiResponse<BeneficiarioEps>>(
@@ -269,3 +275,14 @@ export const consultarContratoMensual = (numeroDocumento: number) =>
 
 export const listarContratosVencidos = () =>
   api.get<ApiResponse<ContratoVencido[]>>('/clientes/contratos/vencidos').then(unwrap);
+
+// ─── Migración diario -> mensual ────────────────────────────────────
+
+export interface MigracionDTO {
+  correoElectronico: string;
+  contrasena: string;
+  tipoMembresia: 'MENSUAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+}
+
+export const migrarDiarioAMensual = (numeroDocumento: number, data: MigracionDTO) =>
+  api.post<ApiResponse<ParticularMensual>>(`/clientes/diario/migrar/${numeroDocumento}`, data).then(unwrap);

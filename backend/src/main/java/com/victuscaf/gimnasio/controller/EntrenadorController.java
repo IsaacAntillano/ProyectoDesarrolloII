@@ -34,9 +34,9 @@ import lombok.RequiredArgsConstructor;
 /**
  * Panel del entrenador: horarios, rutinas, evaluacion fisica y metas.
  *
- * <p>El entrenador se identifica por el header {@code X-Documento} (lo inyecta
- * la vista desde {@code localStorage['user']}), no por un parametro de ruta:
- * asi una llamada no puede hacerse en nombre de otro entrenador.
+ * <p>El entrenador se identifica desde el token JWT (el principal es
+ * {@code "ROL:documento"}), no por un parámetro de ruta: así una llamada no
+ * puede hacerse en nombre de otro entrenador.
  */
 @RestController
 @RequestMapping("/api/entrenador")
@@ -139,6 +139,21 @@ public class EntrenadorController {
                 evaluacionService.consultarHistorial(numeroDocumento)));
     }
 
+    /** Progreso físico del cliente (EF-0007). Solo si está asignado a este entrenador. */
+    @GetMapping("/clientes/{numeroDocumento}/progreso")
+    public ResponseEntity<ApiResponse<com.victuscaf.gimnasio.dto.ProgresoDTO>> progresoCliente(
+            @PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Progreso físico del cliente",
+                entrenadorService.consultarProgresoDeCliente(documentoActual(), numeroDocumento)));
+    }
+
+    /** Rutinas activas del cliente (GE-0008). Solo si está asignado a este entrenador. */
+    @GetMapping("/clientes/{numeroDocumento}/rutinas")
+    public ResponseEntity<ApiResponse<List<Rutina>>> rutinasCliente(@PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Rutinas activas del cliente",
+                entrenadorService.listarRutinasDeCliente(documentoActual(), numeroDocumento)));
+    }
+
     // ─── Metas ───────────────────────────────────────────────────────
 
     @PostMapping("/metas/particular/{numeroDocumento}")
@@ -159,13 +174,13 @@ public class EntrenadorController {
 
     /**
      * Documento del entrenador autenticado, leido del principal que arma
-     * {@link RolHeaderFilter} a partir de {@code X-Documento}.
+     * {@code JwtAuthFilter} a partir del token JWT.
      */
     private Long documentoActual() {
         String documento = RolHeaderFilter.documentoActual();
         if (documento == null) {
             throw new RuntimeException(
-                    "Falta el header X-Documento: la vista debe enviar el documento del entrenador");
+                    "Falta el documento del entrenador en el token JWT");
         }
         try {
             return Long.parseLong(documento);

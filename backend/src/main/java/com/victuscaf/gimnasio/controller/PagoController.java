@@ -86,8 +86,10 @@ public class PagoController {
     }
 
     // ─── Gastos operativos ───────────────────────────────────────────
+    // PA-0005/6/7: los gastos operativos los registra el administrador, no la secretaría.
 
     @PostMapping("/nomina/{numeroDocumento}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<GastoOperativo>> registrarNomina(
             @PathVariable Long numeroDocumento,
             @Valid @RequestBody GastoDTO dto) {
@@ -96,12 +98,14 @@ public class PagoController {
     }
 
     @PostMapping("/arriendo")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<GastoOperativo>> registrarArriendo(@Valid @RequestBody GastoDTO dto) {
         return ResponseEntity.ok(ApiResponse.success("Pago de arriendo registrado",
                 pagoService.registrarPagoArriendo(dto.valor(), dto.descripcion())));
     }
 
     @PostMapping("/mantenimiento/{idEquipo}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<GastoOperativo>> registrarMantenimiento(
             @PathVariable Long idEquipo,
             @Valid @RequestBody GastoDTO dto) {
@@ -121,11 +125,20 @@ public class PagoController {
                 pagoService.generarFlujoCajaDiario(dia)));
     }
 
-    @GetMapping("/facturas-eps")
+    /** Genera la factura mensual EPS (PA-0009). Período {@code YYYY-MM}. */
+    @PostMapping("/facturas-eps")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<FacturaEps>> generarFacturaEps(@RequestParam String periodo) {
         return ResponseEntity.ok(ApiResponse.success("Factura EPS generada",
                 pagoService.generarFacturaEPS(periodo)));
+    }
+
+    /** Facturas EPS ya generadas, más recientes primero. */
+    @GetMapping("/facturas-eps")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<List<FacturaEps>>> listarFacturasEps() {
+        return ResponseEntity.ok(ApiResponse.success("Facturas EPS",
+                pagoService.listarFacturasEPS()));
     }
 
     @PutMapping("/tarifas/{tipo}")

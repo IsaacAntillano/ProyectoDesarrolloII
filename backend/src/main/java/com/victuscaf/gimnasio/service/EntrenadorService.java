@@ -20,6 +20,7 @@ public class EntrenadorService {
     private final HorarioEntrenadorRepository horarioRepository;
     private final MensajeRepository mensajeRepository;
     private final AsignacionEntrenadorService asignacionService;
+    private final EvaluacionService evaluacionService;
 
     // CRUD Entrenador (solo admin)
     @Transactional
@@ -43,7 +44,7 @@ public class EntrenadorService {
     // Horarios
     /**
      * El parametro es el numero de documento del entrenador, que es lo que
-     * viaja en el header X-Documento (no el id de base de datos).
+     * (el documento viaja en el token JWT, no el id de base de datos).
      */
     @Transactional
     public HorarioEntrenador crearHorario(Long documentoEntrenador, HorarioDTO dto) {
@@ -197,5 +198,43 @@ public class EntrenadorService {
     public List<Rutina> listarRutinas(Long documentoEntrenador) {
         Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
         return rutinaRepository.findByEntrenador(entrenador);
+    }
+
+    /** Progreso físico de un cliente asignado al entrenador (EF-0007). */
+    @Transactional(readOnly = true)
+    public ProgresoDTO consultarProgresoDeCliente(Long documentoEntrenador, Long numeroDocumento) {
+        Usuario cliente = verificarAsignacionActiva(documentoEntrenador, numeroDocumento);
+        return evaluacionService.consultarProgreso(cliente.getNumeroDeDocumento());
+    }
+
+    /** Rutinas activas de un cliente asignado al entrenador (GE-0008). */
+    @Transactional(readOnly = true)
+    public List<Rutina> listarRutinasDeCliente(Long documentoEntrenador, Long numeroDocumento) {
+        Usuario cliente = verificarAsignacionActiva(documentoEntrenador, numeroDocumento);
+        return rutinaRepository.findByUsuarioAndActivaTrue(cliente);
+    }
+
+    /**
+     * Verifica que, si quien llama es un entrenador, el cliente tenga una
+     * asignación activa con él. El rol {@code ADMINISTRADOR} (su documento no
+     * corresponde a ningún entrenador) puede consultar a cualquiera.
+     */
+    private Usuario verificarAsignacionActiva(Long documentoEntrenador, Long numeroDocumento) {
+        Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        var entrenadorOpt = entrenadorRepository.findByNumeroDeDocumento(documentoEntrenador);
+        if (entrenadorOpt.isEmpty()) {
+            // Quien llama no es un entrenador (administrador): acceso libre.
+            return cliente;
+        }
+        Entrenador entrenador = entrenadorOpt.get();
+        AsignacionEntrenador asignacion = asignacionService.asignacionActiva(cliente)
+                .orElseThrow(() -> new RuntimeException("El cliente no tiene un entrenador asignado"));
+        if (asignacion.getEntrenador() == null
+                || !asignacion.getEntrenador().getIdUsuarioSistema()
+                        .equals(entrenador.getIdUsuarioSistema())) {
+            throw new RuntimeException("El cliente no esta asignado a ti");
+        }
+        return cliente;
     }
 }

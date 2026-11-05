@@ -17,16 +17,13 @@ monorepo con vista y backend.
 
 ## Arquitectura
 
-- **Sin autenticación.** La entrada es un selector de rol
-  (`SeleccionarRol.tsx`): guarda `localStorage['user'] =
-  { id: 0, numeroDocumento: 0, nombreCompleto, rol }`. No hay token.
-- **Autorización por header.** `api.ts` manda `X-Rol` y `X-Documento`;
-  `RolHeaderFilter` en el backend construye el `SecurityContext`. Los
-  `@PreAuthorize` de los controllers deciden el acceso. **No es
-  autenticación**: solo desarrollo local.
-- **Identidad del usuario.** `SeleccionarRol` pide rol + número de documento y
-  los guarda en `localStorage`. El documento permite que el backend sepa a qué
-  entrenador o cliente pertenece cada llamada.
+- **Autenticación JWT.** `POST /api/auth/login` devuelve el token; el
+  frontend manda `Authorization: Bearer <token>`. `JwtAuthFilter` arma el
+  `SecurityContext` y los `@PreAuthorize` deciden el acceso.
+- **Registro público.** `POST /api/auth/registro-cliente` crea un particular
+  mensual desde `/registro`.
+- **Identidad del usuario.** El documento viaja en el token y los services lo
+  leen del principal armado por `JwtAuthFilter`.
 - **Datos**: Vite proxy `/api` → `http://localhost:8080`. MariaDB debe escuchar
   en 3306 por TCP.
 - **Base de datos**: sin migraciones. `ddl-auto=update` genera el esquema desde
@@ -58,9 +55,9 @@ monorepo con vista y backend.
 
 ## Estado actual (resumen)
 
-Ver [[estado-proyecto]]. Lo más reciente: monorepo con el backend de vuelta,
-autorización por header en lugar de JWT, servicios de cliente fusionados,
-`AdminController` agregado y documentación reescrita.
+Ver [[estado-proyecto]]. Lo más reciente: cierre de brechas de las HU,
+autenticación JWT definitiva, factura EPS, auto-registro y bloqueo
+automático.
 
 ## Convención con el asistente
 

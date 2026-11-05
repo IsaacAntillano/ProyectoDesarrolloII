@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.victuscaf.gimnasio.dto.ApiResponse;
+import com.victuscaf.gimnasio.dto.ClienteMensualDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,14 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
+
+    /** Registro público de un particular mensual (CO-0001). Sin autenticación. */
+    @PostMapping("/registro-cliente")
+    public ResponseEntity<ApiResponse<Void>> registroCliente(@Valid @RequestBody ClienteMensualDTO dto) {
+        authService.registrarClientePublico(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Registro completado. Ya puedes iniciar sesión.", null));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest credenciales) {

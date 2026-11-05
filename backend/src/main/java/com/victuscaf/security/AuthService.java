@@ -10,6 +10,9 @@ import com.victuscaf.gimnasio.repository.UsuarioSistemaRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import com.victuscaf.gimnasio.dto.ClienteMensualDTO;
+import com.victuscaf.gimnasio.service.ClienteService;
+
 /**
  * Autentica por documento: primero busca en los usuarios del sistema
  * (admin/secretaria/entrenador), luego en los clientes (mensual/diario/EPS).
@@ -23,6 +26,7 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ClienteService clienteService;
 
     public LoginResponse autenticar(LoginRequest credenciales) {
         String raw = credenciales.contrasena();
@@ -36,6 +40,9 @@ public class AuthService {
             UsuarioSistema u = sysUser.get();
             if (!passwordEncoder.matches(raw, u.getContrasena())) {
                 return LoginResponse.fallido("Credenciales invalidas");
+            }
+            if (u.getEstado() == null || !u.getEstado()) {
+                return LoginResponse.fallido("Usuario inactivo. Contacte al administrador.");
             }
             String rol = u.getRol().name();
             return LoginResponse.ok(jwtTokenProvider.generarToken(String.valueOf(u.getNumeroDeDocumento()), rol, u.getNombreCompleto()),
@@ -54,11 +61,26 @@ public class AuthService {
             if (!ok) {
                 return LoginResponse.fallido("Credenciales invalidas");
             }
+            if (u.getEstado() == null || !u.getEstado()) {
+                return LoginResponse.fallido("Usuario inactivo. Contacte a la secretaria.");
+            }
             return LoginResponse.ok(jwtTokenProvider.generarToken(String.valueOf(u.getNumeroDeDocumento()), "CLIENTE", u.getNombreCompleto()),
                     "CLIENTE", String.valueOf(u.getNumeroDeDocumento()), u.getNombreCompleto());
         }
 
         return LoginResponse.fallido("Usuario no encontrado");
+    }
+
+    /**
+     * Registro público de un particular mensual (CO-0001).
+     *
+     * <p>Reutiliza la misma lógica que la secretaría: crea el usuario, genera
+     * el contrato con el tipo de membresía elegido y asigna el entrenador de
+     * primer mes. Si el documento ya existe, lanza una RuntimeException que el
+     * advice traduce a 400.
+     */
+    public void registrarClientePublico(ClienteMensualDTO dto) {
+        clienteService.registrarParticularMensual(dto);
     }
 
     private Long parsearDocumento(String texto) {

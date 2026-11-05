@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FiLogOut, FiUsers, FiUserPlus, FiHome, FiMenu, FiX, FiDollarSign, FiTrendingDown, FiAlertTriangle, FiUserCheck } from 'react-icons/fi';
+import { FiLogOut, FiUsers, FiUserPlus, FiHome, FiMenu, FiX, FiDollarSign, FiTrendingDown, FiAlertTriangle, FiUserCheck, FiFileText } from 'react-icons/fi';
 
 interface LayoutProps {
   children: ReactNode;
@@ -22,6 +22,7 @@ const NAV_POR_ROL: Record<string, NavItem[]> = {
     { to: '/gastos-operativos', label: 'Gastos Operativos', icon: FiTrendingDown },
     { to: '/contratos-vencidos', label: 'Contratos Vencidos', icon: FiAlertTriangle },
     { to: '/solicitudes-plus', label: 'Solicitudes Plus', icon: FiUserCheck },
+    { to: '/factura-eps', label: 'Factura EPS', icon: FiFileText },
   ],
   SECRETARIA: [
     { to: '/secretaria', label: 'Inicio', icon: FiHome },

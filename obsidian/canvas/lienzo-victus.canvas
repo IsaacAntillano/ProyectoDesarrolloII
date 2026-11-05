@@ -1,1622 +1,1792 @@
 {
-	"nodes": [
-		{
-			"id": "title",
-			"type": "text",
-			"text": "# VICTUS-CAF\n\nLienzo maestro del proyecto · crece con cada sesión (infinito)",
-			"x": -380,
-			"y": -1520,
-			"width": 760,
-			"height": 80,
-			"color": "6"
-		},
-		{
-			"id": "n-index",
-			"type": "file",
-			"file": "context/index.md",
-			"x": -900,
-			"y": -1520,
-			"width": 440,
-			"height": 80,
-			"color": "4"
-		},
-		{
-			"id": "n-readme",
-			"type": "file",
-			"file": "Readme.md",
-			"x": 380,
-			"y": -1520,
-			"width": 440,
-			"height": 80,
-			"color": "4"
-		},
-		{
-			"id": "g-objetivo",
-			"type": "group",
-			"label": "Objetivo",
-			"x": -1000,
-			"y": -1390,
-			"width": 2000,
-			"height": 170,
-			"color": "5"
-		},
-		{
-			"id": "n-objetivo",
-			"type": "text",
-			"text": "**Objetivo**\nSistema de gestión de gimnasio: clientes por tipo (diario / EPS / mensual), pagos y facturación EPS, inventario y mantenimiento, evaluación física, entrenadores y notificaciones, con control de acceso por roles.",
-			"x": -960,
-			"y": -1355,
-			"width": 1920,
-			"height": 120,
-			"color": "5"
-		},
-		{
-			"id": "g-backend",
-			"type": "group",
-			"label": "Backend · Spring Boot 3.2.5 · Java 21 · Maven",
-			"x": -1000,
-			"y": -1150,
-			"width": 970,
-			"height": 1080,
-			"color": "5"
-		},
-		{
-			"id": "n-be-titulo",
-			"type": "text",
-			"text": "**Backend** `victus-caf-backend/`\npaquete base: `com.victuscaf.modules.client.{controller, service, repository, models, dto, exception}` + `com.victuscaf.security`",
-			"x": -960,
-			"y": -1115,
-			"width": 890,
-			"height": 75
-		},
-		{
-			"id": "c-acceso",
-			"type": "text",
-			"text": "**AccesoController**\n`…/client/controller/AccesoController.java`",
-			"x": -960,
-			"y": -1020,
-			"width": 160,
-			"height": 95
-		},
-		{
-			"id": "c-admin",
-			"type": "text",
-			"text": "**AdminController**\n`…/client/controller/AdminController.java`",
-			"x": -770,
-			"y": -1020,
-			"width": 160,
-			"height": 95
-		},
-		{
-			"id": "c-cliente",
-			"type": "text",
-			"text": "**ClienteController**\n`…/client/controller/ClienteController.java`",
-			"x": -580,
-			"y": -1020,
-			"width": 160,
-			"height": 95
-		},
-		{
-			"id": "c-usuario",
-			"type": "text",
-			"text": "**UsuarioSistemaController**\n`…/client/controller/UsuarioSistemaController.java`",
-			"x": -390,
-			"y": -1020,
-			"width": 160,
-			"height": 95
-		},
-		{
-			"id": "n-be-services",
-			"type": "text",
-			"text": "Services (`…/client/service/`)",
-			"x": -960,
-			"y": -900,
-			"width": 400,
-			"height": 35
-		},
-		{
-			"id": "s-acceso",
-			"type": "text",
-			"text": "**AccesoService**\n`AccesoService.java`",
-			"x": -960,
-			"y": -850,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-admin",
-			"type": "text",
-			"text": "**AdminService**\n`AdminService.java`",
-			"x": -770,
-			"y": -850,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-cliente",
-			"type": "text",
-			"text": "**ClienteService**\n`ClienteService.java`",
-			"x": -580,
-			"y": -850,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-entrenador",
-			"type": "text",
-			"text": "**EntrenadorService**\n`EntrenadorService.java`",
-			"x": -390,
-			"y": -850,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-evaluacion",
-			"type": "text",
-			"text": "**EvaluacionService**\n`EvaluacionService.java`",
-			"x": -200,
-			"y": -850,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-inventario",
-			"type": "text",
-			"text": "**InventarioService**\n`InventarioService.java`",
-			"x": -960,
-			"y": -755,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-notificacion",
-			"type": "text",
-			"text": "**NotificacionService**\n`NotificacionService.java`",
-			"x": -770,
-			"y": -755,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-pago",
-			"type": "text",
-			"text": "**PagoService**\n`PagoService.java`",
-			"x": -580,
-			"y": -755,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-seguridad",
-			"type": "text",
-			"text": "**SeguridadService**\n`SeguridadService.java`",
-			"x": -390,
-			"y": -755,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "s-usuario",
-			"type": "text",
-			"text": "**UsuarioSistemaService**\n`UsuarioSistemaService.java`",
-			"x": -200,
-			"y": -755,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "n-be-repo",
-			"type": "text",
-			"text": "Repositories (`…/client/repository/`)",
-			"x": -960,
-			"y": -660,
-			"width": 400,
-			"height": 35
-		},
-		{
-			"id": "r-usuario",
-			"type": "text",
-			"text": "**UsuarioRepository**\n`UsuarioRepository.java`",
-			"x": -960,
-			"y": -610,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "r-tarifa",
-			"type": "text",
-			"text": "**TarifaRepository**\n`TarifaRepository.java`",
-			"x": -770,
-			"y": -610,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "r-pago",
-			"type": "text",
-			"text": "**PagoRepository**\n`PagoRepository.java`",
-			"x": -580,
-			"y": -610,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "r-asistencia",
-			"type": "text",
-			"text": "**AsistenciaRepository**\n`AsistenciaRepository.java`",
-			"x": -390,
-			"y": -610,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "r-equipo",
-			"type": "text",
-			"text": "**EquipoRepository**\n`EquipoRepository.java`",
-			"x": -200,
-			"y": -610,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "n-be-model",
-			"type": "text",
-			"text": "Models (`…/client/models/`, 30+ entidades)",
-			"x": -960,
-			"y": -520,
-			"width": 400,
-			"height": 35
-		},
-		{
-			"id": "m-usuario",
-			"type": "text",
-			"text": "**Usuario**\n`Usuario.java`",
-			"x": -960,
-			"y": -470,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "m-contrato",
-			"type": "text",
-			"text": "**Contrato**\n`Contrato.java`",
-			"x": -770,
-			"y": -470,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "m-pago",
-			"type": "text",
-			"text": "**Pago**\n`Pago.java`",
-			"x": -580,
-			"y": -470,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "m-asistencia",
-			"type": "text",
-			"text": "**Asistencia**\n`Asistencia.java`",
-			"x": -390,
-			"y": -470,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "m-factura",
-			"type": "text",
-			"text": "**FacturaEps**\n`FacturaEps.java`",
-			"x": -200,
-			"y": -470,
-			"width": 160,
-			"height": 70
-		},
-		{
-			"id": "n-be-extra",
-			"type": "text",
-			"text": "**dto/** (18 DTOs: `ApiResponse`, `TarifaDTO`, `ProgresoDTO`, `RegistroPagoDTO`, …)\n**exception/** · `GlobalExceptionHandler`\nRelaciones JPA bidireccionales → `@JsonIgnore` para evitar recursión infinita de Jackson",
-			"x": -960,
-			"y": -370,
-			"width": 890,
-			"height": 120
-		},
-		{
-			"id": "g-frontend",
-			"type": "group",
-			"label": "Frontend · React 19 · Vite · TypeScript · Tailwind v4",
-			"x": 0,
-			"y": -1150,
-			"width": 1000,
-			"height": 780,
-			"color": "5"
-		},
-		{
-			"id": "n-fe-titulo",
-			"type": "text",
-			"text": "**Frontend** `victus-caf-frontend/`\nVite proxya /api → localhost:8080 · auth en localStorage",
-			"x": 40,
-			"y": -1115,
-			"width": 920,
-			"height": 70
-		},
-		{
-			"id": "n-fe-pages",
-			"type": "text",
-			"text": "Pages (`src/pages/`)",
-			"x": 40,
-			"y": -1025,
-			"width": 600,
-			"height": 35
-		},
-		{
-			"id": "p-login",
-			"type": "text",
-			"text": "**Login**\n`Login.tsx`",
-			"x": 40,
-			"y": -975,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "p-cli",
-			"type": "text",
-			"text": "**ClienteDashboard**\n`ClienteDashboard.tsx`",
-			"x": 220,
-			"y": -975,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "p-admin",
-			"type": "text",
-			"text": "**AdminDashboard**\n`AdminDashboard.tsx`",
-			"x": 400,
-			"y": -975,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "p-sec",
-			"type": "text",
-			"text": "**SecretariaDashboard**\n`SecretariaDashboard.tsx`",
-			"x": 580,
-			"y": -975,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "p-ent",
-			"type": "text",
-			"text": "**EntrenadorDashboard**\n`EntrenadorDashboard.tsx`",
-			"x": 760,
-			"y": -975,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "p-gestion",
-			"type": "text",
-			"text": "**GestionClientes**\n`GestionClientes.tsx`",
-			"x": 40,
-			"y": -880,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "p-diario",
-			"type": "text",
-			"text": "**RegistrarClienteDiario**\n`RegistrarClienteDiario.tsx`",
-			"x": 220,
-			"y": -880,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "p-eps",
-			"type": "text",
-			"text": "**RegistrarClienteEps**\n`RegistrarClienteEps.tsx`",
-			"x": 400,
-			"y": -880,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "p-mensual",
-			"type": "text",
-			"text": "**RegistrarClienteMensual**\n`RegistrarClienteMensual.tsx`",
-			"x": 580,
-			"y": -880,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "n-fe-comp",
-			"type": "text",
-			"text": "Componentes y servicios (`src/components/`, `src/services/`)",
-			"x": 40,
-			"y": -785,
-			"width": 700,
-			"height": 35
-		},
-		{
-			"id": "f-layout",
-			"type": "text",
-			"text": "**Layout**\n`components/Layout.tsx`",
-			"x": 40,
-			"y": -740,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "f-priv",
-			"type": "text",
-			"text": "**PrivateRoute**\n`components/PrivateRoute.tsx` (allowedRoles)",
-			"x": 220,
-			"y": -740,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "f-api",
-			"type": "text",
-			"text": "**api.ts**\n`services/api.ts` (interceptor Bearer JWT)",
-			"x": 400,
-			"y": -740,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "f-roles",
-			"type": "text",
-			"text": "**rolLimits**\n`constants/rolLimits.ts`",
-			"x": 580,
-			"y": -740,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "f-admin-svc",
-			"type": "text",
-			"text": "**adminService**\n`services/adminService.ts`",
-			"x": 40,
-			"y": -645,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "f-sec-svc",
-			"type": "text",
-			"text": "**secretariaService**\n`services/secretariaService.ts`",
-			"x": 220,
-			"y": -645,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "f-usuario-svc",
-			"type": "text",
-			"text": "**usuarioSistemaService**\n`services/usuarioSistemaService.ts`",
-			"x": 400,
-			"y": -645,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "f-particular-svc",
-			"type": "text",
-			"text": "**clienteParticularService**\n`services/clienteParticularService.ts`",
-			"x": 580,
-			"y": -645,
-			"width": 160,
-			"height": 75
-		},
-		{
-			"id": "n-fe-note",
-			"type": "text",
-			"text": "`App.tsx` → router con basename `import.meta.env.BASE_URL` = `/Sistema-PMS-victus-caf/` · auth state en `localStorage` (keys `token` y `user`) · `PrivateRoute` protege por `allowedRoles`",
-			"x": 40,
-			"y": -555,
-			"width": 920,
-			"height": 75
-		},
-		{
-			"id": "g-seguridad",
-			"type": "group",
-			"label": "Seguridad y autenticación",
-			"x": -1000,
-			"y": -60,
-			"width": 970,
-			"height": 320,
-			"color": "6"
-		},
-		{
-			"id": "n-sec-tit",
-			"type": "text",
-			"text": "**Seguridad** `com.victuscaf.security`\nSolo `POST /api/auth/login` es pública · el resto exige `Authorization: Bearer <JWT>`",
-			"x": -960,
-			"y": -25,
-			"width": 890,
-			"height": 60
-		},
-		{
-			"id": "a-auth",
-			"type": "text",
-			"text": "**AuthController**\n`security/AuthController.java`",
-			"x": -960,
-			"y": 50,
-			"width": 170,
-			"height": 80
-		},
-		{
-			"id": "a-config",
-			"type": "text",
-			"text": "**SecurityConfig**\n`security/SecurityConfig.java`",
-			"x": -770,
-			"y": 50,
-			"width": 170,
-			"height": 80
-		},
-		{
-			"id": "a-jwt",
-			"type": "text",
-			"text": "**JwtUtils**\n`security/JwtUtils.java`",
-			"x": -580,
-			"y": 50,
-			"width": 170,
-			"height": 80
-		},
-		{
-			"id": "a-filter",
-			"type": "text",
-			"text": "**JwtAuthTokenFilter**\n`security/JwtAuthTokenFilter.java`",
-			"x": -390,
-			"y": 50,
-			"width": 170,
-			"height": 80
-		},
-		{
-			"id": "n-sec-roles",
-			"type": "text",
-			"text": "Roles: `ADMINISTRADOR` · `SECRETARIA` · `ENTRENADOR` · `CLIENTE`\nChequeo con Spring `@PreAuthorize` · contraseñas BCrypt (sin seed de admin → generar hash con `GenerarHash.java`)",
-			"x": -960,
-			"y": 160,
-			"width": 890,
-			"height": 90
-		},
-		{
-			"id": "g-modulos",
-			"type": "group",
-			"label": "Módulos / entregables",
-			"x": 0,
-			"y": -60,
-			"width": 1000,
-			"height": 320,
-			"color": "4"
-		},
-		{
-			"id": "n-mod-tit",
-			"type": "text",
-			"text": "Features del sistema (clientes por tipo, pagos, inventario…)",
-			"x": 40,
-			"y": -25,
-			"width": 920,
-			"height": 60
-		},
-		{
-			"id": "mo-auth",
-			"type": "text",
-			"text": "Autenticación y roles",
-			"x": 40,
-			"y": 50,
-			"width": 210,
-			"height": 95,
-			"color": "4"
-		},
-		{
-			"id": "mo-clientes",
-			"type": "text",
-			"text": "Clientes: diario · EPS · mensual",
-			"x": 285,
-			"y": 50,
-			"width": 210,
-			"height": 95,
-			"color": "4"
-		},
-		{
-			"id": "mo-pagos",
-			"type": "text",
-			"text": "Pagos y facturación EPS",
-			"x": 530,
-			"y": 50,
-			"width": 210,
-			"height": 95,
-			"color": "4"
-		},
-		{
-			"id": "mo-entrenadores",
-			"type": "text",
-			"text": "Entrenadores y horarios",
-			"x": 775,
-			"y": 50,
-			"width": 210,
-			"height": 95,
-			"color": "4"
-		},
-		{
-			"id": "mo-evaluacion",
-			"type": "text",
-			"text": "Evaluación física y medidas",
-			"x": 40,
-			"y": 170,
-			"width": 210,
-			"height": 95,
-			"color": "4"
-		},
-		{
-			"id": "mo-inventario",
-			"type": "text",
-			"text": "Inventario · equipos · mantenimiento",
-			"x": 285,
-			"y": 170,
-			"width": 210,
-			"height": 95,
-			"color": "4"
-		},
-		{
-			"id": "mo-contratos",
-			"type": "text",
-			"text": "Contratos y remisiones",
-			"x": 530,
-			"y": 170,
-			"width": 210,
-			"height": 95,
-			"color": "4"
-		},
-		{
-			"id": "mo-notis",
-			"type": "text",
-			"text": "Notificaciones y mensajes",
-			"x": 775,
-			"y": 170,
-			"width": 210,
-			"height": 95,
-			"color": "4"
-		},
-		{
-			"id": "g-estado",
-			"type": "group",
-			"label": "Estado y progreso",
-			"x": -1000,
-			"y": 280,
-			"width": 2000,
-			"height": 280,
-			"color": "3"
-		},
-		{
-			"id": "n-estado-tit",
-			"type": "text",
-			"text": "Estado y progreso · sesión 2026-09-15",
-			"x": -960,
-			"y": 315,
-			"width": 600,
-			"height": 40
-		},
-		{
-			"id": "n-wip",
-			"type": "text",
-			"text": "**WIP**\n- Capa de iteraciones para la secretaria (commit `92e8580`)\n- Pulido de funcionalidades\n- Sin seed de admin (hash BCrypt pendiente)",
-			"x": -960,
-			"y": 365,
-			"width": 590,
-			"height": 110,
-			"color": "3"
-		},
-		{
-			"id": "n-next",
-			"type": "text",
-			"text": "**Próximos pasos**\n- Definir próximas features con el equipo\n- Validar `../mvnw -q compile` y `npm run lint/build`\n- Mantener al día vault + lienzo",
-			"x": -320,
-			"y": 365,
-			"width": 590,
-			"height": 110,
-			"color": "4"
-		},
-		{
-			"id": "n-lastcommit",
-			"type": "text",
-			"text": "**Último commit**\n`92e8580` — mejoras, capa de iteraciones para la secretaria\n19 commits · mensajes en español",
-			"x": 320,
-			"y": 365,
-			"width": 590,
-			"height": 110,
-			"color": "4"
-		},
-		{
-			"id": "n-log",
-			"type": "text",
-			"text": "Convención: al iniciar sesión leer `context/index.md` + este lienzo · al cerrar actualizar `estado-proyecto.md`, `decisiones.md` y **agregar** nodos/aristas aquí (nunca borrar)",
-			"x": -960,
-			"y": 500,
-			"width": 1880,
-			"height": 40
-		},
-		{
-			"id": "g-sesion-actual",
-			"type": "group",
-			"label": "Sesión 2026-09-15 · vista MVC sin JWT",
-			"x": -1000,
-			"y": 620,
-			"width": 2000,
-			"height": 330,
-			"color": "3"
-		},
-		{
-			"id": "n-actual-tit",
-			"type": "text",
-			"text": "**Estado tras la sesión del 2026-09-15**\nEl repo pasó a ser solo la **vista (MVC)**; el login se reemplazó por un **selector de rol** y se eliminó todo el protocolo JWT de la vista.",
-			"x": -960,
-			"y": 655,
-			"width": 1920,
-			"height": 60,
-			"color": "3"
-		},
-		{
-			"id": "n-vista-mvc",
-			"type": "text",
-			"text": "**Repositorio actual = vista**\n`victus-caf-frontend/` es la vista del MVC. El backend Spring Boot fue **retirado del workspace** (solo en git history) y se consume por API real vía `/api` → `:8080`. Residuos raíz (`mvnw`, `BcryptGen.java`…) se ignoran.",
-			"x": -960,
-			"y": 730,
-			"width": 590,
-			"height": 110,
-			"color": "3"
-		},
-		{
-			"id": "n-sin-jwt",
-			"type": "text",
-			"text": "**Sin JWT en la vista**\n`Login.tsx` eliminado → `SeleccionarRol.tsx` (ruta `/`). Guarda `localStorage['user'] = { id: 0, numeroDocumento: 0, nombreCompleto, rol }`; no existe `token`. `PrivateRoute` redirige a `/`; `Layout` cierra sesión limpiando `localStorage`.",
-			"x": -330,
-			"y": 730,
-			"width": 590,
-			"height": 110,
-			"color": "3"
-		},
-		{
-			"id": "p-selector",
-			"type": "text",
-			"text": "**SeleccionarRol**\n`pages/SeleccionarRol.tsx` · 4 tarjetas de rol → `/admin|/secretaria|/entrenador|/cliente`",
-			"x": 300,
-			"y": 730,
-			"width": 590,
-			"height": 110,
-			"color": "3"
-		},
-		{
-			"id": "n-bugfix",
-			"type": "text",
-			"text": "**Bugfixes de la sesión**\n- `currentAdminId` en `AdminDashboard` (leía `idUsuarioSistema`; sin `if (!localStorage)`)\n- Activar/desactivar clientes **diario** y **EPS** en `SecretariaDashboard` (confirm + actualización de estado)\n- Endpoint único `POST /api/acceso/registrar-ingreso` con `{ numeroDocumento }`\n- `apiTypes.ts` (`ApiResponse`/`unwrap`) y `apiError.ts` (`getApiErrorMessage`) compartidos",
-			"x": -960,
-			"y": 870,
-			"width": 1920,
-			"height": 100,
-			"color": "4"
-		},
-		{
-			"id": "s2026-10-07",
-			"type": "text",
-			"text": "# SESIÓN 2026-10-07\n\n## Monorepo + backend revivido",
-			"x": 1200,
-			"y": -1520,
-			"width": 620,
-			"height": 60,
-			"color": "4"
-		},
-		{
-			"id": "n-monorepo",
-			"type": "text",
-			"text": "**Monorepo**\nvictus-caf/\n├── frontend/  (antes victus-caf-frontend/)\n└── backend/   (revivido de git history)",
-			"x": 1200,
-			"y": -1440,
-			"width": 300,
-			"height": 110,
-			"color": "5"
-		},
-		{
-			"id": "n-backend",
-			"type": "text",
-			"text": "**Backend**\nSpring Boot 3.2.5 · Java 21\n108 clases bajo com.victuscaf.gimnasio\nLombok 1.18.48 (JDK 27)",
-			"x": 1530,
-			"y": -1440,
-			"width": 300,
-			"height": 110,
-			"color": "5"
-		},
-		{
-			"id": "n-auth",
-			"type": "text",
-			"text": "**Autorización por header**\nfrontend manda X-Rol → RolHeaderFilter\n⚠ NO es autenticación, solo local",
-			"x": 1200,
-			"y": -1300,
-			"width": 300,
-			"height": 110,
-			"color": "3"
-		},
-		{
-			"id": "n-admin",
-			"type": "text",
-			"text": "**AdminController (nuevo)**\n/api/admin: tarifas · equipos · flujo de caja\n3 métodos de service nuevos",
-			"x": 1530,
-			"y": -1300,
-			"width": 300,
-			"height": 110,
-			"color": "1"
-		},
-		{
-			"id": "n-fusion",
-			"type": "text",
-			"text": "**Servicios fusionados**\nclienteService.ts + clienteParticularService.ts\n→ un único clienteService.ts",
-			"x": 1200,
-			"y": -1160,
-			"width": 300,
-			"height": 110,
-			"color": "2"
-		},
-		{
-			"id": "n-nombres",
-			"type": "text",
-			"text": "**Nombres saneados**\ncom.victuscaf.modules.client → .gimnasio\nBeneficiarioEPSDTO → BeneficiarioEpsDTO\nendpoint debug eliminado (sin auth)",
-			"x": 1530,
-			"y": -1160,
-			"width": 300,
-			"height": 110,
-			"color": "2"
-		},
-		{
-			"id": "n-docs",
-			"type": "text",
-			"text": "**Documentación**\nReadme.md y AGENTS.md reescritos\nvault actualizado · canvas nodo corregido",
-			"x": 1200,
-			"y": -1020,
-			"width": 620,
-			"height": 70,
-			"color": "4"
-		},
-		{
-			"id": "n-pagos",
-			"type": "text",
-			"text": "**Pagos (nuevo)**\n/api/pagos\nmensualidad · diario · copago\nnomina · arriendo · mantenimiento\nflujo de caja · factura EPS\n\nEl sistema antes NO podia cobrar",
-			"x": 1200,
-			"y": -1400,
-			"width": 300,
-			"height": 150,
-			"color": "1"
-		},
-		{
-			"id": "n-paneles",
-			"type": "text",
-			"text": "**Paneles (nuevo)**\nEntrenadorController → horarios,\nrutinas, evaluaciones, metas\n\nClientePanelController → perfil,\nprogreso, rutina, asistencias\n\nDashboard antes: placeholders",
-			"x": 1530,
-			"y": -1400,
-			"width": 300,
-			"height": 150,
-			"color": "1"
-		},
-		{
-			"id": "n-documento",
-			"type": "text",
-			"text": "**X-Documento**\nEl selector de rol pide documento\ny lo manda en un header.\n\nEl backend lo adjunta al principal:\nservicios usan documento, no id.\n\nUn entrenador no puede actuar\nen nombre de otro.",
-			"x": 1860,
-			"y": -1400,
-			"width": 300,
-			"height": 150,
-			"color": "2"
-		},
-		{
-			"id": "n-estado-final",
-			"type": "text",
-			"text": "**Estado final**\n61 endpoints · 7 controllers\n\nAdmin → todo\nSecretaria → clientes, pagos, ingresos\nEntrenador → horarios, rutinas, evaluacion\nCliente → su membresia y progreso\n\nVerificado end-to-end vs MariaDB",
-			"x": 1200,
-			"y": -1220,
-			"width": 960,
-			"height": 110,
-			"color": "5"
-		},
-		{
-			"id": "g-sesion-2026-11-03",
-			"type": "group",
-			"x": 2200,
-			"y": -1560,
-			"width": 1220,
-			"height": 1380,
-			"label": "Sesión 2026-11-03 · 16 HU"
-		},
-		{
-			"id": "s2026-11-03",
-			"type": "text",
-			"text": "# SESIÓN 2026-11-03\n\n## 16 historias de usuario\nde punta a punta (backend + frontend)",
-			"x": 2240,
-			"y": -1520,
-			"width": 760,
-			"height": 60
-		},
-		{
-			"id": "n-16hu",
-			"type": "text",
-			"text": "**16 HU implementadas**\nContratos, EPS, entrenadores,\nplus, horarios, gastos y ajustes\nde registro/edición.\n\nVerificación: compile + build + lint.",
-			"x": 2240,
-			"y": -1430,
-			"width": 360,
-			"height": 150
-		},
-		{
-			"id": "n-modelo-asig",
-			"type": "text",
-			"text": "**AsignacionEntrenador**\ncliente ↔ entrenador\n\norigen: PRIMER_MES (fechaFin +1 mes)\n· PLUS (sin fecha de corte)\nCupo: 4 clientes activos",
-			"x": 2630,
-			"y": -1430,
-			"width": 360,
-			"height": 150
-		},
-		{
-			"id": "n-solicitud-plus",
-			"type": "text",
-			"text": "**SolicitudEntrenadorPlus**\nPENDIENTE · APROBADA · RECHAZADA\n\nSolo tras el primer mes\ny sin entrenador activo.\nAprobación del administrador.",
-			"x": 3020,
-			"y": -1430,
-			"width": 360,
-			"height": 150
-		},
-		{
-			"id": "n-contratos",
-			"type": "text",
-			"text": "**Contratos**\nGET /clientes/mensual/{doc}/contrato\nGET /clientes/contratos/vencidos\n\nVencido = fechaVencimiento < hoy,\nno estadoMembresia.",
-			"x": 2240,
-			"y": -1250,
-			"width": 360,
-			"height": 140
-		},
-		{
-			"id": "n-horarios",
-			"type": "text",
-			"text": "**Horarios y reservas**\nGET /entrenador/clientes\nGET /cliente/horarios-disponibles\nPOST /cliente/horarios/{id}/reservar",
-			"x": 2630,
-			"y": -1250,
-			"width": 360,
-			"height": 140
-		},
-		{
-			"id": "n-gastos",
-			"type": "text",
-			"text": "**Gastos operativos**\nNómina · arriendo · mantenimiento\nGET /pagos/gastos?fecha=\nFlujo de caja los descuenta.",
-			"x": 3020,
-			"y": -1250,
-			"width": 360,
-			"height": 140
-		},
-		{
-			"id": "n-fe-nuevo",
-			"type": "text",
-			"text": "**Frontend nuevo**\n`GastosOperativos.tsx` (PA-0005/6/7) · `ContratosVencidos.tsx` (CO-0003) · `SolicitudesPlus.tsx` (PC-0011)\n`GestionClientes` (contrato, cancelación EPS, asignar/liberar entrenador) · `EntrenadorDashboard` (Mis clientes) · `ClienteDashboard` (horarios, plus) · `RegistrarPago` (tipo Plus)\nRutas admin nuevas: `/gastos-operativos`, `/contratos-vencidos`, `/solicitudes-plus`.",
-			"x": 2240,
-			"y": -1080,
-			"width": 1140,
-			"height": 130
-		},
-		{
-			"id": "n-endpoints-new",
-			"type": "text",
-			"text": "**Endpoints nuevos**\n`PUT /clientes/eps/{doc}/cancelar` · `PUT|DELETE /clientes/eps/{doc}/entrenador[/{docEntrenador}]`\n`GET /admin/solicitudes-plus` · `PUT /admin/solicitudes-plus/{id}/aprobar|rechazar`\n`POST /pagos/plus/{doc}` · `GET /pagos/gastos` · `POST|GET /cliente/solicitud-plus`",
-			"x": 2240,
-			"y": -920,
-			"width": 1140,
-			"height": 120
-		},
-		{
-			"id": "n-docs-jwt",
-			"type": "text",
-			"text": "**Documentación corregida**\nReadme.md y AGENTS.md ya no dicen \"autorización por header\":\nla autenticación real es JWT (`POST /api/auth/login` con documento + contraseña).\n`RolHeaderFilter` solo expone `documentoActual()` desde el principal.",
-			"x": 2240,
-			"y": -770,
-			"width": 1140,
-			"height": 110
-		},
-		{
-			"id": "n-verif",
-			"type": "text",
-			"text": "**Verificación**\n`./mvnw -q compile` ✅ · `npm run build` ✅ · `npm run lint` ✅\nPruebas manuales con `curl`: pendientes (MariaDB inactiva, sin sudo).",
-			"x": 2240,
-			"y": -630,
-			"width": 1140,
-			"height": 90
-		},
-		{
-			"id": "n-pend",
-			"type": "text",
-			"text": "**Pendiente / WIP**\n`SeleccionarRol.tsx` obsoleto (sin token).\nSin commit: árbol de trabajo sucio.\nResuelto: contraseñas ocultas con `@JsonIgnore`.",
-			"x": 2240,
-			"y": -510,
-			"width": 1140,
-			"height": 90
-		}
-	],
-	"edges": [
-		{
-			"id": "e1",
-			"fromNode": "title",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-objetivo",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e2",
-			"fromNode": "n-objetivo",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-be-titulo",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e3",
-			"fromNode": "n-objetivo",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-fe-titulo",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e4",
-			"fromNode": "n-be-titulo",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "c-acceso",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e5",
-			"fromNode": "c-acceso",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-acceso",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e6",
-			"fromNode": "c-admin",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-admin",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e7",
-			"fromNode": "c-cliente",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-cliente",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e8",
-			"fromNode": "c-usuario",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-usuario",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e9",
-			"fromNode": "s-cliente",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "r-usuario",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e10",
-			"fromNode": "s-admin",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "r-asistencia",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e11",
-			"fromNode": "s-pago",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "r-pago",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e12",
-			"fromNode": "s-inventario",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "r-equipo",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e13",
-			"fromNode": "s-acceso",
-			"fromSide": "right",
-			"fromEnd": "none",
-			"toNode": "n-sec-tit",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e14",
-			"fromNode": "f-api",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-sec-tit",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e15",
-			"fromNode": "p-login",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "a-auth",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e16",
-			"fromNode": "p-gestion",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "c-cliente",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e17",
-			"fromNode": "p-admin",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "c-admin",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e18",
-			"fromNode": "p-sec",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "c-usuario",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e19",
-			"fromNode": "p-diario",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "c-cliente",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e20",
-			"fromNode": "p-eps",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "c-cliente",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e21",
-			"fromNode": "p-mensual",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "c-cliente",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e22",
-			"fromNode": "f-admin-svc",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-admin",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "5"
-		},
-		{
-			"id": "e23",
-			"fromNode": "mo-auth",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "a-auth",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e24",
-			"fromNode": "mo-clientes",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-cliente",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e25",
-			"fromNode": "mo-pagos",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-pago",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e26",
-			"fromNode": "mo-entrenadores",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-entrenador",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e27",
-			"fromNode": "mo-evaluacion",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-evaluacion",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e28",
-			"fromNode": "mo-inventario",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-inventario",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e29",
-			"fromNode": "mo-contratos",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "m-contrato",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e30",
-			"fromNode": "mo-notis",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "s-notificacion",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e31",
-			"fromNode": "n-estado-tit",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-wip",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e32",
-			"fromNode": "n-wip",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-next",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "3"
-		},
-		{
-			"id": "e33",
-			"fromNode": "n-actual-tit",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-vista-mvc",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "3"
-		},
-		{
-			"id": "e34",
-			"fromNode": "n-actual-tit",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-sin-jwt",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "3"
-		},
-		{
-			"id": "e35",
-			"fromNode": "n-actual-tit",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "p-selector",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "3"
-		},
-		{
-			"id": "e36",
-			"fromNode": "n-sin-jwt",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "p-selector",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "3"
-		},
-		{
-			"id": "e37",
-			"fromNode": "p-selector",
-			"fromSide": "top",
-			"fromEnd": "none",
-			"toNode": "f-priv",
-			"toSide": "bottom",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e38",
-			"fromNode": "p-selector",
-			"fromSide": "top",
-			"fromEnd": "none",
-			"toNode": "p-admin",
-			"toSide": "bottom",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e39",
-			"fromNode": "p-selector",
-			"fromSide": "top",
-			"fromEnd": "none",
-			"toNode": "p-sec",
-			"toSide": "bottom",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e40",
-			"fromNode": "p-selector",
-			"fromSide": "top",
-			"fromEnd": "none",
-			"toNode": "p-login",
-			"toSide": "bottom",
-			"toEnd": "none",
-			"color": "1"
-		},
-		{
-			"id": "e41",
-			"fromNode": "n-actual-tit",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-bugfix",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "4"
-		},
-		{
-			"id": "e42",
-			"fromNode": "p-selector",
-			"fromSide": "top",
-			"fromEnd": "none",
-			"toNode": "n-sec-tit",
-			"toSide": "bottom",
-			"toEnd": "none",
-			"color": "6",
-			"label": "obsoleto en la vista (solo backend externo)"
-		},
-		{
-			"id": "e-s2026-10-07-n-monorepo",
-			"fromNode": "s2026-10-07",
-			"toNode": "n-monorepo"
-		},
-		{
-			"id": "e-s2026-10-07-n-backend",
-			"fromNode": "s2026-10-07",
-			"toNode": "n-backend"
-		},
-		{
-			"id": "e-n-monorepo-n-fusion",
-			"fromNode": "n-monorepo",
-			"toNode": "n-fusion"
-		},
-		{
-			"id": "e-n-backend-n-admin",
-			"fromNode": "n-backend",
-			"toNode": "n-admin"
-		},
-		{
-			"id": "e-n-backend-n-nombres",
-			"fromNode": "n-backend",
-			"toNode": "n-nombres"
-		},
-		{
-			"id": "e-s2026-10-07-n-auth",
-			"fromNode": "s2026-10-07",
-			"toNode": "n-auth"
-		},
-		{
-			"id": "e-s2026-10-07-n-docs",
-			"fromNode": "s2026-10-07",
-			"toNode": "n-docs"
-		},
-		{
-			"id": "e-n-fusion-n-docs",
-			"fromNode": "n-fusion",
-			"toNode": "n-docs"
-		},
-		{
-			"id": "e-n-auth-n-docs",
-			"fromNode": "n-auth",
-			"toNode": "n-docs"
-		},
-		{
-			"id": "e-n-admin-n-docs",
-			"fromNode": "n-admin",
-			"toNode": "n-docs"
-		},
-		{
-			"id": "e-n-nombres-n-docs",
-			"fromNode": "n-nombres",
-			"toNode": "n-docs"
-		},
-		{
-			"id": "e-n-pagos-n-estado-final",
-			"fromNode": "n-pagos",
-			"toNode": "n-estado-final"
-		},
-		{
-			"id": "e-n-paneles-n-estado-final",
-			"fromNode": "n-paneles",
-			"toNode": "n-estado-final"
-		},
-		{
-			"id": "e-n-documento-n-paneles",
-			"fromNode": "n-documento",
-			"toNode": "n-paneles"
-		},
-		{
-			"id": "e-20261103-1",
-			"fromNode": "s2026-11-03",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-16hu",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-2",
-			"fromNode": "s2026-11-03",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-modelo-asig",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-3",
-			"fromNode": "s2026-11-03",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-solicitud-plus",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-4",
-			"fromNode": "n-16hu",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-contratos",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-5",
-			"fromNode": "n-16hu",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-horarios",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-6",
-			"fromNode": "n-16hu",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-gastos",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-7",
-			"fromNode": "n-16hu",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-fe-nuevo",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-8",
-			"fromNode": "n-fe-nuevo",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-endpoints-new",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-9",
-			"fromNode": "n-endpoints-new",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-docs-jwt",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-10",
-			"fromNode": "n-docs-jwt",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-verif",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-11",
-			"fromNode": "n-verif",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-pend",
-			"toSide": "top",
-			"toEnd": "arrow"
-		},
-		{
-			"id": "e-20261103-12",
-			"fromNode": "n-auth",
-			"fromSide": "bottom",
-			"fromEnd": "none",
-			"toNode": "n-docs-jwt",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"color": "1",
-			"label": "revierte: ahora JWT"
-		}
-	]
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "text": "# VICTUS-CAF\n\nLienzo maestro del proyecto · crece con cada sesión (infinito)",
+      "x": -380,
+      "y": -1520,
+      "width": 760,
+      "height": 80,
+      "color": "6"
+    },
+    {
+      "id": "n-index",
+      "type": "file",
+      "file": "context/index.md",
+      "x": -900,
+      "y": -1520,
+      "width": 440,
+      "height": 80,
+      "color": "4"
+    },
+    {
+      "id": "n-readme",
+      "type": "file",
+      "file": "Readme.md",
+      "x": 380,
+      "y": -1520,
+      "width": 440,
+      "height": 80,
+      "color": "4"
+    },
+    {
+      "id": "g-objetivo",
+      "type": "group",
+      "label": "Objetivo",
+      "x": -1000,
+      "y": -1390,
+      "width": 2000,
+      "height": 170,
+      "color": "5"
+    },
+    {
+      "id": "n-objetivo",
+      "type": "text",
+      "text": "**Objetivo**\nSistema de gestión de gimnasio: clientes por tipo (diario / EPS / mensual), pagos y facturación EPS, inventario y mantenimiento, evaluación física, entrenadores y notificaciones, con control de acceso por roles.",
+      "x": -960,
+      "y": -1355,
+      "width": 1920,
+      "height": 120,
+      "color": "5"
+    },
+    {
+      "id": "g-backend",
+      "type": "group",
+      "label": "Backend · Spring Boot 3.2.5 · Java 21 · Maven",
+      "x": -1000,
+      "y": -1150,
+      "width": 970,
+      "height": 1080,
+      "color": "5"
+    },
+    {
+      "id": "n-be-titulo",
+      "type": "text",
+      "text": "**Backend** `victus-caf-backend/`\npaquete base: `com.victuscaf.modules.client.{controller, service, repository, models, dto, exception}` + `com.victuscaf.security`",
+      "x": -960,
+      "y": -1115,
+      "width": 890,
+      "height": 75
+    },
+    {
+      "id": "c-acceso",
+      "type": "text",
+      "text": "**AccesoController**\n`…/client/controller/AccesoController.java`",
+      "x": -960,
+      "y": -1020,
+      "width": 160,
+      "height": 95
+    },
+    {
+      "id": "c-admin",
+      "type": "text",
+      "text": "**AdminController**\n`…/client/controller/AdminController.java`",
+      "x": -770,
+      "y": -1020,
+      "width": 160,
+      "height": 95
+    },
+    {
+      "id": "c-cliente",
+      "type": "text",
+      "text": "**ClienteController**\n`…/client/controller/ClienteController.java`",
+      "x": -580,
+      "y": -1020,
+      "width": 160,
+      "height": 95
+    },
+    {
+      "id": "c-usuario",
+      "type": "text",
+      "text": "**UsuarioSistemaController**\n`…/client/controller/UsuarioSistemaController.java`",
+      "x": -390,
+      "y": -1020,
+      "width": 160,
+      "height": 95
+    },
+    {
+      "id": "n-be-services",
+      "type": "text",
+      "text": "Services (`…/client/service/`)",
+      "x": -960,
+      "y": -900,
+      "width": 400,
+      "height": 35
+    },
+    {
+      "id": "s-acceso",
+      "type": "text",
+      "text": "**AccesoService**\n`AccesoService.java`",
+      "x": -960,
+      "y": -850,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-admin",
+      "type": "text",
+      "text": "**AdminService**\n`AdminService.java`",
+      "x": -770,
+      "y": -850,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-cliente",
+      "type": "text",
+      "text": "**ClienteService**\n`ClienteService.java`",
+      "x": -580,
+      "y": -850,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-entrenador",
+      "type": "text",
+      "text": "**EntrenadorService**\n`EntrenadorService.java`",
+      "x": -390,
+      "y": -850,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-evaluacion",
+      "type": "text",
+      "text": "**EvaluacionService**\n`EvaluacionService.java`",
+      "x": -200,
+      "y": -850,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-inventario",
+      "type": "text",
+      "text": "**InventarioService**\n`InventarioService.java`",
+      "x": -960,
+      "y": -755,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-notificacion",
+      "type": "text",
+      "text": "**NotificacionService**\n`NotificacionService.java`",
+      "x": -770,
+      "y": -755,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-pago",
+      "type": "text",
+      "text": "**PagoService**\n`PagoService.java`",
+      "x": -580,
+      "y": -755,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-seguridad",
+      "type": "text",
+      "text": "**SeguridadService**\n`SeguridadService.java`",
+      "x": -390,
+      "y": -755,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "s-usuario",
+      "type": "text",
+      "text": "**UsuarioSistemaService**\n`UsuarioSistemaService.java`",
+      "x": -200,
+      "y": -755,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "n-be-repo",
+      "type": "text",
+      "text": "Repositories (`…/client/repository/`)",
+      "x": -960,
+      "y": -660,
+      "width": 400,
+      "height": 35
+    },
+    {
+      "id": "r-usuario",
+      "type": "text",
+      "text": "**UsuarioRepository**\n`UsuarioRepository.java`",
+      "x": -960,
+      "y": -610,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "r-tarifa",
+      "type": "text",
+      "text": "**TarifaRepository**\n`TarifaRepository.java`",
+      "x": -770,
+      "y": -610,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "r-pago",
+      "type": "text",
+      "text": "**PagoRepository**\n`PagoRepository.java`",
+      "x": -580,
+      "y": -610,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "r-asistencia",
+      "type": "text",
+      "text": "**AsistenciaRepository**\n`AsistenciaRepository.java`",
+      "x": -390,
+      "y": -610,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "r-equipo",
+      "type": "text",
+      "text": "**EquipoRepository**\n`EquipoRepository.java`",
+      "x": -200,
+      "y": -610,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "n-be-model",
+      "type": "text",
+      "text": "Models (`…/client/models/`, 30+ entidades)",
+      "x": -960,
+      "y": -520,
+      "width": 400,
+      "height": 35
+    },
+    {
+      "id": "m-usuario",
+      "type": "text",
+      "text": "**Usuario**\n`Usuario.java`",
+      "x": -960,
+      "y": -470,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "m-contrato",
+      "type": "text",
+      "text": "**Contrato**\n`Contrato.java`",
+      "x": -770,
+      "y": -470,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "m-pago",
+      "type": "text",
+      "text": "**Pago**\n`Pago.java`",
+      "x": -580,
+      "y": -470,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "m-asistencia",
+      "type": "text",
+      "text": "**Asistencia**\n`Asistencia.java`",
+      "x": -390,
+      "y": -470,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "m-factura",
+      "type": "text",
+      "text": "**FacturaEps**\n`FacturaEps.java`",
+      "x": -200,
+      "y": -470,
+      "width": 160,
+      "height": 70
+    },
+    {
+      "id": "n-be-extra",
+      "type": "text",
+      "text": "**dto/** (18 DTOs: `ApiResponse`, `TarifaDTO`, `ProgresoDTO`, `RegistroPagoDTO`, …)\n**exception/** · `GlobalExceptionHandler`\nRelaciones JPA bidireccionales → `@JsonIgnore` para evitar recursión infinita de Jackson",
+      "x": -960,
+      "y": -370,
+      "width": 890,
+      "height": 120
+    },
+    {
+      "id": "g-frontend",
+      "type": "group",
+      "label": "Frontend · React 19 · Vite · TypeScript · Tailwind v4",
+      "x": 0,
+      "y": -1150,
+      "width": 1000,
+      "height": 780,
+      "color": "5"
+    },
+    {
+      "id": "n-fe-titulo",
+      "type": "text",
+      "text": "**Frontend** `victus-caf-frontend/`\nVite proxya /api → localhost:8080 · auth en localStorage",
+      "x": 40,
+      "y": -1115,
+      "width": 920,
+      "height": 70
+    },
+    {
+      "id": "n-fe-pages",
+      "type": "text",
+      "text": "Pages (`src/pages/`)",
+      "x": 40,
+      "y": -1025,
+      "width": 600,
+      "height": 35
+    },
+    {
+      "id": "p-login",
+      "type": "text",
+      "text": "**Login**\n`Login.tsx`",
+      "x": 40,
+      "y": -975,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "p-cli",
+      "type": "text",
+      "text": "**ClienteDashboard**\n`ClienteDashboard.tsx`",
+      "x": 220,
+      "y": -975,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "p-admin",
+      "type": "text",
+      "text": "**AdminDashboard**\n`AdminDashboard.tsx`",
+      "x": 400,
+      "y": -975,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "p-sec",
+      "type": "text",
+      "text": "**SecretariaDashboard**\n`SecretariaDashboard.tsx`",
+      "x": 580,
+      "y": -975,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "p-ent",
+      "type": "text",
+      "text": "**EntrenadorDashboard**\n`EntrenadorDashboard.tsx`",
+      "x": 760,
+      "y": -975,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "p-gestion",
+      "type": "text",
+      "text": "**GestionClientes**\n`GestionClientes.tsx`",
+      "x": 40,
+      "y": -880,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "p-diario",
+      "type": "text",
+      "text": "**RegistrarClienteDiario**\n`RegistrarClienteDiario.tsx`",
+      "x": 220,
+      "y": -880,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "p-eps",
+      "type": "text",
+      "text": "**RegistrarClienteEps**\n`RegistrarClienteEps.tsx`",
+      "x": 400,
+      "y": -880,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "p-mensual",
+      "type": "text",
+      "text": "**RegistrarClienteMensual**\n`RegistrarClienteMensual.tsx`",
+      "x": 580,
+      "y": -880,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "n-fe-comp",
+      "type": "text",
+      "text": "Componentes y servicios (`src/components/`, `src/services/`)",
+      "x": 40,
+      "y": -785,
+      "width": 700,
+      "height": 35
+    },
+    {
+      "id": "f-layout",
+      "type": "text",
+      "text": "**Layout**\n`components/Layout.tsx`",
+      "x": 40,
+      "y": -740,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "f-priv",
+      "type": "text",
+      "text": "**PrivateRoute**\n`components/PrivateRoute.tsx` (allowedRoles)",
+      "x": 220,
+      "y": -740,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "f-api",
+      "type": "text",
+      "text": "**api.ts**\n`services/api.ts` (interceptor Bearer JWT)",
+      "x": 400,
+      "y": -740,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "f-roles",
+      "type": "text",
+      "text": "**rolLimits**\n`constants/rolLimits.ts`",
+      "x": 580,
+      "y": -740,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "f-admin-svc",
+      "type": "text",
+      "text": "**adminService**\n`services/adminService.ts`",
+      "x": 40,
+      "y": -645,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "f-sec-svc",
+      "type": "text",
+      "text": "**secretariaService**\n`services/secretariaService.ts`",
+      "x": 220,
+      "y": -645,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "f-usuario-svc",
+      "type": "text",
+      "text": "**usuarioSistemaService**\n`services/usuarioSistemaService.ts`",
+      "x": 400,
+      "y": -645,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "f-particular-svc",
+      "type": "text",
+      "text": "**clienteParticularService**\n`services/clienteParticularService.ts`",
+      "x": 580,
+      "y": -645,
+      "width": 160,
+      "height": 75
+    },
+    {
+      "id": "n-fe-note",
+      "type": "text",
+      "text": "`App.tsx` → router con basename `import.meta.env.BASE_URL` = `/Sistema-PMS-victus-caf/` · auth state en `localStorage` (keys `token` y `user`) · `PrivateRoute` protege por `allowedRoles`",
+      "x": 40,
+      "y": -555,
+      "width": 920,
+      "height": 75
+    },
+    {
+      "id": "g-seguridad",
+      "type": "group",
+      "label": "Seguridad y autenticación",
+      "x": -1000,
+      "y": -60,
+      "width": 970,
+      "height": 320,
+      "color": "6"
+    },
+    {
+      "id": "n-sec-tit",
+      "type": "text",
+      "text": "**Seguridad** `com.victuscaf.security`\nSolo `POST /api/auth/login` es pública · el resto exige `Authorization: Bearer <JWT>`",
+      "x": -960,
+      "y": -25,
+      "width": 890,
+      "height": 60
+    },
+    {
+      "id": "a-auth",
+      "type": "text",
+      "text": "**AuthController**\n`security/AuthController.java`",
+      "x": -960,
+      "y": 50,
+      "width": 170,
+      "height": 80
+    },
+    {
+      "id": "a-config",
+      "type": "text",
+      "text": "**SecurityConfig**\n`security/SecurityConfig.java`",
+      "x": -770,
+      "y": 50,
+      "width": 170,
+      "height": 80
+    },
+    {
+      "id": "a-jwt",
+      "type": "text",
+      "text": "**JwtUtils**\n`security/JwtUtils.java`",
+      "x": -580,
+      "y": 50,
+      "width": 170,
+      "height": 80
+    },
+    {
+      "id": "a-filter",
+      "type": "text",
+      "text": "**JwtAuthTokenFilter**\n`security/JwtAuthTokenFilter.java`",
+      "x": -390,
+      "y": 50,
+      "width": 170,
+      "height": 80
+    },
+    {
+      "id": "n-sec-roles",
+      "type": "text",
+      "text": "Roles: `ADMINISTRADOR` · `SECRETARIA` · `ENTRENADOR` · `CLIENTE`\nChequeo con Spring `@PreAuthorize` · contraseñas BCrypt (sin seed de admin → generar hash con `GenerarHash.java`)",
+      "x": -960,
+      "y": 160,
+      "width": 890,
+      "height": 90
+    },
+    {
+      "id": "g-modulos",
+      "type": "group",
+      "label": "Módulos / entregables",
+      "x": 0,
+      "y": -60,
+      "width": 1000,
+      "height": 320,
+      "color": "4"
+    },
+    {
+      "id": "n-mod-tit",
+      "type": "text",
+      "text": "Features del sistema (clientes por tipo, pagos, inventario…)",
+      "x": 40,
+      "y": -25,
+      "width": 920,
+      "height": 60
+    },
+    {
+      "id": "mo-auth",
+      "type": "text",
+      "text": "Autenticación y roles",
+      "x": 40,
+      "y": 50,
+      "width": 210,
+      "height": 95,
+      "color": "4"
+    },
+    {
+      "id": "mo-clientes",
+      "type": "text",
+      "text": "Clientes: diario · EPS · mensual",
+      "x": 285,
+      "y": 50,
+      "width": 210,
+      "height": 95,
+      "color": "4"
+    },
+    {
+      "id": "mo-pagos",
+      "type": "text",
+      "text": "Pagos y facturación EPS",
+      "x": 530,
+      "y": 50,
+      "width": 210,
+      "height": 95,
+      "color": "4"
+    },
+    {
+      "id": "mo-entrenadores",
+      "type": "text",
+      "text": "Entrenadores y horarios",
+      "x": 775,
+      "y": 50,
+      "width": 210,
+      "height": 95,
+      "color": "4"
+    },
+    {
+      "id": "mo-evaluacion",
+      "type": "text",
+      "text": "Evaluación física y medidas",
+      "x": 40,
+      "y": 170,
+      "width": 210,
+      "height": 95,
+      "color": "4"
+    },
+    {
+      "id": "mo-inventario",
+      "type": "text",
+      "text": "Inventario · equipos · mantenimiento",
+      "x": 285,
+      "y": 170,
+      "width": 210,
+      "height": 95,
+      "color": "4"
+    },
+    {
+      "id": "mo-contratos",
+      "type": "text",
+      "text": "Contratos y remisiones",
+      "x": 530,
+      "y": 170,
+      "width": 210,
+      "height": 95,
+      "color": "4"
+    },
+    {
+      "id": "mo-notis",
+      "type": "text",
+      "text": "Notificaciones y mensajes",
+      "x": 775,
+      "y": 170,
+      "width": 210,
+      "height": 95,
+      "color": "4"
+    },
+    {
+      "id": "g-estado",
+      "type": "group",
+      "label": "Estado y progreso",
+      "x": -1000,
+      "y": 280,
+      "width": 2000,
+      "height": 280,
+      "color": "3"
+    },
+    {
+      "id": "n-estado-tit",
+      "type": "text",
+      "text": "Estado y progreso · sesión 2026-09-15",
+      "x": -960,
+      "y": 315,
+      "width": 600,
+      "height": 40
+    },
+    {
+      "id": "n-wip",
+      "type": "text",
+      "text": "**WIP**\n- Capa de iteraciones para la secretaria (commit `92e8580`)\n- Pulido de funcionalidades\n- Sin seed de admin (hash BCrypt pendiente)",
+      "x": -960,
+      "y": 365,
+      "width": 590,
+      "height": 110,
+      "color": "3"
+    },
+    {
+      "id": "n-next",
+      "type": "text",
+      "text": "**Próximos pasos**\n- Definir próximas features con el equipo\n- Validar `../mvnw -q compile` y `npm run lint/build`\n- Mantener al día vault + lienzo",
+      "x": -320,
+      "y": 365,
+      "width": 590,
+      "height": 110,
+      "color": "4"
+    },
+    {
+      "id": "n-lastcommit",
+      "type": "text",
+      "text": "**Último commit**\n`92e8580` — mejoras, capa de iteraciones para la secretaria\n19 commits · mensajes en español",
+      "x": 320,
+      "y": 365,
+      "width": 590,
+      "height": 110,
+      "color": "4"
+    },
+    {
+      "id": "n-log",
+      "type": "text",
+      "text": "Convención: al iniciar sesión leer `context/index.md` + este lienzo · al cerrar actualizar `estado-proyecto.md`, `decisiones.md` y **agregar** nodos/aristas aquí (nunca borrar)",
+      "x": -960,
+      "y": 500,
+      "width": 1880,
+      "height": 40
+    },
+    {
+      "id": "g-sesion-actual",
+      "type": "group",
+      "label": "Sesión 2026-09-15 · vista MVC sin JWT",
+      "x": -1000,
+      "y": 620,
+      "width": 2000,
+      "height": 330,
+      "color": "3"
+    },
+    {
+      "id": "n-actual-tit",
+      "type": "text",
+      "text": "**Estado tras la sesión del 2026-09-15**\nEl repo pasó a ser solo la **vista (MVC)**; el login se reemplazó por un **selector de rol** y se eliminó todo el protocolo JWT de la vista.",
+      "x": -960,
+      "y": 655,
+      "width": 1920,
+      "height": 60,
+      "color": "3"
+    },
+    {
+      "id": "n-vista-mvc",
+      "type": "text",
+      "text": "**Repositorio actual = vista**\n`victus-caf-frontend/` es la vista del MVC. El backend Spring Boot fue **retirado del workspace** (solo en git history) y se consume por API real vía `/api` → `:8080`. Residuos raíz (`mvnw`, `BcryptGen.java`…) se ignoran.",
+      "x": -960,
+      "y": 730,
+      "width": 590,
+      "height": 110,
+      "color": "3"
+    },
+    {
+      "id": "n-sin-jwt",
+      "type": "text",
+      "text": "**Sin JWT en la vista**\n`Login.tsx` eliminado → `SeleccionarRol.tsx` (ruta `/`). Guarda `localStorage['user'] = { id: 0, numeroDocumento: 0, nombreCompleto, rol }`; no existe `token`. `PrivateRoute` redirige a `/`; `Layout` cierra sesión limpiando `localStorage`.",
+      "x": -330,
+      "y": 730,
+      "width": 590,
+      "height": 110,
+      "color": "3"
+    },
+    {
+      "id": "p-selector",
+      "type": "text",
+      "text": "**SeleccionarRol**\n`pages/SeleccionarRol.tsx` · 4 tarjetas de rol → `/admin|/secretaria|/entrenador|/cliente`",
+      "x": 300,
+      "y": 730,
+      "width": 590,
+      "height": 110,
+      "color": "3"
+    },
+    {
+      "id": "n-bugfix",
+      "type": "text",
+      "text": "**Bugfixes de la sesión**\n- `currentAdminId` en `AdminDashboard` (leía `idUsuarioSistema`; sin `if (!localStorage)`)\n- Activar/desactivar clientes **diario** y **EPS** en `SecretariaDashboard` (confirm + actualización de estado)\n- Endpoint único `POST /api/acceso/registrar-ingreso` con `{ numeroDocumento }`\n- `apiTypes.ts` (`ApiResponse`/`unwrap`) y `apiError.ts` (`getApiErrorMessage`) compartidos",
+      "x": -960,
+      "y": 870,
+      "width": 1920,
+      "height": 100,
+      "color": "4"
+    },
+    {
+      "id": "s2026-10-07",
+      "type": "text",
+      "text": "# SESIÓN 2026-10-07\n\n## Monorepo + backend revivido",
+      "x": 1200,
+      "y": -1520,
+      "width": 620,
+      "height": 60,
+      "color": "4"
+    },
+    {
+      "id": "n-monorepo",
+      "type": "text",
+      "text": "**Monorepo**\nvictus-caf/\n├── frontend/  (antes victus-caf-frontend/)\n└── backend/   (revivido de git history)",
+      "x": 1200,
+      "y": -1440,
+      "width": 300,
+      "height": 110,
+      "color": "5"
+    },
+    {
+      "id": "n-backend",
+      "type": "text",
+      "text": "**Backend**\nSpring Boot 3.2.5 · Java 21\n108 clases bajo com.victuscaf.gimnasio\nLombok 1.18.48 (JDK 27)",
+      "x": 1530,
+      "y": -1440,
+      "width": 300,
+      "height": 110,
+      "color": "5"
+    },
+    {
+      "id": "n-auth",
+      "type": "text",
+      "text": "**Autorización por header**\nfrontend manda X-Rol → RolHeaderFilter\n⚠ NO es autenticación, solo local",
+      "x": 1200,
+      "y": -1300,
+      "width": 300,
+      "height": 110,
+      "color": "3"
+    },
+    {
+      "id": "n-admin",
+      "type": "text",
+      "text": "**AdminController (nuevo)**\n/api/admin: tarifas · equipos · flujo de caja\n3 métodos de service nuevos",
+      "x": 1530,
+      "y": -1300,
+      "width": 300,
+      "height": 110,
+      "color": "1"
+    },
+    {
+      "id": "n-fusion",
+      "type": "text",
+      "text": "**Servicios fusionados**\nclienteService.ts + clienteParticularService.ts\n→ un único clienteService.ts",
+      "x": 1200,
+      "y": -1160,
+      "width": 300,
+      "height": 110,
+      "color": "2"
+    },
+    {
+      "id": "n-nombres",
+      "type": "text",
+      "text": "**Nombres saneados**\ncom.victuscaf.modules.client → .gimnasio\nBeneficiarioEPSDTO → BeneficiarioEpsDTO\nendpoint debug eliminado (sin auth)",
+      "x": 1530,
+      "y": -1160,
+      "width": 300,
+      "height": 110,
+      "color": "2"
+    },
+    {
+      "id": "n-docs",
+      "type": "text",
+      "text": "**Documentación**\nReadme.md y AGENTS.md reescritos\nvault actualizado · canvas nodo corregido",
+      "x": 1200,
+      "y": -1020,
+      "width": 620,
+      "height": 70,
+      "color": "4"
+    },
+    {
+      "id": "n-pagos",
+      "type": "text",
+      "text": "**Pagos (nuevo)**\n/api/pagos\nmensualidad · diario · copago\nnomina · arriendo · mantenimiento\nflujo de caja · factura EPS\n\nEl sistema antes NO podia cobrar",
+      "x": 1200,
+      "y": -1400,
+      "width": 300,
+      "height": 150,
+      "color": "1"
+    },
+    {
+      "id": "n-paneles",
+      "type": "text",
+      "text": "**Paneles (nuevo)**\nEntrenadorController → horarios,\nrutinas, evaluaciones, metas\n\nClientePanelController → perfil,\nprogreso, rutina, asistencias\n\nDashboard antes: placeholders",
+      "x": 1530,
+      "y": -1400,
+      "width": 300,
+      "height": 150,
+      "color": "1"
+    },
+    {
+      "id": "n-documento",
+      "type": "text",
+      "text": "**X-Documento**\nEl selector de rol pide documento\ny lo manda en un header.\n\nEl backend lo adjunta al principal:\nservicios usan documento, no id.\n\nUn entrenador no puede actuar\nen nombre de otro.",
+      "x": 1860,
+      "y": -1400,
+      "width": 300,
+      "height": 150,
+      "color": "2"
+    },
+    {
+      "id": "n-estado-final",
+      "type": "text",
+      "text": "**Estado final**\n61 endpoints · 7 controllers\n\nAdmin → todo\nSecretaria → clientes, pagos, ingresos\nEntrenador → horarios, rutinas, evaluacion\nCliente → su membresia y progreso\n\nVerificado end-to-end vs MariaDB",
+      "x": 1200,
+      "y": -1220,
+      "width": 960,
+      "height": 110,
+      "color": "5"
+    },
+    {
+      "id": "g-sesion-2026-11-03",
+      "type": "group",
+      "x": 2200,
+      "y": -1560,
+      "width": 1220,
+      "height": 1380,
+      "label": "Sesión 2026-11-03 · 16 HU"
+    },
+    {
+      "id": "s2026-11-03",
+      "type": "text",
+      "text": "# SESIÓN 2026-11-03\n\n## 16 historias de usuario\nde punta a punta (backend + frontend)",
+      "x": 2240,
+      "y": -1520,
+      "width": 760,
+      "height": 60
+    },
+    {
+      "id": "n-16hu",
+      "type": "text",
+      "text": "**16 HU implementadas**\nContratos, EPS, entrenadores,\nplus, horarios, gastos y ajustes\nde registro/edición.\n\nVerificación: compile + build + lint.",
+      "x": 2240,
+      "y": -1430,
+      "width": 360,
+      "height": 150
+    },
+    {
+      "id": "n-modelo-asig",
+      "type": "text",
+      "text": "**AsignacionEntrenador**\ncliente ↔ entrenador\n\norigen: PRIMER_MES (fechaFin +1 mes)\n· PLUS (sin fecha de corte)\nCupo: 4 clientes activos",
+      "x": 2630,
+      "y": -1430,
+      "width": 360,
+      "height": 150
+    },
+    {
+      "id": "n-solicitud-plus",
+      "type": "text",
+      "text": "**SolicitudEntrenadorPlus**\nPENDIENTE · APROBADA · RECHAZADA\n\nSolo tras el primer mes\ny sin entrenador activo.\nAprobación del administrador.",
+      "x": 3020,
+      "y": -1430,
+      "width": 360,
+      "height": 150
+    },
+    {
+      "id": "n-contratos",
+      "type": "text",
+      "text": "**Contratos**\nGET /clientes/mensual/{doc}/contrato\nGET /clientes/contratos/vencidos\n\nVencido = fechaVencimiento < hoy,\nno estadoMembresia.",
+      "x": 2240,
+      "y": -1250,
+      "width": 360,
+      "height": 140
+    },
+    {
+      "id": "n-horarios",
+      "type": "text",
+      "text": "**Horarios y reservas**\nGET /entrenador/clientes\nGET /cliente/horarios-disponibles\nPOST /cliente/horarios/{id}/reservar",
+      "x": 2630,
+      "y": -1250,
+      "width": 360,
+      "height": 140
+    },
+    {
+      "id": "n-gastos",
+      "type": "text",
+      "text": "**Gastos operativos**\nNómina · arriendo · mantenimiento\nGET /pagos/gastos?fecha=\nFlujo de caja los descuenta.",
+      "x": 3020,
+      "y": -1250,
+      "width": 360,
+      "height": 140
+    },
+    {
+      "id": "n-fe-nuevo",
+      "type": "text",
+      "text": "**Frontend nuevo**\n`GastosOperativos.tsx` (PA-0005/6/7) · `ContratosVencidos.tsx` (CO-0003) · `SolicitudesPlus.tsx` (PC-0011)\n`GestionClientes` (contrato, cancelación EPS, asignar/liberar entrenador) · `EntrenadorDashboard` (Mis clientes) · `ClienteDashboard` (horarios, plus) · `RegistrarPago` (tipo Plus)\nRutas admin nuevas: `/gastos-operativos`, `/contratos-vencidos`, `/solicitudes-plus`.",
+      "x": 2240,
+      "y": -1080,
+      "width": 1140,
+      "height": 130
+    },
+    {
+      "id": "n-endpoints-new",
+      "type": "text",
+      "text": "**Endpoints nuevos**\n`PUT /clientes/eps/{doc}/cancelar` · `PUT|DELETE /clientes/eps/{doc}/entrenador[/{docEntrenador}]`\n`GET /admin/solicitudes-plus` · `PUT /admin/solicitudes-plus/{id}/aprobar|rechazar`\n`POST /pagos/plus/{doc}` · `GET /pagos/gastos` · `POST|GET /cliente/solicitud-plus`",
+      "x": 2240,
+      "y": -920,
+      "width": 1140,
+      "height": 120
+    },
+    {
+      "id": "n-docs-jwt",
+      "type": "text",
+      "text": "**Documentación corregida**\nReadme.md y AGENTS.md ya no dicen \"autorización por header\":\nla autenticación real es JWT (`POST /api/auth/login` con documento + contraseña).\n`RolHeaderFilter` solo expone `documentoActual()` desde el principal.",
+      "x": 2240,
+      "y": -770,
+      "width": 1140,
+      "height": 110
+    },
+    {
+      "id": "n-verif",
+      "type": "text",
+      "text": "**Verificación**\n`./mvnw -q compile` ✅ · `npm run build` ✅ · `npm run lint` ✅\nPruebas manuales con `curl`: pendientes (MariaDB inactiva, sin sudo).",
+      "x": 2240,
+      "y": -630,
+      "width": 1140,
+      "height": 90
+    },
+    {
+      "id": "n-pend",
+      "type": "text",
+      "text": "**Pendiente / WIP**\n`SeleccionarRol.tsx` obsoleto (sin token).\nSin commit: árbol de trabajo sucio.\nResuelto: contraseñas ocultas con `@JsonIgnore`.",
+      "x": 2240,
+      "y": -510,
+      "width": 1140,
+      "height": 90
+    },
+    {
+      "id": "g-sesion-2026-11-04",
+      "type": "group",
+      "label": "Sesión 2026-11-04 · Cierre 48 HU",
+      "x": 3520,
+      "y": -1560,
+      "width": 1220,
+      "height": 1380,
+      "color": "5"
+    },
+    {
+      "id": "s2026-11-04",
+      "type": "text",
+      "text": "# SESIÓN 2026-11-04\n\n## Cierre de brechas\npara las 48 HU auditadas",
+      "x": 3560,
+      "y": -1520,
+      "width": 760,
+      "height": 60,
+      "color": "6"
+    },
+    {
+      "id": "n-cierre-48hu",
+      "type": "text",
+      "text": "**Cierre de brechas**\nFactura EPS real · ingreso visible en 'Gestión de clientes'\nMigración diario→mensual con botón y modal\nBloqueo automático por vencimiento / copago",
+      "x": 3560,
+      "y": -1430,
+      "width": 360,
+      "height": 150,
+      "color": "6"
+    },
+    {
+      "id": "n-factura-eps",
+      "type": "text",
+      "text": "**FacturaEps (PA-0009)**\nPeríodo YYYY-MM único\nsesiones EPS × tarifa ÷ 20\n+ copagos exitosos\nGET → POST y vista admin `/factura-eps`",
+      "x": 3950,
+      "y": -1430,
+      "width": 360,
+      "height": 150,
+      "color": "4"
+    },
+    {
+      "id": "n-registro-publico",
+      "type": "text",
+      "text": "**Auto-registro (CO-0001)**\nPOST /api/auth/registro-cliente\nruta pública `/registro`\ncrea usuario + contrato + entrenador incluido\nprimer mes de membresía automático",
+      "x": 4340,
+      "y": -1430,
+      "width": 360,
+      "height": 150,
+      "color": "4"
+    },
+    {
+      "id": "n-login-inactivos",
+      "type": "text",
+      "text": "**Login a salvo (RS-0012)**\nusuario inactivo → 401 con mensaje claro\nJWT 4h (sin denylist)\n`RolHeaderFilter` reducido a helper\nsin X-Rol válido en la cadena",
+      "x": 3560,
+      "y": -1250,
+      "width": 360,
+      "height": 140,
+      "color": "4"
+    },
+    {
+      "id": "n-gastos-admin",
+      "type": "text",
+      "text": "**Gastos solo admin (PA-0005/6/7)**\nnómina · arriendo · mantenimiento\nSECRETARIA ya no pasa",
+      "x": 3950,
+      "y": -1250,
+      "width": 360,
+      "height": 140,
+      "color": "4"
+    },
+    {
+      "id": "n-bloqueo-auto",
+      "type": "text",
+      "text": "**Bloqueo automático (CA-0002)**\njob horario: mensual vencido → VENCIDO\nEPS sin copago en 30 días → BLOQUEADO\ningreso mensual usa contrato,\nno falso vencimiento anual",
+      "x": 4340,
+      "y": -1250,
+      "width": 360,
+      "height": 140,
+      "color": "5"
+    },
+    {
+      "id": "n-ui-faltante",
+      "type": "text",
+      "text": "**UI completada**\nEntrenador: progreso + rutinas\ndel cliente seleccionado\nCliente diario: “Mis sesiones diarias”\nFactura EPS: vista `/factura-eps`",
+      "x": 3560,
+      "y": -1080,
+      "width": 1140,
+      "height": 130,
+      "color": "6"
+    },
+    {
+      "id": "n-docs-sesion-114",
+      "type": "text",
+      "text": "**Vault corregido**\nindex/estado/decisiones ya dicen JWT real\nmigración diario→mensual usa BCrypt\n(y no texto plano)",
+      "x": 3560,
+      "y": -920,
+      "width": 1140,
+      "height": 120,
+      "color": "4"
+    },
+    {
+      "id": "n-verif-114",
+      "type": "text",
+      "text": "**Verificación**\n`./mvnw -q compile` ✅ · `npm run build` ✅ · `npm run lint` ✅\nPruebas manuales `curl`: pendientes.\nMariaDB está inactiva en el entorno.",
+      "x": 3560,
+      "y": -770,
+      "width": 1140,
+      "height": 110,
+      "color": "5"
+    },
+    {
+      "id": "n-pend-114",
+      "type": "text",
+      "text": "**Pendiente / WIP**\nSin commit: árbol sucio.\nMariaDB debe levantarse para pruebas.\nSeleccionarRol.tsx sigue sin uso.",
+      "x": 3560,
+      "y": -630,
+      "width": 1140,
+      "height": 110,
+      "color": "6"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-objetivo",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e2",
+      "fromNode": "n-objetivo",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-be-titulo",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e3",
+      "fromNode": "n-objetivo",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-fe-titulo",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e4",
+      "fromNode": "n-be-titulo",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "c-acceso",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e5",
+      "fromNode": "c-acceso",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-acceso",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e6",
+      "fromNode": "c-admin",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-admin",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e7",
+      "fromNode": "c-cliente",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-cliente",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e8",
+      "fromNode": "c-usuario",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-usuario",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e9",
+      "fromNode": "s-cliente",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "r-usuario",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e10",
+      "fromNode": "s-admin",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "r-asistencia",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e11",
+      "fromNode": "s-pago",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "r-pago",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e12",
+      "fromNode": "s-inventario",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "r-equipo",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e13",
+      "fromNode": "s-acceso",
+      "fromSide": "right",
+      "fromEnd": "none",
+      "toNode": "n-sec-tit",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e14",
+      "fromNode": "f-api",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-sec-tit",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e15",
+      "fromNode": "p-login",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "a-auth",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e16",
+      "fromNode": "p-gestion",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "c-cliente",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e17",
+      "fromNode": "p-admin",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "c-admin",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e18",
+      "fromNode": "p-sec",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "c-usuario",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e19",
+      "fromNode": "p-diario",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "c-cliente",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e20",
+      "fromNode": "p-eps",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "c-cliente",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e21",
+      "fromNode": "p-mensual",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "c-cliente",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e22",
+      "fromNode": "f-admin-svc",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-admin",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "5"
+    },
+    {
+      "id": "e23",
+      "fromNode": "mo-auth",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "a-auth",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e24",
+      "fromNode": "mo-clientes",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-cliente",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e25",
+      "fromNode": "mo-pagos",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-pago",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e26",
+      "fromNode": "mo-entrenadores",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-entrenador",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e27",
+      "fromNode": "mo-evaluacion",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-evaluacion",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e28",
+      "fromNode": "mo-inventario",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-inventario",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e29",
+      "fromNode": "mo-contratos",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "m-contrato",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e30",
+      "fromNode": "mo-notis",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "s-notificacion",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e31",
+      "fromNode": "n-estado-tit",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-wip",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e32",
+      "fromNode": "n-wip",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-next",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "3"
+    },
+    {
+      "id": "e33",
+      "fromNode": "n-actual-tit",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-vista-mvc",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "3"
+    },
+    {
+      "id": "e34",
+      "fromNode": "n-actual-tit",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-sin-jwt",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "3"
+    },
+    {
+      "id": "e35",
+      "fromNode": "n-actual-tit",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "p-selector",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "3"
+    },
+    {
+      "id": "e36",
+      "fromNode": "n-sin-jwt",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "p-selector",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "3"
+    },
+    {
+      "id": "e37",
+      "fromNode": "p-selector",
+      "fromSide": "top",
+      "fromEnd": "none",
+      "toNode": "f-priv",
+      "toSide": "bottom",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e38",
+      "fromNode": "p-selector",
+      "fromSide": "top",
+      "fromEnd": "none",
+      "toNode": "p-admin",
+      "toSide": "bottom",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e39",
+      "fromNode": "p-selector",
+      "fromSide": "top",
+      "fromEnd": "none",
+      "toNode": "p-sec",
+      "toSide": "bottom",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e40",
+      "fromNode": "p-selector",
+      "fromSide": "top",
+      "fromEnd": "none",
+      "toNode": "p-login",
+      "toSide": "bottom",
+      "toEnd": "none",
+      "color": "1"
+    },
+    {
+      "id": "e41",
+      "fromNode": "n-actual-tit",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-bugfix",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "4"
+    },
+    {
+      "id": "e42",
+      "fromNode": "p-selector",
+      "fromSide": "top",
+      "fromEnd": "none",
+      "toNode": "n-sec-tit",
+      "toSide": "bottom",
+      "toEnd": "none",
+      "color": "6",
+      "label": "obsoleto en la vista (solo backend externo)"
+    },
+    {
+      "id": "e-s2026-10-07-n-monorepo",
+      "fromNode": "s2026-10-07",
+      "toNode": "n-monorepo"
+    },
+    {
+      "id": "e-s2026-10-07-n-backend",
+      "fromNode": "s2026-10-07",
+      "toNode": "n-backend"
+    },
+    {
+      "id": "e-n-monorepo-n-fusion",
+      "fromNode": "n-monorepo",
+      "toNode": "n-fusion"
+    },
+    {
+      "id": "e-n-backend-n-admin",
+      "fromNode": "n-backend",
+      "toNode": "n-admin"
+    },
+    {
+      "id": "e-n-backend-n-nombres",
+      "fromNode": "n-backend",
+      "toNode": "n-nombres"
+    },
+    {
+      "id": "e-s2026-10-07-n-auth",
+      "fromNode": "s2026-10-07",
+      "toNode": "n-auth"
+    },
+    {
+      "id": "e-s2026-10-07-n-docs",
+      "fromNode": "s2026-10-07",
+      "toNode": "n-docs"
+    },
+    {
+      "id": "e-n-fusion-n-docs",
+      "fromNode": "n-fusion",
+      "toNode": "n-docs"
+    },
+    {
+      "id": "e-n-auth-n-docs",
+      "fromNode": "n-auth",
+      "toNode": "n-docs"
+    },
+    {
+      "id": "e-n-admin-n-docs",
+      "fromNode": "n-admin",
+      "toNode": "n-docs"
+    },
+    {
+      "id": "e-n-nombres-n-docs",
+      "fromNode": "n-nombres",
+      "toNode": "n-docs"
+    },
+    {
+      "id": "e-n-pagos-n-estado-final",
+      "fromNode": "n-pagos",
+      "toNode": "n-estado-final"
+    },
+    {
+      "id": "e-n-paneles-n-estado-final",
+      "fromNode": "n-paneles",
+      "toNode": "n-estado-final"
+    },
+    {
+      "id": "e-n-documento-n-paneles",
+      "fromNode": "n-documento",
+      "toNode": "n-paneles"
+    },
+    {
+      "id": "e-20261103-1",
+      "fromNode": "s2026-11-03",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-16hu",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-2",
+      "fromNode": "s2026-11-03",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-modelo-asig",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-3",
+      "fromNode": "s2026-11-03",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-solicitud-plus",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-4",
+      "fromNode": "n-16hu",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-contratos",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-5",
+      "fromNode": "n-16hu",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-horarios",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-6",
+      "fromNode": "n-16hu",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-gastos",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-7",
+      "fromNode": "n-16hu",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-fe-nuevo",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-8",
+      "fromNode": "n-fe-nuevo",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-endpoints-new",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-9",
+      "fromNode": "n-endpoints-new",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-docs-jwt",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-10",
+      "fromNode": "n-docs-jwt",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-verif",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-11",
+      "fromNode": "n-verif",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-pend",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-20261103-12",
+      "fromNode": "n-auth",
+      "fromSide": "bottom",
+      "fromEnd": "none",
+      "toNode": "n-docs-jwt",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "1",
+      "label": "revierte: ahora JWT"
+    },
+    {
+      "id": "e-20261104-1",
+      "fromNode": "s2026-11-04",
+      "toNode": "n-cierre-48hu"
+    },
+    {
+      "id": "e-20261104-2",
+      "fromNode": "s2026-11-04",
+      "toNode": "n-factura-eps"
+    },
+    {
+      "id": "e-20261104-3",
+      "fromNode": "s2026-11-04",
+      "toNode": "n-registro-publico"
+    },
+    {
+      "id": "e-20261104-4",
+      "fromNode": "s2026-11-04",
+      "toNode": "n-login-inactivos"
+    },
+    {
+      "id": "e-20261104-5",
+      "fromNode": "n-cierre-48hu",
+      "toNode": "n-bloqueo-auto"
+    },
+    {
+      "id": "e-20261104-6",
+      "fromNode": "n-gastos-admin",
+      "toNode": "n-ui-faltante"
+    },
+    {
+      "id": "e-20261104-7",
+      "fromNode": "n-ui-faltante",
+      "toNode": "n-docs-sesion-114"
+    },
+    {
+      "id": "e-20261104-8",
+      "fromNode": "n-docs-sesion-114",
+      "toNode": "n-verif-114"
+    },
+    {
+      "id": "e-20261104-9",
+      "fromNode": "n-verif-114",
+      "toNode": "n-pend-114"
+    },
+    {
+      "id": "e-20261104-10",
+      "fromNode": "n-auth",
+      "toNode": "n-login-inactivos"
+    }
+  ]
 }

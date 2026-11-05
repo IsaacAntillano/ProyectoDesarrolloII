@@ -17,6 +17,11 @@ import {
   crearRutina,
   listarClientesAsignados,
   registrarEvaluacionPeriodica,
+  registrarEvaluacionInicial,
+  historialEvaluaciones,
+  progresoCliente,
+  rutinasCliente,
+  type Progreso,
   type Horario,
   type Entrenador,
   type Rutina,
@@ -53,6 +58,8 @@ export default function EntrenadorDashboard() {
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [rutinas, setRutinas] = useState<Rutina[]>([]);
   const [clientes, setClientes] = useState<ClienteAsignado[]>([]);
+  const [progreso, setProgreso] = useState<Progreso | null>(null);
+  const [rutinasClienteSel, setRutinasClienteSel] = useState<Rutina[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +119,26 @@ export default function EntrenadorDashboard() {
     cargar();
   }, [cargar]);
 
+  // Seguimiento del cliente seleccionado: progreso físico y rutinas activas.
+  const cargarSeguimiento = useCallback(async () => {
+    if (!clienteDoc) {
+      setProgreso(null);
+      setRutinasClienteSel([]);
+      return;
+    }
+    const [p, r] = await Promise.allSettled([
+      progresoCliente(Number(clienteDoc)),
+      rutinasCliente(Number(clienteDoc)),
+    ]);
+    setProgreso(p.status === 'fulfilled' ? p.value : null);
+    setRutinasClienteSel(r.status === 'fulfilled' ? r.value : []);
+  }, [clienteDoc]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void cargarSeguimiento();
+  }, [cargarSeguimiento]);
+
   const elegirCliente = (doc: string) => {
     setClienteDoc(doc);
   };
@@ -132,6 +159,7 @@ export default function EntrenadorDashboard() {
       toast.success('Horario creado');
       setAgregando(false);
       cargar();
+      void cargarSeguimiento();
     } catch (err) {
       toast.error(
         isServerUnreachable(err)
@@ -160,6 +188,7 @@ export default function EntrenadorDashboard() {
       toast.success(`Rutina creada para ${target.nombreCompleto}`);
       setRutinaForm({ nombre: '', descripcion: '', fechaVencimiento: '' });
       cargar();
+      void cargarSeguimiento();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'No se pudo crear la rutina'));
     } finally {
@@ -195,7 +224,9 @@ export default function EntrenadorDashboard() {
 
     setGuardando(true);
     try {
-      await registrarEvaluacionPeriodica(target.numeroDocumento, {
+      // Primera evaluación del cliente -> inicial; si ya tiene, -> periódica.
+      const historial = await historialEvaluaciones(target.numeroDocumento);
+      const medidas = {
         peso: numero(medForm.peso),
         talla: numero(medForm.talla),
         porcentajeGrasa: numero(medForm.porcentajeGrasa),
@@ -204,13 +235,20 @@ export default function EntrenadorDashboard() {
         perimetroBrazo: numero(medForm.perimetroBrazo),
         presionArterial: medForm.presionArterial.trim(),
         frecuenciaCardiaca: numero(medForm.frecuenciaCardiaca),
-      });
-      toast.success(`Evaluación registrada para ${target.nombreCompleto}`);
+      };
+      if (historial.length === 0) {
+        await registrarEvaluacionInicial(target.numeroDocumento, medidas);
+        toast.success(`Evaluación inicial registrada para ${target.nombreCompleto}`);
+      } else {
+        await registrarEvaluacionPeriodica(target.numeroDocumento, medidas);
+        toast.success(`Evaluación periódica registrada para ${target.nombreCompleto}`);
+      }
       setMedForm({
         peso: '', talla: '', porcentajeGrasa: '', perimetroCintura: '',
         perimetroCadera: '', perimetroBrazo: '', presionArterial: '', frecuenciaCardiaca: '',
       });
       cargar();
+      void cargarSeguimiento();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'No se pudo registrar la evaluación'));
     } finally {
@@ -518,6 +556,61 @@ export default function EntrenadorDashboard() {
                 </Button>
               </form>
             </div>
+          </section>
+
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-1 font-semibold text-gray-800">Seguimiento del cliente</h3>
+            <p className="mb-4 text-sm text-gray-500">
+              Progreso físico y rutinas activas del cliente seleccionado.
+            </p>
+            {!clienteActivo ? (
+              <EmptyState
+                title="Selecciona un cliente"
+                message="Cuando elijas un cliente de la sección anterior verás aquí su progreso y rutinas."
+              />
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <p className="text-sm text-gray-500">Peso perdido</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-800">
+                      {(progreso?.pesoPerdido ?? 0) > 0 ? `${progreso?.pesoPerdido.toFixed(1)} kg` : '0 kg'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <p className="text-sm text-gray-500">IMC actual</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-800">
+                      {progreso?.imcActual?.toFixed(2) ?? '—'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <p className="text-sm text-gray-500">Grasa corporal</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-800">
+                      {progreso?.porcentajeGrasaActual != null ? `${progreso.porcentajeGrasaActual}%` : '—'}
+                    </p>
+                  </div>
+                </div>
+                {progreso?.mensaje && (
+                  <p className="mt-2 text-xs text-gray-500">{progreso.mensaje}</p>
+                )}
+                <div className="mt-4">
+                  <h4 className="font-medium text-gray-800">Rutinas activas</h4>
+                  {rutinasClienteSel.length === 0 ? (
+                    <p className="mt-2 text-sm text-gray-500">Este cliente todavía no tiene rutinas activas.</p>
+                  ) : (
+                    <ul className="mt-2 space-y-2">
+                      {rutinasClienteSel.map((r) => (
+                        <li key={r.idRutina} className="border-l-4 border-blue-500 pl-3">
+                          <p className="font-medium text-gray-800">{r.nombre}</p>
+                          <p className="text-sm text-gray-600">{r.descripcion}</p>
+                          <p className="mt-1 text-xs text-gray-500">Vence {formatearFecha(r.fechaVencimiento)}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
           </section>
         </div>
       )}

@@ -66,8 +66,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Login: unico endpoint publico.
-                        .requestMatchers("/api/auth/login").permitAll()
+                        // Login y registro de cliente: únicos endpoints públicos.
+                        .requestMatchers("/api/auth/login", "/api/auth/registro-cliente").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Sin token la respuesta correcta es 401; con token pero sin rol,

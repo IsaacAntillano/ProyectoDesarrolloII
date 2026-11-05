@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -46,8 +45,13 @@ public class AccesoService {
         if (mensual.getEstadoMembresia() != EstadoMembresia.ACTIVO) {
             throw new RuntimeException("Membresía no activa. No puede ingresar.");
         }
-        if (tieneSaldoPendiente(mensual)) {
-            throw new RuntimeException("Pago pendiente. No puede ingresar.");
+        // La membresía vence con el contrato, no por una ventana fija de 30 días
+        // (un pago anual no deja de ser válido al mes).
+        Contrato contrato = mensual.getContrato();
+        if (contrato == null || contrato.getFechaVencimiento().isBefore(LocalDate.now())) {
+            mensual.setEstadoMembresia(EstadoMembresia.VENCIDO);
+            particularMensualRepository.save(mensual);
+            throw new RuntimeException("Membresía vencida. Renueva el contrato pagando la mensualidad.");
         }
         return guardarAsistencia(mensual);
     }
@@ -112,12 +116,6 @@ public class AccesoService {
         a.setFechaIngreso(LocalDate.now());
         a.setHoraIngreso(LocalTime.now());
         return asistenciaRepository.save(a);
-    }
-
-    private boolean tieneSaldoPendiente(ParticularMensual mensual) {
-        LocalDate haceUnMes = LocalDate.now().minusDays(30);
-        return pagoRepository.findByUsuarioAndTipoPago(mensual, TipoDePago.MEMBRESIA).stream()
-                .noneMatch(p -> p.getFechaPago().isAfter(haceUnMes) && p.getEstadoPago() == EstadoPago.EXITOSO);
     }
 
     private boolean tieneCopagoPendiente(BeneficiarioEps eps) {

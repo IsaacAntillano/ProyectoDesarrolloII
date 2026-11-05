@@ -13,6 +13,8 @@ import GestionClientes from './pages/GestionClientes';
 import GastosOperativos from './pages/GastosOperativos';
 import ContratosVencidos from './pages/ContratosVencidos';
 import SolicitudesPlus from './pages/SolicitudesPlus';
+import RegistroCliente from './pages/RegistroCliente';
+import FacturaEps from './pages/FacturaEps';
 import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 
@@ -30,6 +32,7 @@ function App() {
       <BrowserRouter basename={basename}>
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/registro" element={<RegistroCliente />} />
           <Route
             path="/admin"
             element={
@@ -91,6 +94,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={['ADMINISTRADOR']}>
                 <SolicitudesPlus />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/factura-eps"
+            element={
+              <PrivateRoute allowedRoles={['ADMINISTRADOR']}>
+                <FacturaEps />
               </PrivateRoute>
             }
           />

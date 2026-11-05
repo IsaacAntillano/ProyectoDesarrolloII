@@ -222,6 +222,16 @@ public class ClienteController {
                 clienteService.liberarEntrenadorDeBeneficiarioEPS(numeroDocumento)));
     }
 
+    /** Asigna o cambia el entrenador de cualquier tipo de cliente (solo admin). */
+    @PutMapping("/{numeroDocumento}/entrenador")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<Usuario>> asignarEntrenador(
+            @PathVariable Long numeroDocumento,
+            @Valid @RequestBody AsignarEntrenadorDTO dto) {
+        return ResponseEntity.ok(ApiResponse.success("Entrenador asignado al cliente",
+                clienteService.asignarEntrenadorACliente(numeroDocumento, dto.documentoEntrenador())));
+    }
+
     @GetMapping("/contratos/vencidos")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<List<ContratoVencidoDTO>>> listarContratosVencidos() {

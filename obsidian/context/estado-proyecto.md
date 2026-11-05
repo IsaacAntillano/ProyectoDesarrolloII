@@ -1,6 +1,57 @@
 # Estado del proyecto
 
-> Snapshot al inicio/cierre de cada sesión. Última actualización: 2026-11-03.
+> Snapshot al inicio/cierre de cada sesión. Última actualización: 2026-11-04.
+
+## Sesión: 2026-11-04 (cierre · 48 HU funcionales)
+
+### Último commit
+
+Pendiente: el árbol de trabajo sigue sucio; no se hizo commit en esta sesión.
+
+### Qué se hizo
+
+- **Cierre de brechas del sistema.** Backend y frontend quedaron funcionales
+  para las 48 HU auditadas. Migración diario → mensual ahora tiene botón;
+  `Registrar ingreso` queda visible en gestión de clientes; `Factura EPS`
+  calcula sesiones × valor prorrateado + copagos.
+- **Facturación EPS real** (`PA-0009`): genera factura consolidada por
+  período `YYYY-MM`, única por período y sólo admin; vista admin `/factura-eps`.
+- **Auto-registro** (`CO-0001`): `POST /api/auth/registro-cliente` y ruta
+  pública `/registro`; crea cliente + contrato y asigna entrenador incluído.
+- **Bloqueo automático** (`CA-0002`): job cada hora marca mensuales con
+  contrato vencido como `VENCIDO` y EPS sin copagos recientes como
+  `BLOQUEADO`; ingreso mensual valida vencimiento de contrato.
+- **Huecos de UI**: seguimiento de clientes del entrenador (progreso y rutinas
+  activas), y sección "Mis sesiones diarias" en el cliente particular diario.
+- **Seguridad**: login rechaza usuarios inactivos, gastos operativos sólo admin,
+  JWT por defecto de 4 h y eliminado cualquier rastro de `X-Rol`/`X-Documento`.
+- **Bug real**: la migración diario → mensual acordaba la contraseña en
+  texto plano; ahora se guarda BCrypt.
+
+### Verificación
+
+- `backend/./mvnw -q compile` ✅
+- `frontend/npm run build` ✅
+- `frontend/npm run lint` ✅
+- Pruebas manuales con `curl`: **no ejecutadas**. MariaDB está inactiva en
+  el entorno; no se alteró el servicio.
+
+### Qué quedó en WIP / problemas conocidos
+
+- No se commitearon los cambios.
+- La fórmula de factura prorratea la mensualidad EPS en 20 sesiones; si la
+  gobernanza define otro divisor hay que ajustarlo en un solo lugar.
+- El bloqueo EPS asume que un copago vale para 30 días; es la misma ventana
+  que ya usaba `AccesoService`.
+- `SeleccionarRol.tsx` sigue montado en `/seleccionar-rol`, sin emitir token.
+
+### Próximos pasos
+
+- Levantar MariaDB y hacer las pruebas con `curl`.
+- Decidir si se elimina `SeleccionarRol.tsx`.
+- Commit del trabajo.
+
+---
 
 ## Sesión: 2026-11-03 (cierre · 16 HU de Victus CAF)
 

@@ -36,8 +36,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Endpoints administrativos: tarifas, inventario de equipos y flujo de caja.
  *
- * <p>Solo ADMINISTRADOR. El rol llega en el header {@code X-Rol} y lo aplica
- * {@code RolHeaderFilter}; ver la advertencia de seguridad en el README.
+ * <p>El rol ADMINISTRADOR llega exclusivamente por el token JWT; ver el aviso de seguridad en el README.
  */
 @RestController
 @RequestMapping("/api/admin")
