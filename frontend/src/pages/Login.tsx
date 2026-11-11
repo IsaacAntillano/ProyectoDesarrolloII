@@ -45,8 +45,7 @@ export default function Login() {
       localStorage.setItem(
         'user',
         JSON.stringify({
-          id: 0,
-          numeroDocumento: Number(documento.trim()),
+          documento: Number(documento.trim()),
           nombreCompleto: payload.nombreCompleto,
           rol: payload.rol,
           token: payload.token,

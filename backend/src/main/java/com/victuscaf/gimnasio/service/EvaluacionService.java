@@ -18,11 +18,13 @@ public class EvaluacionService {
     private final EvaluacionFisicaRepository evaluacionRepository;
     private final MetaFisicaRepository metaRepository;
     private final EntrenadorRepository entrenadorRepository;
+    private final AsignacionEntrenadorService asignacionService;
 
     @Transactional
     public EvaluacionFisica crearEvaluacionInicial(Long numeroDocumento, Long documentoEntrenador, MedidasDTO medidas) {
         Usuario usuario = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        asignacionService.validarAsignacionActiva(documentoEntrenador, usuario);
         Entrenador entrenador = entrenadorRepository.findByNumeroDeDocumento(documentoEntrenador)
                 .orElseThrow(() -> new RuntimeException("Entrenador no encontrado"));
         // Verificar si ya existe una evaluación inicial (opcional)
@@ -48,6 +50,7 @@ public class EvaluacionService {
         ev.setPerimetroCintura(m.getPerimetroCintura());
         ev.setPerimetroCadera(m.getPerimetroCadera());
         ev.setPerimetroBrazo(m.getPerimetroBrazo());
+        if (m.getPerimetroPierna() != null) ev.setPerimetroPierna(m.getPerimetroPierna());
         ev.setPresionArterial(m.getPresionArterial());
         ev.setFrecuenciaCardiaca(m.getFrecuenciaCardiaca());
         if (m.getNivelDolor() != null) ev.setNivelDolor(m.getNivelDolor());
@@ -66,12 +69,23 @@ public class EvaluacionService {
         return evaluacionRepository.findByUsuarioOrderByFechaEvaluacionAsc(usuario);
     }
 
-    // Metas
-    @Transactional
-    public MetaFisica crearMetaParticular(Long numeroDocumento, MetaParticularDTO dto) {
+    /** Historial que consulta un entrenador: exige que el cliente este asignado a el. */
+    public List<EvaluacionFisica> consultarHistorial(Long documentoEntrenador, Long numeroDocumento) {
         Usuario usuario = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        MetaFisica meta = new MetaFisica();
+        asignacionService.validarAsignacionActiva(documentoEntrenador, usuario);
+        return evaluacionRepository.findByUsuarioOrderByFechaEvaluacionAsc(usuario);
+    }
+
+    // Metas
+    @Transactional
+    public MetaFisica crearMetaParticular(Long documentoEntrenador, Long numeroDocumento,
+                                          MetaParticularDTO dto) {
+        Usuario usuario = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        asignacionService.validarAsignacionActiva(documentoEntrenador, usuario);
+
+        MetaFisica meta = metaRepository.findByUsuario(usuario).orElseGet(MetaFisica::new);
         meta.setUsuario(usuario);
         meta.setDescripcion(dto.descripcion());
         meta.setPesoObjetivo(dto.pesoObjetivo());
@@ -82,15 +96,27 @@ public class EvaluacionService {
     }
 
     @Transactional
-    public MetaFisica crearMetaEPS(Long numeroDocumento, MetaEPSDTO dto) {
+    public MetaFisica crearMetaEPS(Long documentoEntrenador, Long numeroDocumento, MetaEPSDTO dto) {
         BeneficiarioEps eps = beneficiarioEpsRepository.findByNumeroDeDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException("Beneficiario no encontrado"));
-        MetaFisica meta = new MetaFisica();
+        asignacionService.validarAsignacionActiva(documentoEntrenador, eps);
+
+        // La meta es una sola por cliente (@OneToOne): se actualiza la vigente.
+        MetaFisica meta = metaRepository.findByUsuario(eps).orElseGet(MetaFisica::new);
         meta.setUsuario(eps);
         meta.setObservacionMedica(dto.observacionMedica());
         meta.setDescripcion("Objetivo clínico: " + dto.objetivoClinico());
-        // otros campos opcionales
+        meta.setFechaObjetivo(dto.fechaObjetivo());
         return metaRepository.save(meta);
+    }
+
+    /** Meta vigente del cliente, solo si está asignado al entrenador. */
+    @Transactional(readOnly = true)
+    public MetaFisica consultarMeta(Long documentoEntrenador, Long numeroDocumento) {
+        Usuario usuario = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        asignacionService.validarAsignacionActiva(documentoEntrenador, usuario);
+        return metaRepository.findByUsuario(usuario).orElse(null);
     }
 
     public ProgresoDTO consultarProgreso(Long numeroDocumento) {

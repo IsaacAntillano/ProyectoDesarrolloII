@@ -18,9 +18,11 @@ import com.victuscaf.gimnasio.dto.MedidasDTO;
 import com.victuscaf.gimnasio.dto.MetaEPSDTO;
 import com.victuscaf.gimnasio.dto.MetaParticularDTO;
 import com.victuscaf.gimnasio.dto.MensajeDTO;
+import com.victuscaf.gimnasio.dto.ReporteProgresoEpsDTO;
 import com.victuscaf.gimnasio.dto.RutinaDTO;
 import com.victuscaf.gimnasio.models.EvaluacionFisica;
 import com.victuscaf.gimnasio.models.HorarioEntrenador;
+import com.victuscaf.gimnasio.models.Mensaje;
 import com.victuscaf.gimnasio.models.MetaFisica;
 import com.victuscaf.gimnasio.models.Rutina;
 import com.victuscaf.security.RolHeaderFilter;
@@ -113,6 +115,14 @@ public class EntrenadorController {
         return ResponseEntity.ok(ApiResponse.success("Mensaje enviado al cliente", null));
     }
 
+    /** Mensajes que este entrenador le envió al cliente (GE-0009). */
+    @GetMapping("/clientes/{numeroDocumento}/mensajes")
+    public ResponseEntity<ApiResponse<List<Mensaje>>> mensajesDelCliente(
+            @PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Mensajes enviados al cliente",
+                entrenadorService.listarMensajesEnviados(documentoActual(), numeroDocumento)));
+    }
+
     // ─── Evaluacion fisica ───────────────────────────────────────────
 
     @PostMapping("/evaluaciones/inicial/{numeroDocumento}")
@@ -136,7 +146,7 @@ public class EntrenadorController {
     public ResponseEntity<ApiResponse<List<EvaluacionFisica>>> historialCliente(
             @PathVariable Long numeroDocumento) {
         return ResponseEntity.ok(ApiResponse.success("Historial de evaluaciones",
-                evaluacionService.consultarHistorial(numeroDocumento)));
+                evaluacionService.consultarHistorial(documentoActual(), numeroDocumento)));
     }
 
     /** Progreso físico del cliente (EF-0007). Solo si está asignado a este entrenador. */
@@ -161,7 +171,7 @@ public class EntrenadorController {
             @PathVariable Long numeroDocumento,
             @Valid @RequestBody MetaParticularDTO dto) {
         return ResponseEntity.ok(ApiResponse.success("Meta registrada",
-                evaluacionService.crearMetaParticular(numeroDocumento, dto)));
+                evaluacionService.crearMetaParticular(documentoActual(), numeroDocumento, dto)));
     }
 
     @PostMapping("/metas/eps/{numeroDocumento}")
@@ -169,7 +179,25 @@ public class EntrenadorController {
             @PathVariable Long numeroDocumento,
             @Valid @RequestBody MetaEPSDTO dto) {
         return ResponseEntity.ok(ApiResponse.success("Meta registrada",
-                evaluacionService.crearMetaEPS(numeroDocumento, dto)));
+                evaluacionService.crearMetaEPS(documentoActual(), numeroDocumento, dto)));
+    }
+
+    /** Meta vigente del cliente (EF-0006). */
+    @GetMapping("/clientes/{numeroDocumento}/metas")
+    public ResponseEntity<ApiResponse<MetaFisica>> metaCliente(
+            @PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Meta vigente del cliente",
+                evaluacionService.consultarMeta(documentoActual(), numeroDocumento)));
+    }
+
+    // ─── Reporte EPS (EF-0008) ───────────────────────────────────────
+
+    /** Reporte de progreso físico de un beneficiario EPS, para imprimir o guardar como PDF. */
+    @GetMapping("/clientes/{numeroDocumento}/reporte-eps")
+    public ResponseEntity<ApiResponse<ReporteProgresoEpsDTO>> reporteEps(
+            @PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Reporte de progreso EPS",
+                entrenadorService.generarReporteEps(documentoActual(), numeroDocumento)));
     }
 
     /**

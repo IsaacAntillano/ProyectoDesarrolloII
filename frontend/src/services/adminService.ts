@@ -43,6 +43,7 @@ export interface FlujoCaja {
   totalIngresoParticular: number;
   totalIngresoParticularDiario: number;
   totalIngresoCopagoEps: number;
+  totalIngresoFacturaEps: number;
   totalIngresoPlus: number;
   totalEgresosMantenimiento: number;
   totalEgresosNomina: number;
@@ -81,6 +82,84 @@ export const generarFacturaEps = (periodo: string) =>
 
 export const listarFacturasEps = () =>
   api.get<ApiResponse<FacturaEps[]>>('/pagos/facturas-eps').then(unwrap);
+
+export interface PagoFacturaEps {
+  id: number;
+  fechaPago: string;
+  valor: number;
+  metodoPago: 'EFECTIVO' | 'TARJETA_DEBITO' | 'TARJETA_CREDITO' | 'TRANSFERENCIA';
+  tipoPago: string;
+  estadoPago: string;
+}
+
+export interface FacturaEpsDetalle {
+  factura: FacturaEps;
+  pagos: PagoFacturaEps[];
+}
+
+/** Detalle de una factura EPS con los pagos registrados (PA-0010). */
+export const detalleFacturaEps = (id: number) =>
+  api.get<ApiResponse<FacturaEpsDetalle>>(`/pagos/facturas-eps/${id}`).then(unwrap);
+
+/** Marca la factura como radicada ante la EPS. */
+export const radicarFacturaEps = (id: number) =>
+  api.put<ApiResponse<FacturaEps>>(`/pagos/facturas-eps/${id}/radicar`).then(unwrap);
+
+/** Registra el pago recibido de la EPS (PA-0013). */
+export const pagarFacturaEps = (
+  id: number,
+  data: { fechaPago: string; metodoPago: PagoFacturaEps['metodoPago']; valor: number }
+) => api.put<ApiResponse<FacturaEps>>(`/pagos/facturas-eps/${id}/pagar`, data).then(unwrap);
+
+// ─── Horarios de beneficiarios EPS (GE-0006) ────────────────────────
+
+export interface HorarioDisponibleEps {
+  idHorario: number;
+  fechaDisponible: string;
+  horaInicio: string;
+  horaFin: string;
+  entrenador: string;
+}
+
+export const listarHorariosDisponiblesEps = (numeroDocumento: number) =>
+  api
+    .get<ApiResponse<HorarioDisponibleEps[]>>(`/admin/eps/${numeroDocumento}/horarios-disponibles`)
+    .then(unwrap);
+
+export const asignarHorarioEps = (numeroDocumento: number, idHorario: number) =>
+  api
+    .put<ApiResponse<void>>(`/admin/eps/${numeroDocumento}/horarios/${idHorario}`)
+    .then(unwrap);
+
+// ─── Solicitudes de baja voluntaria (CLT-0005) ──────────────────────
+
+export type EstadoSolicitudBaja = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+
+export interface SolicitudBaja {
+  id: number;
+  fechaSolicitud: string;
+  horaSolicitud: string;
+  motivo: string;
+  estado: EstadoSolicitudBaja;
+  observacionAdmin?: string | null;
+  fechaRespuesta?: string | null;
+  cliente?: { numeroDocumento: number; nombreCompleto: string } | null;
+}
+
+export const listarSolicitudesBaja = (estado?: EstadoSolicitudBaja) =>
+  api
+    .get<ApiResponse<SolicitudBaja[]>>('/admin/solicitudes-baja', { params: { estado } })
+    .then(unwrap);
+
+export const aprobarSolicitudBaja = (id: number, observacion?: string) =>
+  api
+    .put<ApiResponse<SolicitudBaja>>(`/admin/solicitudes-baja/${id}/aprobar`, { observacion })
+    .then(unwrap);
+
+export const rechazarSolicitudBaja = (id: number, observacion: string) =>
+  api
+    .put<ApiResponse<SolicitudBaja>>(`/admin/solicitudes-baja/${id}/rechazar`, { observacion })
+    .then(unwrap);
 
 // ─── Solicitudes de entrenador plus ─────────────────────────────────
 

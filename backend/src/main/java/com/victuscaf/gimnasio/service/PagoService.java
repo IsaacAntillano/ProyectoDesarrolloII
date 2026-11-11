@@ -1,6 +1,7 @@
 package com.victuscaf.gimnasio.service;
 
 import com.victuscaf.gimnasio.models.*;
+import com.victuscaf.gimnasio.dto.FacturaEpsDetalleDTO;
 import com.victuscaf.gimnasio.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,8 @@ public class PagoService {
     private final EquipoRepository equipoRepository;          // necesario para mantenimiento
     private final EntrenadorRepository entrenadorRepository;  // necesario para nómina
     private final AsistenciaRepository asistenciaRepository;  // necesario para la factura EPS
+    private final UsuarioSistemaRepository usuarioSistemaRepository;
+    private final SeguridadService seguridadService;
 
     /** Sesiones estándar inclusas en la mensualidad EPS, para prorratear por sesión. */
     private static final double SESIONES_MENSUALES_ESTIMADAS = 20.0;
@@ -54,9 +57,21 @@ public class PagoService {
         if (cliente.getEstadoMembresia() != EstadoMembresia.ACTIVO) {
             cliente.setEstadoMembresia(EstadoMembresia.ACTIVO);
         }
-        // Renovar contrato (extender fecha de vencimiento un mes)
+        // Renovar contrato (extender fecha de vencimiento un mes).
+        // Si el contrato ya vencio, la renovacion corre desde hoy: de lo
+        // contrario un pago sobre un contrato vencido hace meses lo dejaria
+        // vencido otra vez y el job de bloqueo lo marcaria de inmediato.
         Contrato contrato = cliente.getContrato();
-        contrato.setFechaVencimiento(contrato.getFechaVencimiento().plusMonths(1));
+        if (contrato == null) {
+            throw new RuntimeException("El cliente no tiene un contrato registrado");
+        }
+        LocalDate hoy = LocalDate.now();
+        LocalDate base = contrato.getFechaVencimiento() == null
+                || contrato.getFechaVencimiento().isBefore(hoy)
+                ? hoy
+                : contrato.getFechaVencimiento();
+        contrato.setFechaVencimiento(base.plusMonths(1));
+        contrato.setEstado(EstadoContratoParticular.ACTIVO);
         particularMensualRepository.save(cliente);
         return pago;
     }
@@ -191,6 +206,9 @@ public class PagoService {
         double totalIngresosCopago = pagos.stream()
                 .filter(p -> p.getTipoPago() == TipoDePago.COPAGO)
                 .mapToDouble(Pago::getValor).sum();
+        double totalIngresosFacturaEps = pagos.stream()
+                .filter(p -> p.getTipoPago() == TipoDePago.EPS)
+                .mapToDouble(Pago::getValor).sum();
         double totalIngresosPlus = pagos.stream()
                 .filter(p -> p.getTipoPago() == TipoDePago.PLUS)
                 .mapToDouble(Pago::getValor).sum();
@@ -211,6 +229,7 @@ public class PagoService {
         flujo.setTotalIngresoParticular(totalIngresosParticular);
         flujo.setTotalIngresoParticularDiario(totalIngresosDiario);
         flujo.setTotalIngresoCopagoEps(totalIngresosCopago);
+        flujo.setTotalIngresoFacturaEps(totalIngresosFacturaEps);
         flujo.setTotalIngresoPlus(totalIngresosPlus);
         flujo.setTotalEgresosMantenimiento(egresosMantenimiento);
         flujo.setTotalEgresosNomina(egresosNomina);
@@ -282,6 +301,89 @@ public class PagoService {
         return facturaEpsRepository.findAll().stream()
                 .sorted((a, b) -> b.getPeriodoConsolidado().compareTo(a.getPeriodoConsolidado()))
                 .toList();
+    }
+
+    /** Detalle de una factura EPS con los pagos registrados a su favor (PA-0010). */
+    @Transactional(readOnly = true)
+    public FacturaEpsDetalleDTO consultarFacturaEPS(Long idFactura) {
+        FacturaEps factura = facturaEpsRepository.findById(idFactura)
+                .orElseThrow(() -> new RuntimeException("Factura EPS no encontrada"));
+        return new FacturaEpsDetalleDTO(factura, pagoRepository.findByFacturaEps(factura));
+    }
+
+    /** Marca la factura como radicada ante la EPS (paso previo al pago). */
+    @Transactional
+    public FacturaEps radicarFacturaEPS(Long idFactura, Long documentoAdmin) {
+        FacturaEps factura = facturaEpsRepository.findById(idFactura)
+                .orElseThrow(() -> new RuntimeException("Factura EPS no encontrada"));
+        if (factura.getEstado() != EstadoFacturaEps.PENDIENTE) {
+            throw new RuntimeException("Solo se puede radicar una factura pendiente");
+        }
+        factura.setEstado(EstadoFacturaEps.RADICADA);
+        factura.setFechaRadicacion(LocalDate.now());
+        FacturaEps guardada = facturaEpsRepository.save(factura);
+        registrarBitacora(documentoAdmin, "Factura EPS radicada: " + factura.getPeriodoConsolidado());
+        return guardada;
+    }
+
+    /**
+     * Registra el pago recibido de la EPS (PA-0013).
+     *
+     * <p>Marca la factura como {@code PAGADA}, guarda la fecha de pago y crea un
+     * {@link Pago} de tipo {@code EPS} vinculado a la factura, de modo que el
+     * ingreso aparezca en el flujo de caja.
+     */
+    @Transactional
+    public FacturaEps registrarPagoFacturaEPS(Long idFactura, MetodoDePago metodo,
+                                              LocalDate fechaPago, double valor,
+                                              Long documentoAdmin) {
+        FacturaEps factura = facturaEpsRepository.findById(idFactura)
+                .orElseThrow(() -> new RuntimeException("Factura EPS no encontrada"));
+        if (factura.getEstado() == EstadoFacturaEps.PAGADA) {
+            throw new RuntimeException("La factura EPS ya está pagada");
+        }
+        if (Math.abs(valor - factura.getValorTotal()) > 0.01) {
+            throw new RuntimeException("El valor debe ser igual al total de la factura: "
+                    + factura.getValorTotal());
+        }
+
+        LocalDate fecha = fechaPago == null ? LocalDate.now() : fechaPago;
+        factura.setEstado(EstadoFacturaEps.PAGADA);
+        factura.setFechaPago(fecha);
+        facturaEpsRepository.save(factura);
+
+        Pago pago = new Pago();
+        pago.setValor(valor);
+        pago.setMetodoPago(metodo);
+        pago.setTipoPago(TipoDePago.EPS);
+        pago.setEstadoPago(EstadoPago.EXITOSO);
+        pago.setFechaPago(fecha);
+        pago.setFacturaEps(factura);
+        pagoRepository.save(pago);
+
+        // Si el flujo del día ya se generó, se actualiza para que el ingreso EPS
+        // quede reflejado (el flujo se calcula normalmente desde los pagos).
+        flujoDeCajaRepository.findByFecha(fecha).ifPresent(flujo -> {
+            flujo.setTotalIngresoFacturaEps(flujo.getTotalIngresoFacturaEps() + valor);
+            flujo.setUtilidadNeta(flujo.getUtilidadNeta() + valor);
+            flujoDeCajaRepository.save(flujo);
+        });
+
+        registrarBitacora(documentoAdmin, "Pago de factura EPS "
+                + factura.getPeriodoConsolidado() + " por " + valor);
+        return factura;
+    }
+
+    private void registrarBitacora(Long documentoAdmin, String descripcion) {
+        if (documentoAdmin == null) {
+            return;
+        }
+        usuarioSistemaRepository.findByNumeroDeDocumento(documentoAdmin).ifPresent(admin ->
+                seguridadService.registrarAccionEnBitacora(
+                        admin.getIdUsuarioSistema(),
+                        admin.getNombreCompleto(),
+                        TipoAccion.REGISTRO_PAGO,
+                        descripcion));
     }
 
     // ========== TARIFAS ==========

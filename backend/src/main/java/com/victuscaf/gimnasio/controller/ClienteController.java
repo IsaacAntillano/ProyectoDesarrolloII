@@ -4,6 +4,7 @@ import com.victuscaf.gimnasio.dto.*;
 import com.victuscaf.gimnasio.models.*;
 import com.victuscaf.gimnasio.service.ClienteService;
 import com.victuscaf.gimnasio.dto.ApiResponse;
+import com.victuscaf.security.RolHeaderFilter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -145,6 +146,28 @@ public class ClienteController {
                 clienteService.reactivarBeneficiarioEPS(numeroDocumento)));
     }
 
+    // ==================== DESBLOQUEO MANUAL (CA-0003) ====================
+
+    @PutMapping("/mensual/{numeroDocumento}/desbloquear")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<ParticularMensual>> desbloquearParticularMensual(
+            @PathVariable Long numeroDocumento,
+            @RequestBody(required = false) DesbloqueoDTO dto) {
+        String motivo = dto == null ? null : dto.motivo();
+        return ResponseEntity.ok(ApiResponse.success("Cliente particular mensual desbloqueado",
+                clienteService.desbloquearParticularMensual(numeroDocumento, motivo, documentoActual())));
+    }
+
+    @PutMapping("/eps/{numeroDocumento}/desbloquear")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<BeneficiarioEps>> desbloquearBeneficiarioEPS(
+            @PathVariable Long numeroDocumento,
+            @RequestBody(required = false) DesbloqueoDTO dto) {
+        String motivo = dto == null ? null : dto.motivo();
+        return ResponseEntity.ok(ApiResponse.success("Beneficiario EPS desbloqueado",
+                clienteService.desbloquearBeneficiarioEPS(numeroDocumento, motivo, documentoActual())));
+    }
+
     // ==================== LISTADOS ====================
 
     @GetMapping("/mensuales/activos")
@@ -237,5 +260,17 @@ public class ClienteController {
     public ResponseEntity<ApiResponse<List<ContratoVencidoDTO>>> listarContratosVencidos() {
         return ResponseEntity.ok(ApiResponse.success("Clientes con contrato vencido",
                 clienteService.consultarContratosVencidos()));
+    }
+
+    private Long documentoActual() {
+        String documento = RolHeaderFilter.documentoActual();
+        if (documento == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(documento);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

@@ -1,6 +1,65 @@
 # Estado del proyecto
 
-> Snapshot al inicio/cierre de cada sesión. Última actualización: 2026-11-04.
+> Snapshot al inicio/cierre de cada sesión. Última actualización: 2026-11-11.
+
+## Sesión: 2026-11-11 (cierre · revisión 47 HU + prueba E2E)
+
+### Último commit
+
+Pendiente: el árbol de trabajo sigue sucio; no se hizo commit en esta sesión.
+
+### Qué se hizo
+
+- **Revisión completa de las 47 HU** de los Sprint 1 (31) y 2 (16): todas
+  tienen implementación backend + frontend. No faltaban historias, sino
+  agujeros de integridad en flujos ya existentes.
+- **Fix renovación de contrato (`CO-0004`).** `PagoService.registrarPagoMensualidad`
+  renovaba siempre desde `fechaVencimiento`. Si el contrato estaba vencido hace
+  meses, el pago lo dejaba vencido otra vez. Ahora renueva desde
+  `max(hoy, fechaVencimiento)`, valida que el contrato exista y lo marca
+  `ACTIVO`.
+- **Fix escrituras del entrenador.** Nuevo
+  `AsignacionEntrenadorService.validarAsignacionActiva(...)`. `crearRutina`,
+  `enviarMensaje`, `verificarAsignacionActiva` y `crearEvaluacionInicial` ya no
+  permiten operar sobre clientes ajenos; el historial del entrenador usa un
+  overload que exige la asignación. El admin sigue con acceso libre.
+- **Fix `idAdminModificador`.** `AdminController` resuelve el id del
+  administrador desde el documento del JWT e ignora el valor del body, que
+  antes llegaba en 0.
+- **Fix flujo de caja.** `generarFlujoCaja` existía en `pagoService.ts` pero
+  ninguna página lo llamaba, y la UI pedía "generarlo desde el panel" sin
+  botón. Se agregó "Generar flujo" en `AdminDashboard.tsx`.
+
+### Verificación
+
+- `backend/./mvnw -q compile` ✅
+- `frontend/npm run build` ✅
+- `frontend/npm run lint` ✅
+- **Smoke test `curl`: 68 PASS / 0 FAIL** contra MariaDB local
+  (`/tmp/opencode/mariadb`, puerto 3306) con el seed cargado. Cubre login por
+  rol, tarifas, clientes mensual/diario/EPS, migración, pagos, ingresos,
+  rutinas/evaluaciones, asignación y cupo, cancelación EPS, equipos, gastos,
+  flujo de caja, factura EPS, contratos vencidos, plus y autorización por rol.
+- Verificado en BD: `id_admin_modificador` guarda el id real del admin (1) y la
+  renovación de un contrato vencido 2 meses deja fecha futura (`2026-12-11`).
+
+### Qué quedó en WIP / problemas conocidos
+
+- Los cambios no están commiteados.
+- `SeleccionarRol.tsx` sigue montado en `/seleccionar-rol` sin emitir token:
+  código obsoleto.
+- No hay tests automatizados; la verificación es `compile` + smoke manual.
+- MariaDB no se pudo levantar como servicio (sin `sudo`); se usó una instancia
+  local con datadir propio en `/tmp/opencode/mariadb`.
+
+### Próximos pasos
+
+- Commit del trabajo.
+- Eliminar o archivar `SeleccionarRol.tsx`.
+- Evaluar convertir el smoke test en una suite repetible (hoy no es idempotente:
+  requiere base limpia).
+
+---
 
 ## Sesión: 2026-11-04 (cierre · 48 HU funcionales)
 
@@ -269,3 +328,52 @@ Pendiente de cerrar al terminar la sesión (ver `git log`).
 - Qué quedó en WIP:
 - Problemas nuevos:
 - Próximos pasos:
+## Sesión: 2026-11-11 (cierre · Sprint 3 implementado)
+
+### Último commit
+
+Pendiente: el árbol de trabajo sigue sucio; no se hizo commit en esta sesión.
+
+### Qué se hizo
+
+- **Sprint 3 (16 HU) implementado** backend + frontend, verificado con
+  `./mvnw -q compile`, `npm run build` y `npm run lint` (verde).
+- **Backend:**
+  - `CA-0003`: `desbloquearParticularMensual` / `desbloquearBeneficiarioEPS`
+    + endpoints admin + bitácora `DESBLOQUEO_ACCESO`; rechaza si el contrato
+    mensual venció.
+  - `PA-0013/PA-0010`: `TipoDePago.EPS`, `Pago.facturaEps`, flujo de caja
+    `totalIngresoFacturaEps`, detalle/radicar/pagar factura, bitácora
+    `REGISTRO_PAGO`; el pago actualiza el flujo del día si ya existe.
+  - `EF-0002/0004/0006`: `perimetroPierna` en `MedidasDTO`/`EvaluacionFisica`;
+    metas con upsert, validación de asignación y `GET /metas`;
+    `MetaEPSDTO.fechaObjetivo`.
+  - `GE-0006`: `asignarHorarioAEps`, `listarHorariosDisponiblesParaEps` +
+    endpoints admin.
+  - `GE-0009`: listado de mensajes enviados, bandeja del cliente y
+    marcar leído.
+  - `EF-0008`: `ReporteProgresoEpsDTO` + `generarReporteEps` + endpoint
+    `GET /api/entrenador/clientes/{doc}/reporte-eps`.
+  - `CLT-0005`: entidad `SolicitudBaja`, repo, servicio, controller y
+    endpoints del portal.
+- **Frontend:**
+  - `EntrenadorDashboard.tsx`: `perimetroPierna`, meta (EPS/particular),
+    mensajes enviados + envío, historial con pierna, botón reporte EPS.
+  - `ClienteDashboard.tsx`: bandeja de mensajes con "marcar leído" y solicitud
+    de baja voluntaria con `ConfirmDialog`.
+  - `ReporteEps.tsx`: vista imprimible con `window.print()`, ruta
+    `/reporte-eps/:documento`.
+  - `SolicitudesBaja.tsx`: bandeja admin con filtros, aprobar/rechazar.
+  - `GestionClientes.tsx`: desbloqueo, asignación de horario EPS, `formatearHora`.
+  - `FacturaEps.tsx`: modal de detalle con pagos, radicar y pago.
+  - `AdminDashboard.tsx`: "Ingreso factura EPS" en el flujo.
+  - `App.tsx`/`Layout.tsx`: rutas y nav nuevas.
+- **Smoke test** ampliado con sección 11 (Sprint 3): **108 PASS / 0 FAIL** sobre
+  base limpia.
+
+### Verificación
+
+- `./mvnw -q compile` OK (solo warnings de Lombok).
+- `npm run build` OK.
+- `npm run lint` OK.
+- Smoke E2E: 108 PASS / 0 FAIL.

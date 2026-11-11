@@ -4,6 +4,11 @@ Formato: fecha · decisión · motivo. Se añade una entrada al cerrar cada sesi
 
 | Fecha | Decisión | Motivo |
 | --- | --- | --- |
+| 2026-11-11 | **Sprint 3 (16 HU) implementado** (desbloqueo manual, factura EPS pagada con `Pago` tipo EPS, metas con upsert, horarios EPS, mensajes entrenador-cliente, reporte EPS imprimible, solicitud de baja con aprobación admin) | Cierra las brechas del Sprint 3 sobre la auditoría; el smoke E2E queda en 108 PASS / 0 FAIL |
+| 2026-11-11 | Renovar el contrato mensual desde **`max(hoy, fechaVencimiento)`** | Renovar siempre desde el vencimiento dejaba vencido un contrato que ya llevaba meses caído: el pago no lo rescataba y el job de bloqueo lo marcaba de inmediato |
+| 2026-11-11 | Validar **asignación activa** en toda escritura del entrenador (`validarAsignacionActiva`) | El entrenador podía crear rutinas, mensajes, evaluaciones y leer historiales de clientes que no tenía asignados. El rol ADMINISTRADOR conserva acceso libre |
+| 2026-11-11 | El **`idAdminModificador` de tarifas sale del JWT**, no del body | El campo del DTO lo podía falsificar el cliente y llegaba en 0; la bitácora debe registrar al admin autenticado |
+| 2026-11-11 | La UI de admin **genera el flujo de caja** con un botón | `generarFlujoCaja` existía en el servicio pero ninguna página lo llamaba; el mensaje pedía generarlo desde un panel que no tenía la acción |
 | 2026-11-03 | Ocultar `contrasena` en las entidades con **`@JsonIgnore`** | Las respuestas de clientes, usuarios y solicitudes plus devolvían la contraseña en texto plano. El login y los DTO de entrada no se afectan |
 | 2026-11-03 | Modelar la relación entrenador-cliente en **`AsignacionEntrenador`** | El flag booleano del cliente no guardaba origen, fechas ni historial. Una tabla permite cupo, vencimiento a un mes y liberar el cupo al cancelar |
 | 2026-11-03 | **Primer mes incluido** (`origen=PRIMER_MES`, `fechaFin=hoy+1 mes`); el **plus** (`origen=PLUS`) no lleva fecha de corte | Es la regla del negocio: todo particular mensual arranca con entrenador un mes; después el servicio se solicita y se cobra aparte |

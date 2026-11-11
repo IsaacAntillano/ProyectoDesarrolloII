@@ -21,6 +21,7 @@ public class EntrenadorService {
     private final MensajeRepository mensajeRepository;
     private final AsignacionEntrenadorService asignacionService;
     private final EvaluacionService evaluacionService;
+    private final BeneficiarioEpsRepository beneficiarioEpsRepository;
 
     // CRUD Entrenador (solo admin)
     @Transactional
@@ -72,12 +73,51 @@ public class EntrenadorService {
         horarioRepository.save(horario);
     }
 
+    /**
+     * Asigna un horario a un beneficiario EPS desde el panel del administrador
+     * (GE-0006). Exige que el beneficiario esté activo, tenga una asignación
+     * vigente y que el horario pertenezca a su entrenador.
+     */
+    @Transactional
+    public void asignarHorarioAEps(Long idHorario, Long numeroDocumento) {
+        BeneficiarioEps eps = beneficiarioEpsRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Beneficiario EPS no encontrado"));
+        if (!Boolean.TRUE.equals(eps.getEstado())) {
+            throw new RuntimeException("El beneficiario EPS no está activo");
+        }
+        if (eps.getEstadoContrato() == EstadoContratoEps.FINALIZADO
+                || eps.getEstadoContrato() == EstadoContratoEps.CANCELADO_ANCTICIPADAMENTE) {
+            throw new RuntimeException("El contrato EPS está finalizado o cancelado");
+        }
+
+        AsignacionEntrenador asignacion = asignacionService.asignacionActiva(eps)
+                .orElseThrow(() -> new RuntimeException(
+                        "El beneficiario EPS no tiene un entrenador asignado"));
+
+        HorarioEntrenador horario = horarioRepository.findById(idHorario)
+                .orElseThrow(() -> new RuntimeException("Horario no encontrado"));
+        if (!horario.isDisponible()) {
+            throw new RuntimeException("El horario ya no está disponible");
+        }
+        if (horario.getFechaDisponible().isBefore(LocalDate.now())) {
+            throw new RuntimeException("No se puede asignar un horario pasado");
+        }
+        if (horario.getEntrenador() == null
+                || !horario.getEntrenador().getIdUsuarioSistema()
+                        .equals(asignacion.getEntrenador().getIdUsuarioSistema())) {
+            throw new RuntimeException("El horario no pertenece al entrenador asignado al beneficiario");
+        }
+
+        horario.setIdClienteAsignado(eps.getId());
+        horario.setDisponible(false);
+        horarioRepository.save(horario);
+    }
+
     // Rutinas
     @Transactional
     public Rutina crearRutina(Long documentoEntrenador, Long numeroDocumento, RutinaDTO dto) {
         Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
-        Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        Usuario cliente = verificarAsignacionActiva(documentoEntrenador, numeroDocumento);
         Rutina rutina = new Rutina();
         rutina.setEntrenador(entrenador);
         rutina.setUsuario(cliente);
@@ -93,8 +133,7 @@ public class EntrenadorService {
     @Transactional
     public Mensaje enviarMensaje(Long documentoEntrenador, Long numeroDocumento, String contenido) {
         Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
-        Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        Usuario cliente = verificarAsignacionActiva(documentoEntrenador, numeroDocumento);
         Mensaje msg = new Mensaje();
         msg.setEntrenador(entrenador);
         msg.setCliente(cliente);
@@ -103,6 +142,34 @@ public class EntrenadorService {
         msg.setHoraEnvio(java.time.LocalTime.now());
         msg.setLeido(false);
         return mensajeRepository.save(msg);
+    }
+
+    /** Mensajes que este entrenador le envió a un cliente asignado (GE-0009). */
+    @Transactional(readOnly = true)
+    public List<Mensaje> listarMensajesEnviados(Long documentoEntrenador, Long numeroDocumento) {
+        Entrenador entrenador = buscarPorDocumento(documentoEntrenador);
+        Usuario cliente = verificarAsignacionActiva(documentoEntrenador, numeroDocumento);
+        return mensajeRepository.findByEntrenadorAndClienteOrderByFechaEnvioDescHoraEnvioDesc(
+                entrenador, cliente);
+    }
+
+    /** Bandeja del cliente autenticado, más recientes primero (GE-0009). */
+    @Transactional(readOnly = true)
+    public List<Mensaje> listarMensajesDelCliente(Long numeroDocumento) {
+        Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        return mensajeRepository.findByClienteOrderByFechaEnvioDescHoraEnvioDesc(cliente);
+    }
+
+    /** Marca como leído un mensaje propio del cliente. */
+    @Transactional
+    public Mensaje marcarMensajeLeido(Long idMensaje, Long numeroDocumento) {
+        Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        Mensaje mensaje = mensajeRepository.findByIdAndCliente(idMensaje, cliente)
+                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+        mensaje.setLeido(true);
+        return mensajeRepository.save(mensaje);
     }
 
     // ========== CONSULTAS ==========
@@ -157,6 +224,17 @@ public class EntrenadorService {
                         horario.getHoraFin(),
                         entrenador.getNombreCompleto()))
                 .toList();
+    }
+
+    /** Cupos libres del entrenador asignado a un beneficiario EPS (GE-0006). */
+    @Transactional(readOnly = true)
+    public List<HorarioDisponibleDTO> listarHorariosDisponiblesParaEps(Long numeroDocumento) {
+        BeneficiarioEps eps = beneficiarioEpsRepository.findByNumeroDeDocumento(numeroDocumento)
+                .orElseThrow(() -> new RuntimeException("Beneficiario EPS no encontrado"));
+        if (!Boolean.TRUE.equals(eps.getEstado())) {
+            throw new RuntimeException("El beneficiario EPS no está activo");
+        }
+        return listarHorariosDisponiblesParaCliente(numeroDocumento);
     }
 
     /** Reserva un cupo del entrenador asignado al cliente. */
@@ -215,6 +293,48 @@ public class EntrenadorService {
     }
 
     /**
+     * Reporte de progreso físico de un beneficiario EPS (EF-0008).
+     *
+     * <p>El entrenador lo genera desde su panel y lo imprime o guarda como PDF
+     * desde el navegador. El administrador también puede consultarlo.
+     */
+    @Transactional(readOnly = true)
+    public ReporteProgresoEpsDTO generarReporteEps(Long documentoEntrenador, Long numeroDocumento) {
+        Usuario usuario = verificarAsignacionActiva(documentoEntrenador, numeroDocumento);
+        if (!(usuario instanceof BeneficiarioEps eps)) {
+            throw new RuntimeException("El cliente no es un beneficiario EPS");
+        }
+
+        AsignacionEntrenador asignacion = asignacionService.asignacionActiva(eps)
+                .orElseThrow(() -> new RuntimeException(
+                        "El beneficiario EPS no tiene un entrenador asignado"));
+        Entrenador entrenador = asignacion.getEntrenador();
+
+        List<EvaluacionFisica> evaluaciones =
+                evaluacionService.consultarHistorial(documentoEntrenador, numeroDocumento);
+        ProgresoDTO progreso = evaluacionService.consultarProgreso(numeroDocumento);
+        MetaFisica meta = evaluacionService.consultarMeta(documentoEntrenador, numeroDocumento);
+        Remision remision = eps.getRemision();
+
+        return new ReporteProgresoEpsDTO(
+                eps.getNumeroDeDocumento(),
+                eps.getNombreCompleto(),
+                remision != null ? remision.getEntidadEps() : null,
+                remision != null ? remision.getDiagnostico() : null,
+                remision != null ? remision.getZonaCuerpoTratar() : null,
+                remision != null ? remision.getMedicoRemitente() : null,
+                entrenador != null ? entrenador.getNombreCompleto() : null,
+                LocalDate.now(),
+                evaluaciones.isEmpty() ? null : evaluaciones.getFirst().getFechaEvaluacion(),
+                evaluaciones.isEmpty() ? null : evaluaciones.getLast().getFechaEvaluacion(),
+                evaluaciones,
+                progreso,
+                meta != null ? meta.getDescripcion() : null,
+                meta != null ? meta.getObservacionMedica() : null,
+                meta != null ? meta.getFechaObjetivo() : null);
+    }
+
+    /**
      * Verifica que, si quien llama es un entrenador, el cliente tenga una
      * asignación activa con él. El rol {@code ADMINISTRADOR} (su documento no
      * corresponde a ningún entrenador) puede consultar a cualquiera.
@@ -222,19 +342,7 @@ public class EntrenadorService {
     private Usuario verificarAsignacionActiva(Long documentoEntrenador, Long numeroDocumento) {
         Usuario cliente = usuarioRepository.findByNumeroDeDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
-        var entrenadorOpt = entrenadorRepository.findByNumeroDeDocumento(documentoEntrenador);
-        if (entrenadorOpt.isEmpty()) {
-            // Quien llama no es un entrenador (administrador): acceso libre.
-            return cliente;
-        }
-        Entrenador entrenador = entrenadorOpt.get();
-        AsignacionEntrenador asignacion = asignacionService.asignacionActiva(cliente)
-                .orElseThrow(() -> new RuntimeException("El cliente no tiene un entrenador asignado"));
-        if (asignacion.getEntrenador() == null
-                || !asignacion.getEntrenador().getIdUsuarioSistema()
-                        .equals(entrenador.getIdUsuarioSistema())) {
-            throw new RuntimeException("El cliente no esta asignado a ti");
-        }
+        asignacionService.validarAsignacionActiva(documentoEntrenador, cliente);
         return cliente;
     }
 }

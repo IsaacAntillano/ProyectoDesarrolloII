@@ -14,7 +14,7 @@ export interface Entrenador {
 }
 
 export interface Horario {
-  idHorario: number;
+  id: number;
   fechaDisponible: string;
   horaInicio: string;
   horaFin: string;
@@ -63,14 +63,32 @@ export interface EvaluacionFisica {
   imc: number;
   porcentajeGrasa: number;
   perimetroCintura: number;
+  perimetroCadera?: number;
+  perimetroBrazo?: number;
+  perimetroPierna?: number;
   presionArterial: string;
   frecuenciaCardiaca: number;
+  observaciones?: string;
 }
 
 export interface MetaFisica {
   id: number;
   descripcion: string;
-  fechaObjetivo: string;
+  pesoObjetivo?: number | null;
+  porcentajeGrasaObjetivo?: number | null;
+  perimetroCinturaObjetivo?: number | null;
+  fechaObjetivo?: string | null;
+  observacionMedica?: string | null;
+}
+
+export interface Mensaje {
+  id: number;
+  contenido: string;
+  fechaEnvio: string;
+  horaEnvio: string;
+  leido: boolean;
+  entrenador?: { nombreCompleto: string } | null;
+  cliente?: { nombreCompleto: string } | null;
 }
 
 // ─── Identidad ──────────────────────────────────────────────────────
@@ -141,5 +159,45 @@ export const progresoCliente = (numeroDocumento: number) =>
 export const rutinasCliente = (numeroDocumento: number) =>
   api.get<ApiResponse<Rutina[]>>(`/entrenador/clientes/${numeroDocumento}/rutinas`).then(unwrap);
 
-export const crearMetaEps = (numeroDocumento: number, data: { objetivoClinico: string; observacionMedica?: string }) =>
-  api.post<ApiResponse<MetaFisica>>(`/entrenador/metas/eps/${numeroDocumento}`, data).then(unwrap);
+export const crearMetaEps = (
+  numeroDocumento: number,
+  data: { objetivoClinico: string; observacionMedica?: string; fechaObjetivo?: string }
+) => api.post<ApiResponse<MetaFisica>>(`/entrenador/metas/eps/${numeroDocumento}`, data).then(unwrap);
+
+/** Meta vigente del cliente (EF-0006). */
+export const metaCliente = (numeroDocumento: number) =>
+  api.get<ApiResponse<MetaFisica | null>>(`/entrenador/clientes/${numeroDocumento}/metas`).then(unwrap);
+
+// ─── Mensajes (GE-0009) ─────────────────────────────────────────────
+
+export const enviarMensaje = (numeroDocumento: number, contenido: string) =>
+  api.post<ApiResponse<void>>(`/entrenador/mensajes/${numeroDocumento}`, { contenido }).then(unwrap);
+
+export const mensajesEnviados = (numeroDocumento: number) =>
+  api.get<ApiResponse<Mensaje[]>>(`/entrenador/clientes/${numeroDocumento}/mensajes`).then(unwrap);
+
+// ─── Reporte EPS (EF-0008) ──────────────────────────────────────────
+
+export interface ReporteProgresoEps {
+  numeroDocumento: number;
+  nombreBeneficiario: string;
+  entidadEps?: string | null;
+  diagnostico?: string | null;
+  zonaCuerpoTratar?: string | null;
+  medicoRemitente?: string | null;
+  nombreEntrenador?: string | null;
+  fechaGeneracion: string;
+  fechaEvaluacionInicial?: string | null;
+  fechaEvaluacionFinal?: string | null;
+  evaluaciones: EvaluacionFisica[];
+  progreso: Progreso;
+  objetivoClinico?: string | null;
+  observacionMedica?: string | null;
+  fechaObjetivo?: string | null;
+}
+
+/** Reporte de progreso físico de un beneficiario EPS (EF-0008). */
+export const reporteEps = (numeroDocumento: number) =>
+  api
+    .get<ApiResponse<ReporteProgresoEps>>(`/entrenador/clientes/${numeroDocumento}/reporte-eps`)
+    .then(unwrap);

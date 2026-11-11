@@ -4,5 +4,6 @@ public enum TipoDePago {
     MEMBRESIA,
     COPAGO,
     PLUS,
-    DIARIO
+    DIARIO,
+    EPS
 }

@@ -23,6 +23,8 @@ import {
   FiUserX,
   FiLogIn,
   FiArrowRight,
+  FiUnlock,
+  FiClock,
 } from 'react-icons/fi';
 import {
   type ClienteBase,
@@ -44,6 +46,8 @@ import {
   reactivarClienteMensual,
   reactivarClienteDiario,
   reactivarBeneficiarioEps,
+  desbloquearClienteMensual,
+  desbloquearBeneficiarioEps,
   buscarClienteMensual,
   buscarClienteDiario,
   buscarBeneficiarioEps,
@@ -54,6 +58,11 @@ import {
   getApiErrorMessage,
   migrarDiarioAMensual,
 } from '../services/clienteService';
+import {
+  listarHorariosDisponiblesEps,
+  asignarHorarioEps,
+  type HorarioDisponibleEps,
+} from '../services/adminService';
 import { listarUsuarios, type UsuarioSistema } from '../services/usuarioSistemaService';
 import { registrarIngreso } from '../services/secretariaService';
 import { isServerUnreachable, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
@@ -64,7 +73,7 @@ import {
   ETIQUETA_TIPO_MEMBRESIA,
   ETIQUETA_ESTADO_CONTRATO,
 } from '../constants/labels';
-import { formatearFecha, formatearNumero } from '../utils/format';
+import { formatearFecha, formatearHora, formatearNumero } from '../utils/format';
 
 type Tab = 'mensual' | 'diario' | 'eps';
 
@@ -99,6 +108,14 @@ export default function GestionClientes() {
   const [motivoCancelacion, setMotivoCancelacion] = useState('');
   const [asignando, setAsignando] = useState<ClienteBase | null>(null);
   const [documentoEntrenador, setDocumentoEntrenador] = useState('');
+
+  // Desbloqueo manual (CA-0003) y asignación de horario EPS (GE-0006).
+  const [desbloqueando, setDesbloqueando] = useState<ClienteBase | null>(null);
+  const [motivoDesbloqueo, setMotivoDesbloqueo] = useState('');
+  const [horarioAsignando, setHorarioAsignando] = useState<ClienteBase | null>(null);
+  const [horariosEps, setHorariosEps] = useState<HorarioDisponibleEps[]>([]);
+  const [cargandoHorarios, setCargandoHorarios] = useState(false);
+  const [idHorarioSeleccionado, setIdHorarioSeleccionado] = useState('');
 
   // Modal de migración diario -> mensual.
   const [migrando, setMigrando] = useState<ClienteBase | null>(null);
@@ -291,6 +308,66 @@ export default function GestionClientes() {
       cargar();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'No se pudo asignar el entrenador'));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const abrirDesbloqueo = (c: ClienteBase) => {
+    setDesbloqueando(c);
+    setMotivoDesbloqueo('');
+  };
+
+  const confirmarDesbloqueo = async () => {
+    if (!desbloqueando) return;
+    setGuardando(true);
+    try {
+      const motivo = motivoDesbloqueo.trim() || undefined;
+      if (tab === 'mensual') {
+        await desbloquearClienteMensual(desbloqueando.numeroDeDocumento, motivo);
+      } else {
+        await desbloquearBeneficiarioEps(desbloqueando.numeroDeDocumento, motivo);
+      }
+      toast.success(`${desbloqueando.nombreCompleto} desbloqueado`);
+      setDesbloqueando(null);
+      setMotivoDesbloqueo('');
+      cargar();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo desbloquear el cliente'));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const abrirHorario = async (c: ClienteBase) => {
+    setHorarioAsignando(c);
+    setIdHorarioSeleccionado('');
+    setHorariosEps([]);
+    setCargandoHorarios(true);
+    try {
+      setHorariosEps(await listarHorariosDisponiblesEps(c.numeroDeDocumento));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudieron cargar los horarios del entrenador'));
+    } finally {
+      setCargandoHorarios(false);
+    }
+  };
+
+  const confirmarHorario = async () => {
+    if (!horarioAsignando) return;
+    if (!idHorarioSeleccionado) {
+      toast.error('Selecciona un horario');
+      return;
+    }
+    setGuardando(true);
+    try {
+      await asignarHorarioEps(horarioAsignando.numeroDeDocumento, Number(idHorarioSeleccionado));
+      toast.success(`Horario asignado a ${horarioAsignando.nombreCompleto}`);
+      setHorarioAsignando(null);
+      setIdHorarioSeleccionado('');
+      cargar();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo asignar el horario'));
     } finally {
       setGuardando(false);
     }
@@ -527,6 +604,17 @@ export default function GestionClientes() {
                       {tab === 'eps' && esAdmin && c.tieneEntrenadorPermanente && !epsCancelado(c) && (
                         <button
                           type="button"
+                          onClick={() => void abrirHorario(c)}
+                          className="rounded-md p-2 text-indigo-600 hover:bg-indigo-50 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-indigo-500"
+                          aria-label={`Asignar horario a ${c.nombreCompleto}`}
+                          title="Asignar horario"
+                        >
+                          <FiClock aria-hidden="true" />
+                        </button>
+                      )}
+                      {tab === 'eps' && esAdmin && c.tieneEntrenadorPermanente && !epsCancelado(c) && (
+                        <button
+                          type="button"
                           onClick={() => setAccion({ tipo: 'liberar', cliente: c })}
                           className="rounded-md p-2 text-amber-600 hover:bg-amber-50 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-amber-500"
                           aria-label={`Liberar el entrenador de ${c.nombreCompleto}`}
@@ -535,6 +623,19 @@ export default function GestionClientes() {
                           <FiUserX aria-hidden="true" />
                         </button>
                       )}
+                      {esAdmin &&
+                        ((tab === 'mensual' && c.estadoMembresia === 'BLOQUEADO') ||
+                          (tab === 'eps' && c.estadoContrato === 'BLOQUEADO')) && (
+                          <button
+                            type="button"
+                            onClick={() => abrirDesbloqueo(c)}
+                            className="rounded-md p-2 text-emerald-600 hover:bg-emerald-50 [&:focus-visible]:outline-none [&:focus-visible]:ring-2 [&:focus-visible]:ring-emerald-500"
+                            aria-label={`Desbloquear a ${c.nombreCompleto}`}
+                            title="Desbloquear acceso"
+                          >
+                            <FiUnlock aria-hidden="true" />
+                          </button>
+                        )}
                       {tab === 'eps' && esAdmin && c.estado && !epsCancelado(c) && (
                         <button
                           type="button"
@@ -861,6 +962,99 @@ export default function GestionClientes() {
               />
             </Field>
           </form>
+        )}
+      </Modal>
+
+      {/* Desbloqueo manual (CA-0003) */}
+      <Modal
+        open={!!desbloqueando}
+        onClose={() => setDesbloqueando(null)}
+        title="Desbloquear acceso"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDesbloqueando(null)} disabled={guardando}>
+              Cancelar
+            </Button>
+            <Button variant="success" onClick={() => void confirmarDesbloqueo()} loading={guardando}>
+              Desbloquear
+            </Button>
+          </>
+        }
+      >
+        {desbloqueando && (
+          <>
+            <p className="text-sm text-gray-600">
+              Se habilitará de nuevo el acceso de <strong>{desbloqueando.nombreCompleto}</strong>. El
+              desbloqueo solo procede si su contrato sigue vigente; si ya venció, registra el pago
+              correspondiente.
+            </p>
+            <Field
+              label="Motivo (opcional)"
+              htmlFor="motivo-desbloqueo"
+              help="Queda registrado en la bitácora del sistema"
+            >
+              <Textarea
+                id="motivo-desbloqueo"
+                rows={3}
+                value={motivoDesbloqueo}
+                onChange={(e) => setMotivoDesbloqueo(e.target.value)}
+                placeholder="Ej: pago en efectivo verificado en taquilla"
+              />
+            </Field>
+          </>
+        )}
+      </Modal>
+
+      {/* Asignar horario a un beneficiario EPS (GE-0006) */}
+      <Modal
+        open={!!horarioAsignando}
+        onClose={() => setHorarioAsignando(null)}
+        title="Asignar horario"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setHorarioAsignando(null)} disabled={guardando}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => void confirmarHorario()}
+              loading={guardando}
+              disabled={cargandoHorarios || horariosEps.length === 0}
+            >
+              Asignar horario
+            </Button>
+          </>
+        }
+      >
+        {horarioAsignando && (
+          <>
+            <p className="text-sm text-gray-600">
+              Beneficiario: <strong>{horarioAsignando.nombreCompleto}</strong>. Solo aparecen cupos
+              libres del entrenador que tiene asignado.
+            </p>
+            {cargandoHorarios ? (
+              <p className="text-sm text-gray-500">Cargando horarios disponibles...</p>
+            ) : horariosEps.length === 0 ? (
+              <p role="note" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                El entrenador no tiene cupos libres. Crea horarios desde su panel o libera un cupo.
+              </p>
+            ) : (
+              <Field label="Horario disponible" htmlFor="horario-eps" required>
+                <Select
+                  id="horario-eps"
+                  value={idHorarioSeleccionado}
+                  onChange={(e) => setIdHorarioSeleccionado(e.target.value)}
+                  required
+                >
+                  <option value="">Selecciona un horario</option>
+                  {horariosEps.map((h) => (
+                    <option key={h.idHorario} value={h.idHorario}>
+                      {formatearFecha(h.fechaDisponible)} · {formatearHora(h.horaInicio)} - {formatearHora(h.horaFin)}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+          </>
         )}
       </Modal>
 

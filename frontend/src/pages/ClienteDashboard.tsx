@@ -21,6 +21,10 @@ import {
   reservarHorario,
   misSolicitudesPlus,
   solicitarPlus,
+  misMensajes,
+  marcarMensajeLeido,
+  misSolicitudesBaja,
+  solicitarBaja,
   type MiPerfil,
   type MiRutina,
   type MiEvaluacion,
@@ -28,6 +32,8 @@ import {
   type Progreso,
   type HorarioDisponible,
   type SolicitudPlus,
+  type Mensaje,
+  type SolicitudBaja,
 } from '../services/clientePanelService';
 import { isServerUnreachable, getApiErrorMessage, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
 import {
@@ -55,6 +61,10 @@ export default function ClienteDashboard() {
   const [asistencias, setAsistencias] = useState<MiAsistencia[]>([]);
   const [horarios, setHorarios] = useState<HorarioDisponible[]>([]);
   const [solicitudes, setSolicitudes] = useState<SolicitudPlus[]>([]);
+  const [mensajes, setMensajes] = useState<Mensaje[]>([]);
+  const [solicitudesBaja, setSolicitudesBaja] = useState<SolicitudBaja[]>([]);
+  const [motivoBaja, setMotivoBaja] = useState('');
+  const [confirmandoBaja, setConfirmandoBaja] = useState(false);
   const [observacionPlus, setObservacionPlus] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [reservando, setReservando] = useState<HorarioDisponible | null>(null);
@@ -78,9 +88,16 @@ export default function ClienteDashboard() {
       setEvaluaciones(ev);
       setAsistencias(as);
 
-      const [h, s] = await Promise.allSettled([misHorariosDisponibles(), misSolicitudesPlus()]);
+      const [h, s, msgs, bajas] = await Promise.allSettled([
+        misHorariosDisponibles(),
+        misSolicitudesPlus(),
+        misMensajes(),
+        misSolicitudesBaja(),
+      ]);
       setHorarios(h.status === 'fulfilled' ? h.value : []);
       setSolicitudes(s.status === 'fulfilled' ? s.value : []);
+      setMensajes(msgs.status === 'fulfilled' ? msgs.value : []);
+      setSolicitudesBaja(bajas.status === 'fulfilled' ? bajas.value : []);
     } catch (err) {
       setError(
         isServerUnreachable(err)
@@ -121,6 +138,34 @@ export default function ClienteDashboard() {
       await cargar();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'No se pudo enviar la solicitud'));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const marcarLeido = async (idMensaje: number) => {
+    try {
+      await marcarMensajeLeido(idMensaje);
+      setMensajes((prev) => prev.map((m) => (m.id === idMensaje ? { ...m, leido: true } : m)));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo marcar el mensaje como leído'));
+    }
+  };
+
+  const enviarBaja = async () => {
+    if (!motivoBaja.trim()) {
+      toast.error('Cuéntanos el motivo de la baja');
+      return;
+    }
+    setGuardando(true);
+    try {
+      await solicitarBaja(motivoBaja.trim());
+      toast.success('Solicitud de baja enviada. El administrador la revisará.');
+      setMotivoBaja('');
+      setConfirmandoBaja(false);
+      await cargar();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo enviar la solicitud de baja'));
     } finally {
       setGuardando(false);
     }
@@ -390,6 +435,94 @@ export default function ClienteDashboard() {
               )}
             </section>
           </div>
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-3 font-semibold text-gray-800">Mensajes de mi entrenador</h3>
+            {mensajes.length === 0 ? (
+              <EmptyState
+                title="Sin mensajes"
+                message="Cuando tu entrenador te envíe recomendaciones o recordatorios, aparecerán aquí."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {mensajes.map((m) => (
+                  <li key={m.id} className="rounded-md border border-gray-200 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs text-gray-500">
+                        {formatearFecha(m.fechaEnvio)} · {formatearHora(m.horaEnvio)}
+                        {m.entrenador?.nombreCompleto ? ` · ${m.entrenador.nombreCompleto}` : ''}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <StatusBadge tone={m.leido ? 'green' : 'amber'}>
+                          {m.leido ? 'Leído' : 'Nuevo'}
+                        </StatusBadge>
+                        {!m.leido && (
+                          <Button size="sm" variant="secondary" onClick={() => void marcarLeido(m.id)}>
+                            Marcar leído
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-700">{m.contenido}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {perfil?.tipoDeCliente === 'PARTICULAR_MENSUAL' && (
+            <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-1 font-semibold text-gray-800">Baja voluntaria</h3>
+              <p className="mb-3 text-sm text-gray-600">
+                Si decides no continuar, envía una solicitud de baja. El administrador la revisa y, si
+                la aprueba, tu contrato se cierra y se libera tu entrenador.
+              </p>
+
+              {solicitudesBaja.length > 0 && (
+                <ul className="mb-4 space-y-2">
+                  {solicitudesBaja.map((s) => (
+                    <li key={s.id} className="flex flex-wrap items-center gap-2 border-b pb-2 text-sm">
+                      <span className="text-gray-700">
+                        Solicitud del {formatearFecha(s.fechaSolicitud)}
+                      </span>
+                      <StatusBadge tone={TONE_SOLICITUD[s.estado]}>
+                        {etiqueta(ETIQUETA_ESTADO_SOLICITUD, s.estado)}
+                      </StatusBadge>
+                      {s.observacionAdmin && (
+                        <span className="text-xs text-gray-500">{s.observacionAdmin}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {solicitudesBaja.some((s) => s.estado === 'PENDIENTE') ? (
+                <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  Tu solicitud de baja está pendiente de respuesta del administrador.
+                </p>
+              ) : (
+                <>
+                  <Field label="Motivo de la baja" htmlFor="motivo-baja" required>
+                    <Input
+                      id="motivo-baja"
+                      type="text"
+                      value={motivoBaja}
+                      onChange={(e) => setMotivoBaja(e.target.value)}
+                      placeholder="Ej: cambio de ciudad"
+                      required
+                    />
+                  </Field>
+                  <Button
+                    variant="danger"
+                    className="mt-3"
+                    onClick={() => setConfirmandoBaja(true)}
+                    disabled={!motivoBaja.trim()}
+                  >
+                    Solicitar baja
+                  </Button>
+                </>
+              )}
+            </section>
+          )}
         </div>
       )}
 
@@ -410,6 +543,22 @@ export default function ClienteDashboard() {
               Una vez reservado, ese cupo deja de estar disponible para otros clientes.
             </>
           ) : null
+        }
+      />
+
+      <ConfirmDialog
+        open={confirmandoBaja}
+        onClose={() => setConfirmandoBaja(false)}
+        onConfirm={() => void enviarBaja()}
+        loading={guardando}
+        variant="danger"
+        title="Solicitar baja"
+        confirmLabel="Enviar solicitud"
+        message={
+          <>
+            ¿Enviar la solicitud de baja voluntaria? El administrador la revisará antes de cerrar tu
+            contrato. Motivo: <strong>{motivoBaja}</strong>.
+          </>
         }
       />
     </Layout>

@@ -11,6 +11,7 @@ public class MedidasDTO {
     @Positive double perimetroCintura;
     @Positive double perimetroCadera;
     @Positive double perimetroBrazo;
+    @Positive Double perimetroPierna;   // opcional
     @NotBlank String presionArterial;
     @Positive int frecuenciaCardiaca;
     Integer nivelDolor;          // opcional, solo para EPS

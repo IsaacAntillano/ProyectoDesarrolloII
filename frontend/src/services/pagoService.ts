@@ -2,7 +2,7 @@ import api from './api';
 import { type ApiResponse, unwrap } from './apiTypes';
 
 export type MetodoPago = 'EFECTIVO' | 'TARJETA_DEBITO' | 'TARJETA_CREDITO' | 'TRANSFERENCIA';
-export type TipoPago = 'MEMBRESIA' | 'COPAGO' | 'PLUS' | 'DIARIO';
+export type TipoPago = 'MEMBRESIA' | 'COPAGO' | 'PLUS' | 'DIARIO' | 'EPS';
 
 export interface Pago {
   id: number;
@@ -26,6 +26,7 @@ export interface FlujoCaja {
   totalIngresoParticular: number;
   totalIngresoParticularDiario: number;
   totalIngresoCopagoEps: number;
+  totalIngresoFacturaEps: number;
   totalIngresoPlus: number;
   totalEgresosMantenimiento: number;
   totalEgresosNomina: number;

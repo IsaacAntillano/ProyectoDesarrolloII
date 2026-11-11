@@ -31,4 +31,9 @@ public class Pago {
     @ManyToOne
     @JoinColumn(name = "contrato_id")
     private Contrato contrato;
+
+    /** Factura EPS a la que aplica el pago (solo para pagos de tipo EPS). */
+    @ManyToOne
+    @JoinColumn(name = "factura_eps_id")
+    private FacturaEps facturaEps;
 }

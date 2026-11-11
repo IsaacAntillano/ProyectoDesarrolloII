@@ -36,6 +36,8 @@ public class ClienteService {
     private final EntrenadorRepository entrenadorRepository;
     private final TarifaRepository tarifaRepository;
     private final AsignacionEntrenadorService asignacionEntrenadorService;
+    private final SeguridadService seguridadService;
+    private final UsuarioSistemaRepository usuarioSistemaRepository;
 
     // ==================== REGISTRO DE CLIENTES ====================
 
@@ -288,6 +290,8 @@ public class ClienteService {
         ParticularMensual cliente = consultarParticularMensualPorDocumento(numeroDocumento);
         cliente.setEstado(false);
         cliente.setEstadoMembresia(EstadoMembresia.VENCIDO);
+        cliente.setTieneEntrenador(false);
+        asignacionEntrenadorService.liberar(cliente);
         particularMensualRepository.save(cliente);
     }
 
@@ -305,6 +309,8 @@ public class ClienteService {
         BeneficiarioEps cliente = consultarBeneficiarioEPSPorDocumento(numeroDocumento);
         cliente.setEstado(false);
         cliente.setEstadoContrato(EstadoContratoEps.FINALIZADO);
+        cliente.setTieneEntrenadorPermanente(false);
+        asignacionEntrenadorService.liberar(cliente);
         beneficiarioEpsRepository.save(cliente);
     }
 
@@ -352,6 +358,75 @@ public class ClienteService {
         cliente.setEstado(true);
         cliente.setEstadoContrato(EstadoContratoEps.ACTIVO);
         return beneficiarioEpsRepository.save(cliente);
+    }
+
+    // ==================== DESBLOQUEO MANUAL (CA-0003) ====================
+
+    /**
+     * Desbloquea manualmente un cliente mensual bloqueado por el job de
+     * membresías. Solo procede si el contrato sigue vigente: si ya venció, el
+     * job volvería a bloquearlo y lo correcto es registrar el pago.
+     */
+    @Transactional
+    public ParticularMensual desbloquearParticularMensual(Long numeroDocumento, String motivo,
+                                                          Long documentoAdmin) {
+        ParticularMensual cliente = consultarParticularMensualPorDocumento(numeroDocumento);
+        boolean bloqueado = cliente.getEstadoMembresia() == EstadoMembresia.BLOQUEADO
+                || !Boolean.TRUE.equals(cliente.getEstado());
+        if (!bloqueado) {
+            throw new RuntimeException("El cliente no está bloqueado");
+        }
+
+        Contrato contrato = cliente.getContrato();
+        if (contrato != null && contrato.getFechaVencimiento() != null
+                && contrato.getFechaVencimiento().isBefore(LocalDate.now())) {
+            throw new RuntimeException(
+                    "El contrato está vencido. Registre el pago de la mensualidad para desbloquear al cliente.");
+        }
+
+        cliente.setEstado(true);
+        cliente.setEstadoMembresia(EstadoMembresia.ACTIVO);
+        if (contrato != null) {
+            contrato.setEstado(EstadoContratoParticular.ACTIVO);
+            contratoRepository.save(contrato);
+        }
+        ParticularMensual guardado = particularMensualRepository.save(cliente);
+        registrarBitacora(documentoAdmin, "Desbloqueo manual del cliente mensual "
+                + cliente.getNumeroDeDocumento()
+                + (motivo == null || motivo.isBlank() ? "" : " - Motivo: " + motivo));
+        return guardado;
+    }
+
+    /** Desbloquea manualmente un beneficiario EPS con contrato bloqueado. */
+    @Transactional
+    public BeneficiarioEps desbloquearBeneficiarioEPS(Long numeroDocumento, String motivo,
+                                                      Long documentoAdmin) {
+        BeneficiarioEps cliente = consultarBeneficiarioEPSPorDocumento(numeroDocumento);
+        boolean bloqueado = cliente.getEstadoContrato() == EstadoContratoEps.BLOQUEADO
+                || !Boolean.TRUE.equals(cliente.getEstado());
+        if (!bloqueado) {
+            throw new RuntimeException("El beneficiario EPS no está bloqueado");
+        }
+
+        cliente.setEstado(true);
+        cliente.setEstadoContrato(EstadoContratoEps.ACTIVO);
+        BeneficiarioEps guardado = beneficiarioEpsRepository.save(cliente);
+        registrarBitacora(documentoAdmin, "Desbloqueo manual del beneficiario EPS "
+                + cliente.getNumeroDeDocumento()
+                + (motivo == null || motivo.isBlank() ? "" : " - Motivo: " + motivo));
+        return guardado;
+    }
+
+    private void registrarBitacora(Long documentoAdmin, String descripcion) {
+        if (documentoAdmin == null) {
+            return;
+        }
+        usuarioSistemaRepository.findByNumeroDeDocumento(documentoAdmin).ifPresent(admin ->
+                seguridadService.registrarAccionEnBitacora(
+                        admin.getIdUsuarioSistema(),
+                        admin.getNombreCompleto(),
+                        TipoAccion.DESBLOQUEO_ACCESO,
+                        descripcion));
     }
 
     // ==================== MIGRACIÓN DIARIO -> MENSUAL ====================

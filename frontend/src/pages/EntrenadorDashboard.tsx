@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FiPlus, FiRefreshCw, FiUsers, FiCalendar, FiActivity } from 'react-icons/fi';
+import { FiPlus, FiRefreshCw, FiUsers, FiCalendar, FiActivity, FiFileText, FiSend } from 'react-icons/fi';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/ui/StatusBadge';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
 import ErrorState from '../components/ui/ErrorState';
 import Button from '../components/ui/Button';
-import { Field, Input, Select } from '../components/ui/Field';
+import { Field, Input, Select, Textarea } from '../components/ui/Field';
 import ProgressBar from '../components/ui/ProgressBar';
 import {
   miPerfil,
@@ -21,11 +22,19 @@ import {
   historialEvaluaciones,
   progresoCliente,
   rutinasCliente,
+  crearMetaParticular,
+  crearMetaEps,
+  metaCliente,
+  mensajesEnviados,
+  enviarMensaje,
   type Progreso,
   type Horario,
   type Entrenador,
   type Rutina,
   type ClienteAsignado,
+  type EvaluacionFisica,
+  type MetaFisica,
+  type Mensaje,
 } from '../services/entrenadorService';
 import { isServerUnreachable, getApiErrorMessage, SERVER_UNREACHABLE_MESSAGE } from '../utils/apiError';
 import {
@@ -49,17 +58,29 @@ interface ErroresEvaluacion {
   perimetroCintura?: string;
   perimetroCadera?: string;
   perimetroBrazo?: string;
+  perimetroPierna?: string;
   presionArterial?: string;
   frecuenciaCardiaca?: string;
 }
 
 export default function EntrenadorDashboard() {
+  const navigate = useNavigate();
   const [perfil, setPerfil] = useState<Entrenador | null>(null);
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [rutinas, setRutinas] = useState<Rutina[]>([]);
   const [clientes, setClientes] = useState<ClienteAsignado[]>([]);
   const [progreso, setProgreso] = useState<Progreso | null>(null);
   const [rutinasClienteSel, setRutinasClienteSel] = useState<Rutina[]>([]);
+  const [historial, setHistorial] = useState<EvaluacionFisica[]>([]);
+  const [meta, setMeta] = useState<MetaFisica | null>(null);
+  const [mensajes, setMensajes] = useState<Mensaje[]>([]);
+  const [mensajeTexto, setMensajeTexto] = useState('');
+  const [metaForm, setMetaForm] = useState({
+    descripcion: '',
+    objetivoClinico: '',
+    observacionMedica: '',
+    fechaObjetivo: '',
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +102,7 @@ export default function EntrenadorDashboard() {
     perimetroCintura: '',
     perimetroCadera: '',
     perimetroBrazo: '',
+    perimetroPierna: '',
     presionArterial: '',
     frecuenciaCardiaca: '',
   });
@@ -119,19 +141,37 @@ export default function EntrenadorDashboard() {
     cargar();
   }, [cargar]);
 
-  // Seguimiento del cliente seleccionado: progreso físico y rutinas activas.
+  // Seguimiento del cliente seleccionado: progreso físico, rutinas, historial, meta y mensajes.
   const cargarSeguimiento = useCallback(async () => {
     if (!clienteDoc) {
       setProgreso(null);
       setRutinasClienteSel([]);
+      setHistorial([]);
+      setMeta(null);
+      setMensajes([]);
       return;
     }
-    const [p, r] = await Promise.allSettled([
+    const [p, r, h, m, msgs] = await Promise.allSettled([
       progresoCliente(Number(clienteDoc)),
       rutinasCliente(Number(clienteDoc)),
+      historialEvaluaciones(Number(clienteDoc)),
+      metaCliente(Number(clienteDoc)),
+      mensajesEnviados(Number(clienteDoc)),
     ]);
     setProgreso(p.status === 'fulfilled' ? p.value : null);
     setRutinasClienteSel(r.status === 'fulfilled' ? r.value : []);
+    setHistorial(h.status === 'fulfilled' ? h.value : []);
+    const metaActual = m.status === 'fulfilled' ? m.value : null;
+    setMeta(metaActual);
+    setMetaForm((prev) => ({
+      ...prev,
+      descripcion: metaActual?.descripcion ?? '',
+      objetivoClinico:
+        metaActual?.descripcion?.replace(/^Objetivo clínico:\s*/, '') ?? '',
+      observacionMedica: metaActual?.observacionMedica ?? '',
+      fechaObjetivo: metaActual?.fechaObjetivo ?? '',
+    }));
+    setMensajes(msgs.status === 'fulfilled' ? msgs.value : []);
   }, [clienteDoc]);
 
   useEffect(() => {
@@ -212,6 +252,7 @@ export default function EntrenadorDashboard() {
     if (!medForm.perimetroCintura || numero(medForm.perimetroCintura) <= 0) errores.perimetroCintura = 'Debe ser mayor que 0';
     if (!medForm.perimetroCadera || numero(medForm.perimetroCadera) <= 0) errores.perimetroCadera = 'Debe ser mayor que 0';
     if (!medForm.perimetroBrazo || numero(medForm.perimetroBrazo) <= 0) errores.perimetroBrazo = 'Debe ser mayor que 0';
+    if (!medForm.perimetroPierna || numero(medForm.perimetroPierna) <= 0) errores.perimetroPierna = 'Debe ser mayor que 0';
     if (!esPresionValida(medForm.presionArterial)) errores.presionArterial = 'Formato 120/80';
     if (!medForm.frecuenciaCardiaca || numero(medForm.frecuenciaCardiaca) < 20 || numero(medForm.frecuenciaCardiaca) > 250) errores.frecuenciaCardiaca = 'Debe estar entre 20 y 250 lpm';
 
@@ -233,6 +274,7 @@ export default function EntrenadorDashboard() {
         perimetroCintura: numero(medForm.perimetroCintura),
         perimetroCadera: numero(medForm.perimetroCadera),
         perimetroBrazo: numero(medForm.perimetroBrazo),
+        perimetroPierna: numero(medForm.perimetroPierna),
         presionArterial: medForm.presionArterial.trim(),
         frecuenciaCardiaca: numero(medForm.frecuenciaCardiaca),
       };
@@ -245,12 +287,83 @@ export default function EntrenadorDashboard() {
       }
       setMedForm({
         peso: '', talla: '', porcentajeGrasa: '', perimetroCintura: '',
-        perimetroCadera: '', perimetroBrazo: '', presionArterial: '', frecuenciaCardiaca: '',
+        perimetroCadera: '', perimetroBrazo: '', perimetroPierna: '',
+        presionArterial: '', frecuenciaCardiaca: '',
       });
       cargar();
       void cargarSeguimiento();
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'No se pudo registrar la evaluación'));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const guardarMeta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clienteActivo) {
+      toast.error('Selecciona uno de tus clientes asignados');
+      return;
+    }
+    const esEps = clienteActivo.tipoDeCliente === 'BENEFICIARIO_EPS';
+    if (esEps) {
+      if (!metaForm.objetivoClinico.trim()) {
+        toast.error('El objetivo clínico es obligatorio para un beneficiario EPS');
+        return;
+      }
+    } else {
+      if (!metaForm.descripcion.trim()) {
+        toast.error('La descripción de la meta es obligatoria');
+        return;
+      }
+      if (!metaForm.fechaObjetivo) {
+        toast.error('Indica la fecha objetivo de la meta');
+        return;
+      }
+    }
+    setGuardando(true);
+    try {
+      if (esEps) {
+        await crearMetaEps(clienteActivo.numeroDocumento, {
+          objetivoClinico: metaForm.objetivoClinico.trim(),
+          observacionMedica: metaForm.observacionMedica.trim() || undefined,
+          fechaObjetivo: metaForm.fechaObjetivo || undefined,
+        });
+      } else {
+        await crearMetaParticular(clienteActivo.numeroDocumento, {
+          descripcion: metaForm.descripcion.trim(),
+          fechaObjetivo: metaForm.fechaObjetivo,
+        });
+      }
+      toast.success(
+        meta ? 'Meta actualizada' : `Meta registrada para ${clienteActivo.nombreCompleto}`
+      );
+      void cargarSeguimiento();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo guardar la meta'));
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const enviarMensajeCliente = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clienteActivo) {
+      toast.error('Selecciona uno de tus clientes asignados');
+      return;
+    }
+    if (!mensajeTexto.trim()) {
+      toast.error('Escribe el mensaje antes de enviarlo');
+      return;
+    }
+    setGuardando(true);
+    try {
+      await enviarMensaje(clienteActivo.numeroDocumento, mensajeTexto.trim());
+      toast.success(`Mensaje enviado a ${clienteActivo.nombreCompleto}`);
+      setMensajeTexto('');
+      void cargarSeguimiento();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'No se pudo enviar el mensaje'));
     } finally {
       setGuardando(false);
     }
@@ -403,7 +516,7 @@ export default function EntrenadorDashboard() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {horarios.map((h) => (
-                      <tr key={h.idHorario} className="hover:bg-gray-50">
+                      <tr key={h.id} className="hover:bg-gray-50">
                         <td className="px-3 py-2 text-sm">{formatearFecha(h.fechaDisponible)}</td>
                         <td className="px-3 py-2 text-sm">{formatearHora(h.horaInicio)}</td>
                         <td className="px-3 py-2 text-sm">{formatearHora(h.horaFin)}</td>
@@ -544,6 +657,9 @@ export default function EntrenadorDashboard() {
                   <Field label="Brazo (cm)" htmlFor="eval-brazo" required error={erroresEval.perimetroBrazo}>
                     <Input id="eval-brazo" type="number" step="any" inputMode="decimal" value={medForm.perimetroBrazo} onChange={(e) => setMedForm({ ...medForm, perimetroBrazo: e.target.value })} required error={!!erroresEval.perimetroBrazo} />
                   </Field>
+                  <Field label="Pierna (cm)" htmlFor="eval-pierna" required error={erroresEval.perimetroPierna}>
+                    <Input id="eval-pierna" type="number" step="any" inputMode="decimal" value={medForm.perimetroPierna} onChange={(e) => setMedForm({ ...medForm, perimetroPierna: e.target.value })} required error={!!erroresEval.perimetroPierna} />
+                  </Field>
                   <Field label="Presión arterial" htmlFor="eval-presion" required help="Formato 120/80" error={erroresEval.presionArterial}>
                     <Input id="eval-presion" type="text" inputMode="numeric" placeholder="120/80" value={medForm.presionArterial} onChange={(e) => setMedForm({ ...medForm, presionArterial: e.target.value })} required error={!!erroresEval.presionArterial} />
                   </Field>
@@ -559,9 +675,20 @@ export default function EntrenadorDashboard() {
           </section>
 
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-1 font-semibold text-gray-800">Seguimiento del cliente</h3>
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-semibold text-gray-800">Seguimiento del cliente</h3>
+              {clienteActivo?.tipoDeCliente === 'BENEFICIARIO_EPS' && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => navigate(`/reporte-eps/${clienteActivo.numeroDocumento}`)}
+                >
+                  <FiFileText aria-hidden="true" /> Reporte EPS
+                </Button>
+              )}
+            </div>
             <p className="mb-4 text-sm text-gray-500">
-              Progreso físico y rutinas activas del cliente seleccionado.
+              Progreso físico, historial de evaluaciones y rutinas activas del cliente seleccionado.
             </p>
             {!clienteActivo ? (
               <EmptyState
@@ -604,6 +731,190 @@ export default function EntrenadorDashboard() {
                           <p className="font-medium text-gray-800">{r.nombre}</p>
                           <p className="text-sm text-gray-600">{r.descripcion}</p>
                           <p className="mt-1 text-xs text-gray-500">Vence {formatearFecha(r.fechaVencimiento)}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="mt-6">
+                  <h4 className="font-medium text-gray-800">Historial de evaluaciones</h4>
+                  {historial.length === 0 ? (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Este cliente todavía no tiene evaluaciones físicas registradas.
+                    </p>
+                  ) : (
+                    <div className="mt-2 overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <caption className="sr-only">Historial de evaluaciones físicas</caption>
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {['Fecha', 'Peso', 'IMC', 'Grasa', 'Cintura', 'Pierna', 'Presión'].map((h) => (
+                              <th
+                                key={h}
+                                scope="col"
+                                className="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500"
+                              >
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {historial.map((ev) => (
+                            <tr key={ev.id} className="hover:bg-gray-50">
+                              <td className="px-3 py-2 text-sm">{formatearFecha(ev.fechaEvaluacion)}</td>
+                              <td className="px-3 py-2 text-sm">{ev.peso} kg</td>
+                              <td className="px-3 py-2 text-sm">{ev.imc?.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-sm">{ev.porcentajeGrasa}%</td>
+                              <td className="px-3 py-2 text-sm">{ev.perimetroCintura} cm</td>
+                              <td className="px-3 py-2 text-sm">
+                                {ev.perimetroPierna != null ? `${ev.perimetroPierna} cm` : '—'}
+                              </td>
+                              <td className="px-3 py-2 text-sm">{ev.presionArterial}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-1 font-semibold text-gray-800">Meta del cliente</h3>
+            <p className="mb-4 text-sm text-gray-500">
+              {meta
+                ? 'Ya existe una meta vigente: al guardar se actualiza.'
+                : 'Define el objetivo físico del cliente seleccionado.'}
+            </p>
+            {!clienteActivo ? (
+              <EmptyState
+                title="Selecciona un cliente"
+                message="La meta se registra sobre el cliente que elijas en la sección de arriba."
+              />
+            ) : (
+              <>
+                {meta && (
+                  <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                    <p className="font-medium">
+                      {clienteActivo.tipoDeCliente === 'BENEFICIARIO_EPS'
+                        ? meta.descripcion
+                        : meta.descripcion}
+                    </p>
+                    {meta.observacionMedica && (
+                      <p className="mt-1 text-emerald-800">{meta.observacionMedica}</p>
+                    )}
+                    {meta.fechaObjetivo && (
+                      <p className="mt-1 text-xs text-emerald-700">
+                        Fecha objetivo: {formatearFecha(meta.fechaObjetivo)}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <form onSubmit={guardarMeta} className="space-y-3">
+                  {clienteActivo.tipoDeCliente === 'BENEFICIARIO_EPS' ? (
+                    <>
+                      <Field label="Objetivo clínico" htmlFor="meta-objetivo" required>
+                        <Input
+                          id="meta-objetivo"
+                          type="text"
+                          value={metaForm.objetivoClinico}
+                          onChange={(e) => setMetaForm({ ...metaForm, objetivoClinico: e.target.value })}
+                          placeholder="Ej: recuperar movilidad de rodilla"
+                          required
+                        />
+                      </Field>
+                      <Field label="Observación médica" htmlFor="meta-observacion">
+                        <Textarea
+                          id="meta-observacion"
+                          rows={2}
+                          value={metaForm.observacionMedica}
+                          onChange={(e) => setMetaForm({ ...metaForm, observacionMedica: e.target.value })}
+                        />
+                      </Field>
+                    </>
+                  ) : (
+                    <Field label="Descripción de la meta" htmlFor="meta-descripcion" required>
+                      <Input
+                        id="meta-descripcion"
+                        type="text"
+                        value={metaForm.descripcion}
+                        onChange={(e) => setMetaForm({ ...metaForm, descripcion: e.target.value })}
+                        placeholder="Ej: reducir 5 kg en tres meses"
+                        required
+                      />
+                    </Field>
+                  )}
+                  <Field
+                    label="Fecha objetivo"
+                    htmlFor="meta-fecha"
+                    required={clienteActivo.tipoDeCliente !== 'BENEFICIARIO_EPS'}
+                  >
+                    <Input
+                      id="meta-fecha"
+                      type="date"
+                      value={metaForm.fechaObjetivo}
+                      onChange={(e) => setMetaForm({ ...metaForm, fechaObjetivo: e.target.value })}
+                      required={clienteActivo.tipoDeCliente !== 'BENEFICIARIO_EPS'}
+                    />
+                  </Field>
+                  <Button type="submit" loading={guardando}>
+                    {meta ? 'Actualizar meta' : 'Guardar meta'}
+                  </Button>
+                </form>
+              </>
+            )}
+          </section>
+
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-1 font-semibold text-gray-800">Mensajes al cliente</h3>
+            <p className="mb-4 text-sm text-gray-500">
+              Envía recomendaciones o recordatorios; el cliente los verá en su panel y podrá marcarlos
+              como leídos.
+            </p>
+            {!clienteActivo ? (
+              <EmptyState
+                title="Selecciona un cliente"
+                message="Los mensajes se envían al cliente que elijas en la sección de arriba."
+              />
+            ) : (
+              <>
+                <form onSubmit={enviarMensajeCliente} className="space-y-3">
+                  <Field label="Mensaje" htmlFor="mensaje-texto" required>
+                    <Textarea
+                      id="mensaje-texto"
+                      rows={3}
+                      value={mensajeTexto}
+                      onChange={(e) => setMensajeTexto(e.target.value)}
+                      placeholder="Ej: recuerda hidratarte antes de la sesión"
+                      required
+                    />
+                  </Field>
+                  <Button type="submit" loading={guardando}>
+                    <FiSend aria-hidden="true" /> Enviar mensaje
+                  </Button>
+                </form>
+
+                <div className="mt-4">
+                  <h4 className="font-medium text-gray-800">Mensajes enviados</h4>
+                  {mensajes.length === 0 ? (
+                    <p className="mt-2 text-sm text-gray-500">Todavía no has enviado mensajes a este cliente.</p>
+                  ) : (
+                    <ul className="mt-2 space-y-2">
+                      {mensajes.map((m) => (
+                        <li key={m.id} className="rounded-md border border-gray-200 p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs text-gray-500">
+                              {formatearFecha(m.fechaEnvio)} · {formatearHora(m.horaEnvio)}
+                            </p>
+                            <StatusBadge tone={m.leido ? 'green' : 'amber'}>
+                              {m.leido ? 'Leído' : 'Sin leer'}
+                            </StatusBadge>
+                          </div>
+                          <p className="mt-1 text-sm text-gray-700">{m.contenido}</p>
                         </li>
                       ))}
                     </ul>

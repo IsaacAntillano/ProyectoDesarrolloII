@@ -20,6 +20,7 @@ import {
   type EquipoDTO,
   type FlujoCaja,
 } from '../services/adminService';
+import { generarFlujoCaja } from '../services/pagoService';
 import Layout from '../components/Layout';
 import DocumentTypeBar from '../components/DocumentTypeBar';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -83,6 +84,7 @@ export default function AdminDashboard() {
   });
   const [flujoCaja, setFlujoCaja] = useState<FlujoCaja | null>(null);
   const [consultando, setConsultando] = useState(false);
+  const [generandoFlujo, setGenerandoFlujo] = useState(false);
   const [errorFlujo, setErrorFlujo] = useState<string | null>(null);
 
   const currentAdminId = (() => {
@@ -290,6 +292,25 @@ export default function AdminDashboard() {
 
   const handleConsultarFlujoCaja = async () => {
     await cargarFlujoCaja(flujoFecha);
+  };
+
+  /** Consolida pagos y gastos de la fecha en un FlujoDeCaja. */
+  const handleGenerarFlujoCaja = async () => {
+    setGenerandoFlujo(true);
+    setErrorFlujo(null);
+    try {
+      const datos = await generarFlujoCaja(flujoFecha);
+      setFlujoCaja(datos);
+      toast.success(`Flujo de caja del ${formatearFecha(flujoFecha)} generado`);
+    } catch (err) {
+      setErrorFlujo(
+        isServerUnreachable(err)
+          ? SERVER_UNREACHABLE_MESSAGE
+          : getApiErrorMessage(err, 'No se pudo generar el flujo de caja')
+      );
+    } finally {
+      setGenerandoFlujo(false);
+    }
   };
 
   /** Etiquetas de las pestañas de recursos con estado activo visible. */
@@ -991,6 +1012,13 @@ export default function AdminDashboard() {
                     <Button onClick={() => void handleConsultarFlujoCaja()} loading={consultando}>
                       Consultar flujo
                     </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => void handleGenerarFlujoCaja()}
+                      loading={generandoFlujo}
+                    >
+                      Generar flujo
+                    </Button>
                   </div>
                 </div>
                 {errorFlujo && (
@@ -1017,6 +1045,10 @@ export default function AdminDashboard() {
                   <div className="space-y-1">
                     <dt className="text-sm text-gray-500">Copago EPS</dt>
                     <dd className="text-lg font-semibold">{formatearMoneda(flujoCaja.totalIngresoCopagoEps)}</dd>
+                  </div>
+                  <div className="space-y-1">
+                    <dt className="text-sm text-gray-500">Ingreso factura EPS</dt>
+                    <dd className="text-lg font-semibold">{formatearMoneda(flujoCaja.totalIngresoFacturaEps)}</dd>
                   </div>
                   <div className="space-y-1">
                     <dt className="text-sm text-gray-500">Ingreso Plus</dt>

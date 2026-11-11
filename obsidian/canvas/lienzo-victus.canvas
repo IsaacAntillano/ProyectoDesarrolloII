@@ -1157,6 +1157,216 @@
       "width": 1140,
       "height": 110,
       "color": "6"
+    },
+    {
+      "id": "g-sesion-2026-11-11",
+      "type": "group",
+      "label": "Sesión 2026-11-11 · Revisión 47 HU + E2E",
+      "x": 3520,
+      "y": 0,
+      "width": 1220,
+      "height": 1060,
+      "color": "5"
+    },
+    {
+      "id": "s2026-11-11",
+      "type": "text",
+      "text": "# SESIÓN 2026-11-11\n\n## Revisión 47 HU\nSprint 1 + 2 · prueba E2E real",
+      "x": 3560,
+      "y": 40,
+      "width": 760,
+      "height": 60,
+      "color": "6"
+    },
+    {
+      "id": "n-revision-47hu",
+      "type": "text",
+      "text": "**47 HU auditadas**\n31 Sprint 1 + 16 Sprint 2\ntodas con backend + frontend",
+      "x": 3560,
+      "y": 130,
+      "width": 360,
+      "height": 110,
+      "color": "4"
+    },
+    {
+      "id": "n-fix-renovacion",
+      "type": "text",
+      "text": "**Fix renovación (CO-0004)**\nPago mensual sobre contrato vencido\nrenueva desde max(hoy, vencimiento)\ny marca ACTIVO",
+      "x": 3950,
+      "y": 130,
+      "width": 360,
+      "height": 110,
+      "color": "5"
+    },
+    {
+      "id": "n-fix-asignacion",
+      "type": "text",
+      "text": "**Fix escrituras del entrenador**\n`validarAsignacionActiva`\nrutina/mensaje/evaluación/historial\nexigen asignación activa",
+      "x": 4340,
+      "y": 130,
+      "width": 360,
+      "height": 110,
+      "color": "5"
+    },
+    {
+      "id": "n-fix-admin-token",
+      "type": "text",
+      "text": "**Fix id admin (tarifas)**\n`idAdminModificador` sale del JWT\nno del body (antes quedaba en 0)",
+      "x": 3560,
+      "y": 280,
+      "width": 360,
+      "height": 100,
+      "color": "5"
+    },
+    {
+      "id": "n-fix-flujo-ui",
+      "type": "text",
+      "text": "**Fix flujo de caja**\nbotón “Generar flujo” en AdminDashboard\n`generarFlujoCaja` ya se usa\n(antes solo existía en el servicio)",
+      "x": 3950,
+      "y": 280,
+      "width": 750,
+      "height": 100,
+      "color": "5"
+    },
+    {
+      "id": "n-verif-1111",
+      "type": "text",
+      "text": "**Verificación E2E**\n`./mvnw -q compile` ✅ · `npm run build` ✅ · `npm run lint` ✅\nSmoke test `curl`: **68 PASS / 0 FAIL**\nMariaDB local en `/tmp/opencode/mariadb`",
+      "x": 3560,
+      "y": 420,
+      "width": 1140,
+      "height": 110,
+      "color": "4"
+    },
+    {
+      "id": "n-pend-1111",
+      "type": "text",
+      "text": "**Pendiente / WIP**\nSin commit: árbol sucio.\n`SeleccionarRol.tsx` sigue obsoleto.\nSin tests automatizados (solo smoke manual).",
+      "x": 3560,
+      "y": 570,
+      "width": 1140,
+      "height": 100,
+      "color": "6"
+    },
+    {
+      "id": "g-sesion-sprint3",
+      "type": "group",
+      "label": "Sesión 2026-11-11 · Sprint 3 (16 HU) implementado",
+      "x": 3520,
+      "y": 1100,
+      "width": 1220,
+      "height": 760,
+      "color": "5"
+    },
+    {
+      "id": "n-sprint3",
+      "type": "text",
+      "text": "# SESIÓN 2026-11-11 · SPRINT 3\n\n16 HU implementadas backend+frontend.\nSmoke E2E: 108 PASS / 0 FAIL.",
+      "x": 3560,
+      "y": 1140,
+      "width": 360,
+      "height": 100,
+      "color": "6"
+    },
+    {
+      "id": "n-s3-desbloqueo",
+      "type": "text",
+      "text": "**Desbloqueo manual (CA-0003)**\n`PUT /clientes/mensual|eps/{doc}/desbloquear`\nbitácora DESBLOQUEO_ACCESO;\nrechaza si contrato vencido",
+      "x": 3560,
+      "y": 1260,
+      "width": 360,
+      "height": 100,
+      "color": "1"
+    },
+    {
+      "id": "n-s3-factura",
+      "type": "text",
+      "text": "**Factura EPS pagada (PA-0010/13)**\n`TipoDePago.EPS`, `Pago.facturaEps`,\ndetalle/radicar/pagar,\nflujo `totalIngresoFacturaEps`",
+      "x": 3940,
+      "y": 1260,
+      "width": 360,
+      "height": 100,
+      "color": "1"
+    },
+    {
+      "id": "n-s3-metas",
+      "type": "text",
+      "text": "**Metas (EF-0002/0004/0006)**\n`perimetroPierna`; upsert meta;\nvalidación asignación;\n`GET /metas`; `MetaEPSDTO.fechaObjetivo`",
+      "x": 4320,
+      "y": 1260,
+      "width": 360,
+      "height": 100,
+      "color": "1"
+    },
+    {
+      "id": "n-s3-horarios",
+      "type": "text",
+      "text": "**Horarios EPS (GE-0006)**\n`asignarHorarioAEps`,\n`listarHorariosDisponiblesParaEps`,\nendpoints admin",
+      "x": 3560,
+      "y": 1380,
+      "width": 360,
+      "height": 100,
+      "color": "1"
+    },
+    {
+      "id": "n-s3-mensajes",
+      "type": "text",
+      "text": "**Mensajes (GE-0009)**\nenvío entrenador, bandeja cliente,\nmarcar leído",
+      "x": 3940,
+      "y": 1380,
+      "width": 360,
+      "height": 100,
+      "color": "1"
+    },
+    {
+      "id": "n-s3-reporte",
+      "type": "text",
+      "text": "**Reporte EPS (EF-0008)**\n`ReporteProgresoEpsDTO` +\n`generarReporteEps` + endpoint,\nvista imprimible `window.print()`",
+      "x": 4320,
+      "y": 1380,
+      "width": 360,
+      "height": 100,
+      "color": "1"
+    },
+    {
+      "id": "n-s3-baja",
+      "type": "text",
+      "text": "**Baja voluntaria (CLT-0005)**\n`SolicitudBaja` PENDIENTE/APROBADA/\nRECHAZADA; aprobar ejecuta baja",
+      "x": 3560,
+      "y": 1500,
+      "width": 360,
+      "height": 100,
+      "color": "1"
+    },
+    {
+      "id": "n-s3-ui",
+      "type": "text",
+      "text": "**UI**\nEntrenadorDashboard, ClienteDashboard,\nReporteEps, SolicitudesBaja,\nGestionClientes, FacturaEps",
+      "x": 3940,
+      "y": 1500,
+      "width": 360,
+      "height": 100,
+      "color": "2"
+    },
+    {
+      "id": "n-s3-verif",
+      "type": "text",
+      "text": "**Verificación**\n`./mvnw -q compile` ✅\n`npm run build` ✅ · `npm run lint` ✅\nSmoke: 108 PASS / 0 FAIL",
+      "x": 4320,
+      "y": 1500,
+      "width": 360,
+      "height": 100,
+      "color": "3"
+    },
+    {
+      "id": "n-s3-pend",
+      "type": "text",
+      "text": "**Pendiente / WIP**\nSin commit: árbol sucio.\nVault actualizado.",
+      "x": 3560,
+      "y": 1620,
+      "width": 360,
+      "height": 80,
+      "color": "4"
     }
   ],
   "edges": [
@@ -1787,6 +1997,125 @@
       "id": "e-20261104-10",
       "fromNode": "n-auth",
       "toNode": "n-login-inactivos"
+    },
+    {
+      "id": "e-20261111-1",
+      "fromNode": "n-verif-114",
+      "toNode": "s2026-11-11",
+      "label": "siguiente sesión"
+    },
+    {
+      "id": "e-20261111-2",
+      "fromNode": "s2026-11-11",
+      "toNode": "n-revision-47hu"
+    },
+    {
+      "id": "e-20261111-3",
+      "fromNode": "s2026-11-11",
+      "toNode": "n-fix-renovacion"
+    },
+    {
+      "id": "e-20261111-4",
+      "fromNode": "s2026-11-11",
+      "toNode": "n-fix-asignacion"
+    },
+    {
+      "id": "e-20261111-5",
+      "fromNode": "s2026-11-11",
+      "toNode": "n-fix-admin-token"
+    },
+    {
+      "id": "e-20261111-6",
+      "fromNode": "s2026-11-11",
+      "toNode": "n-fix-flujo-ui"
+    },
+    {
+      "id": "e-20261111-7",
+      "fromNode": "n-fix-renovacion",
+      "toNode": "n-verif-1111"
+    },
+    {
+      "id": "e-20261111-8",
+      "fromNode": "n-fix-asignacion",
+      "toNode": "n-verif-1111"
+    },
+    {
+      "id": "e-20261111-9",
+      "fromNode": "n-fix-admin-token",
+      "toNode": "n-verif-1111"
+    },
+    {
+      "id": "e-20261111-10",
+      "fromNode": "n-fix-flujo-ui",
+      "toNode": "n-verif-1111"
+    },
+    {
+      "id": "e-20261111-11",
+      "fromNode": "n-verif-1111",
+      "toNode": "n-pend-1111"
+    },
+    {
+      "id": "e-s3-n-s3-desbloqueo",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-desbloqueo",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-s3-n-s3-factura",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-factura",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-s3-n-s3-metas",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-metas",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-s3-n-s3-horarios",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-horarios",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-s3-n-s3-mensajes",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-mensajes",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-s3-n-s3-reporte",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-reporte",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-s3-n-s3-baja",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-baja",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-s3-n-s3-ui",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-ui",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-s3-n-s3-verif",
+      "fromNode": "n-sprint3",
+      "toNode": "n-s3-verif",
+      "fromSide": "bottom",
+      "toSide": "top"
     }
   ]
 }

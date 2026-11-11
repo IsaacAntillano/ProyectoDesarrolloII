@@ -85,6 +85,25 @@ export interface SolicitudPlus {
   entrenadorAsignado?: { nombreCompleto: string } | null;
 }
 
+export interface Mensaje {
+  id: number;
+  contenido: string;
+  fechaEnvio: string;
+  horaEnvio: string;
+  leido: boolean;
+  entrenador?: { nombreCompleto: string } | null;
+}
+
+export interface SolicitudBaja {
+  id: number;
+  fechaSolicitud: string;
+  horaSolicitud: string;
+  motivo: string;
+  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+  observacionAdmin?: string | null;
+  fechaRespuesta?: string | null;
+}
+
 export const miPerfil = () => api.get<ApiResponse<MiPerfil>>('/cliente/perfil').then(unwrap);
 
 export const miProgreso = () => api.get<ApiResponse<Progreso>>('/cliente/progreso').then(unwrap);
@@ -106,3 +125,19 @@ export const misSolicitudesPlus = () =>
 
 export const solicitarPlus = (observacion?: string) =>
   api.post<ApiResponse<SolicitudPlus>>('/cliente/solicitud-plus', { observacion }).then(unwrap);
+
+// ─── Mensajes del entrenador (GE-0009) ──────────────────────────────
+
+export const misMensajes = () =>
+  api.get<ApiResponse<Mensaje[]>>('/cliente/mensajes').then(unwrap);
+
+export const marcarMensajeLeido = (idMensaje: number) =>
+  api.put<ApiResponse<Mensaje>>(`/cliente/mensajes/${idMensaje}/leido`).then(unwrap);
+
+// ─── Solicitud de baja voluntaria (CLT-0005) ────────────────────────
+
+export const misSolicitudesBaja = () =>
+  api.get<ApiResponse<SolicitudBaja[]>>('/cliente/solicitud-baja').then(unwrap);
+
+export const solicitarBaja = (motivo: string) =>
+  api.post<ApiResponse<SolicitudBaja>>('/cliente/solicitud-baja', { motivo }).then(unwrap);

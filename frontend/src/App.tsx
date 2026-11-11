@@ -13,6 +13,8 @@ import GestionClientes from './pages/GestionClientes';
 import GastosOperativos from './pages/GastosOperativos';
 import ContratosVencidos from './pages/ContratosVencidos';
 import SolicitudesPlus from './pages/SolicitudesPlus';
+import SolicitudesBaja from './pages/SolicitudesBaja';
+import ReporteEps from './pages/ReporteEps';
 import RegistroCliente from './pages/RegistroCliente';
 import FacturaEps from './pages/FacturaEps';
 import { Toaster } from 'react-hot-toast';
@@ -94,6 +96,22 @@ function App() {
             element={
               <PrivateRoute allowedRoles={['ADMINISTRADOR']}>
                 <SolicitudesPlus />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/solicitudes-baja"
+            element={
+              <PrivateRoute allowedRoles={['ADMINISTRADOR']}>
+                <SolicitudesBaja />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/reporte-eps/:documento"
+            element={
+              <PrivateRoute allowedRoles={['ENTRENADOR']}>
+                <ReporteEps />
               </PrivateRoute>
             }
           />

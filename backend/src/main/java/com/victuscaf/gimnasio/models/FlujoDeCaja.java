@@ -21,6 +21,7 @@ public class FlujoDeCaja {
     private double totalIngresoParticular;
     private double totalIngresoParticularDiario;
     private double totalIngresoCopagoEps;
+    private double totalIngresoFacturaEps;
     private double totalIngresoPlus;
     private double totalEgresosMantenimiento;
     private double totalEgresosNomina;

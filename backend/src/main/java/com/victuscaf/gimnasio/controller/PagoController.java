@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.victuscaf.gimnasio.dto.ApiResponse;
+import com.victuscaf.gimnasio.dto.FacturaEpsDetalleDTO;
 import com.victuscaf.gimnasio.dto.GastoDTO;
 import com.victuscaf.gimnasio.dto.PagoDTO;
+import com.victuscaf.gimnasio.dto.PagoFacturaEpsDTO;
 import com.victuscaf.gimnasio.models.FacturaEps;
 import com.victuscaf.gimnasio.models.FlujoDeCaja;
 import com.victuscaf.gimnasio.models.GastoOperativo;
@@ -25,6 +27,7 @@ import com.victuscaf.gimnasio.models.Pago;
 import com.victuscaf.gimnasio.models.TipoDeCliente;
 import com.victuscaf.gimnasio.models.Tarifa;
 import com.victuscaf.gimnasio.service.PagoService;
+import com.victuscaf.security.RolHeaderFilter;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -141,6 +144,33 @@ public class PagoController {
                 pagoService.listarFacturasEPS()));
     }
 
+    /** Detalle de una factura EPS con sus pagos (PA-0010). */
+    @GetMapping("/facturas-eps/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<FacturaEpsDetalleDTO>> detalleFacturaEps(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Detalle de la factura EPS",
+                pagoService.consultarFacturaEPS(id)));
+    }
+
+    /** Marca la factura como radicada ante la EPS. */
+    @PutMapping("/facturas-eps/{id}/radicar")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<FacturaEps>> radicarFacturaEps(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Factura EPS radicada",
+                pagoService.radicarFacturaEPS(id, documentoActual())));
+    }
+
+    /** Registra el pago recibido de la EPS (PA-0013). */
+    @PutMapping("/facturas-eps/{id}/pagar")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<ApiResponse<FacturaEps>> pagarFacturaEps(
+            @PathVariable Long id,
+            @Valid @RequestBody PagoFacturaEpsDTO dto) {
+        return ResponseEntity.ok(ApiResponse.success("Pago de factura EPS registrado",
+                pagoService.registrarPagoFacturaEPS(id, dto.metodoPago(), dto.fechaPago(),
+                        dto.valor(), documentoActual())));
+    }
+
     @PutMapping("/tarifas/{tipo}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<ApiResponse<Tarifa>> actualizarTarifa(
@@ -179,5 +209,17 @@ public class PagoController {
         LocalDate dia = fecha == null ? LocalDate.now() : fecha;
         return ResponseEntity.ok(ApiResponse.success("Gastos operativos del dia",
                 pagoService.consultarGastosPorFecha(dia)));
+    }
+
+    private Long documentoActual() {
+        String documento = RolHeaderFilter.documentoActual();
+        if (documento == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(documento);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

@@ -20,6 +20,7 @@ public class EvaluacionFisica {
     private double perimetroCintura;
     private double perimetroCadera;
     private double perimetroBrazo;
+    private double perimetroPierna;
     private String presionArterial;
     private int frecuenciaCardiaca;
     private int nivelDolor;        // escala 1-10, para EPS

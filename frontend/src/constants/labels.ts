@@ -44,6 +44,7 @@ export const ETIQUETA_TIPO_PAGO: Record<string, string> = {
   DIARIO: 'Acceso diario',
   COPAGO: 'Copago EPS',
   PLUS: 'Entrenador Plus',
+  EPS: 'Factura EPS',
 };
 
 export const ETIQUETA_ESTADO_PAGO: Record<string, string> = {

@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,11 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.victuscaf.gimnasio.dto.ApiResponse;
 import com.victuscaf.gimnasio.dto.HorarioDisponibleDTO;
 import com.victuscaf.gimnasio.dto.ProgresoDTO;
+import com.victuscaf.gimnasio.dto.SolicitudBajaRequestDTO;
 import com.victuscaf.gimnasio.dto.SolicitudPlusRequestDTO;
 import com.victuscaf.gimnasio.models.Asistencia;
 import com.victuscaf.gimnasio.models.EvaluacionFisica;
+import com.victuscaf.gimnasio.models.Mensaje;
 import com.victuscaf.gimnasio.models.MetaFisica;
 import com.victuscaf.gimnasio.models.Rutina;
+import com.victuscaf.gimnasio.models.SolicitudBaja;
 import com.victuscaf.gimnasio.models.SolicitudEntrenadorPlus;
 import com.victuscaf.security.RolHeaderFilter;
 import com.victuscaf.gimnasio.service.AsistenciaService;
@@ -26,8 +30,10 @@ import com.victuscaf.gimnasio.service.ClienteService;
 import com.victuscaf.gimnasio.service.EntrenadorService;
 import com.victuscaf.gimnasio.service.EvaluacionService;
 import com.victuscaf.gimnasio.service.RutinaService;
+import com.victuscaf.gimnasio.service.SolicitudBajaService;
 import com.victuscaf.gimnasio.service.SolicitudPlusService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -52,6 +58,7 @@ public class ClientePanelController {
     private final AsistenciaService asistenciaService;
     private final EntrenadorService entrenadorService;
     private final SolicitudPlusService solicitudPlusService;
+    private final SolicitudBajaService solicitudBajaService;
 
     /** Datos basicos del cliente autenticado, con estado de membresia. */
     @GetMapping("/perfil")
@@ -116,6 +123,35 @@ public class ClientePanelController {
     public ResponseEntity<ApiResponse<List<SolicitudEntrenadorPlus>>> misSolicitudesPlus() {
         return ResponseEntity.ok(ApiResponse.success("Solicitudes plus del cliente",
                 solicitudPlusService.listarDeCliente(documentoActual())));
+    }
+
+    /** Bandeja de mensajes que le envió su entrenador (GE-0009). */
+    @GetMapping("/mensajes")
+    public ResponseEntity<ApiResponse<List<Mensaje>>> misMensajes() {
+        return ResponseEntity.ok(ApiResponse.success("Mensajes del entrenador",
+                entrenadorService.listarMensajesDelCliente(documentoActual())));
+    }
+
+    /** Marca como leído un mensaje propio. */
+    @PutMapping("/mensajes/{id}/leido")
+    public ResponseEntity<ApiResponse<Mensaje>> marcarMensajeLeido(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Mensaje marcado como leído",
+                entrenadorService.marcarMensajeLeido(id, documentoActual())));
+    }
+
+    /** Solicita la baja voluntaria del registro (CLT-0005). */
+    @PostMapping("/solicitud-baja")
+    public ResponseEntity<ApiResponse<SolicitudBaja>> solicitarBaja(
+            @Valid @RequestBody SolicitudBajaRequestDTO dto) {
+        return ResponseEntity.ok(ApiResponse.success("Solicitud de baja enviada",
+                solicitudBajaService.solicitar(documentoActual(), dto.motivo())));
+    }
+
+    /** Estado de las solicitudes de baja del cliente. */
+    @GetMapping("/solicitud-baja")
+    public ResponseEntity<ApiResponse<List<SolicitudBaja>>> misSolicitudesBaja() {
+        return ResponseEntity.ok(ApiResponse.success("Solicitudes de baja del cliente",
+                solicitudBajaService.listarDeCliente(documentoActual())));
     }
 
     private Long documentoActual() {

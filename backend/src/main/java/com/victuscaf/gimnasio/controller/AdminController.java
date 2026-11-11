@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.victuscaf.gimnasio.dto.ApiResponse;
 import com.victuscaf.gimnasio.dto.AprobarSolicitudPlusDTO;
 import com.victuscaf.gimnasio.dto.EquipoDTO;
+import com.victuscaf.gimnasio.dto.HorarioDisponibleDTO;
 import com.victuscaf.gimnasio.dto.RespuestaSolicitudPlusDTO;
 import com.victuscaf.gimnasio.dto.TarifaUpdateDTO;
 import com.victuscaf.gimnasio.models.Equipo;
@@ -26,9 +27,13 @@ import com.victuscaf.gimnasio.models.FlujoDeCaja;
 import com.victuscaf.gimnasio.models.SolicitudEntrenadorPlus;
 import com.victuscaf.gimnasio.models.Tarifa;
 import com.victuscaf.gimnasio.models.TipoDeCliente;
+import com.victuscaf.gimnasio.models.UsuarioSistema;
+import com.victuscaf.gimnasio.repository.UsuarioSistemaRepository;
 import com.victuscaf.gimnasio.service.AdminService;
+import com.victuscaf.gimnasio.service.EntrenadorService;
 import com.victuscaf.gimnasio.service.InventarioService;
 import com.victuscaf.gimnasio.service.SolicitudPlusService;
+import com.victuscaf.security.RolHeaderFilter;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +52,8 @@ public class AdminController {
     private final AdminService adminService;
     private final InventarioService inventarioService;
     private final SolicitudPlusService solicitudPlusService;
+    private final EntrenadorService entrenadorService;
+    private final UsuarioSistemaRepository usuarioSistemaRepository;
 
     // ─── Tarifas ─────────────────────────────────────────────────────
 
@@ -61,9 +68,34 @@ public class AdminController {
             @PathVariable TipoDeCliente tipo,
             @Valid @RequestBody TarifaUpdateDTO dto) {
         // El tipo de la ruta manda: el body no puede cambiar de tipo de cliente.
+        // El administrador que modifica sale del token, no del body: el campo
+        // del DTO lo podria falsificar el cliente.
         Tarifa tarifa = adminService.actualizarTarifa(
-                tipo, dto.valorMensual(), dto.valorDiario(), dto.valorPlus(), dto.idAdminModificador());
+                tipo, dto.valorMensual(), dto.valorDiario(), dto.valorPlus(), adminActualId());
         return ResponseEntity.ok(ApiResponse.success("Tarifa actualizada", tarifa));
+    }
+
+    /** Id de base del administrador autenticado, segun el documento del token. */
+    private Long adminActualId() {
+        Long documento = documentoActual();
+        if (documento == null) {
+            return null;
+        }
+        return usuarioSistemaRepository.findByNumeroDeDocumento(documento)
+                .map(UsuarioSistema::getIdUsuarioSistema)
+                .orElse(null);
+    }
+
+    private Long documentoActual() {
+        String documento = RolHeaderFilter.documentoActual();
+        if (documento == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(documento);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     // ─── Equipos ─────────────────────────────────────────────────────
@@ -120,5 +152,24 @@ public class AdminController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         return ResponseEntity.ok(
                 ApiResponse.success("Flujo de caja consultado", adminService.consultarFlujoCaja(fecha)));
+    }
+
+    // ─── Horarios de beneficiarios EPS (GE-0006) ─────────────────────
+
+    /** Cupos libres del entrenador asignado al beneficiario EPS. */
+    @GetMapping("/eps/{numeroDocumento}/horarios-disponibles")
+    public ResponseEntity<ApiResponse<List<HorarioDisponibleDTO>>> horariosDisponiblesEps(
+            @PathVariable Long numeroDocumento) {
+        return ResponseEntity.ok(ApiResponse.success("Horarios disponibles del beneficiario EPS",
+                entrenadorService.listarHorariosDisponiblesParaEps(numeroDocumento)));
+    }
+
+    /** Asigna un horario del entrenador al beneficiario EPS. */
+    @PutMapping("/eps/{numeroDocumento}/horarios/{idHorario}")
+    public ResponseEntity<ApiResponse<Void>> asignarHorarioEps(
+            @PathVariable Long numeroDocumento,
+            @PathVariable Long idHorario) {
+        entrenadorService.asignarHorarioAEps(idHorario, numeroDocumento);
+        return ResponseEntity.ok(ApiResponse.success("Horario asignado al beneficiario EPS", null));
     }
 }

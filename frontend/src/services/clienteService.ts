@@ -207,6 +207,14 @@ export const reactivarClienteMensual = (numeroDocumento: number) =>
     .put<ApiResponse<ParticularMensual>>(`/clientes/mensual/${numeroDocumento}/reactivar`)
     .then(unwrap);
 
+/** Desbloqueo manual de un cliente mensual bloqueado (CA-0003). Solo admin. */
+export const desbloquearClienteMensual = (numeroDocumento: number, motivo?: string) =>
+  api
+    .put<ApiResponse<ParticularMensual>>(`/clientes/mensual/${numeroDocumento}/desbloquear`, {
+      motivo,
+    })
+    .then(unwrap);
+
 // ─── Particulares diarios ───────────────────────────────────────────
 
 export const buscarClienteDiario = (numeroDocumento: number) =>
@@ -243,6 +251,14 @@ export const desactivarBeneficiarioEps = (numeroDocumento: number) =>
 export const reactivarBeneficiarioEps = (numeroDocumento: number) =>
   api
     .put<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}/reactivar`)
+    .then(unwrap);
+
+/** Desbloqueo manual de un beneficiario EPS con contrato bloqueado (CA-0003). Solo admin. */
+export const desbloquearBeneficiarioEps = (numeroDocumento: number, motivo?: string) =>
+  api
+    .put<ApiResponse<BeneficiarioEps>>(`/clientes/eps/${numeroDocumento}/desbloquear`, {
+      motivo,
+    })
     .then(unwrap);
 
 export const cancelarBeneficiarioEps = (numeroDocumento: number, motivo: string) =>

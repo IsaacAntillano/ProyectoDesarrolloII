@@ -1,5 +1,6 @@
 package com.victuscaf.gimnasio.repository;
 
+import com.victuscaf.gimnasio.models.FacturaEps;
 import com.victuscaf.gimnasio.models.Pago;
 import com.victuscaf.gimnasio.models.Usuario;
 import com.victuscaf.gimnasio.models.TipoDePago;
@@ -20,4 +21,6 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     List<Pago> findByUsuarioAndTipoPago(Usuario usuario, TipoDePago tipoPago);
 
     List<Pago> findByFechaPagoBetween(LocalDate start, LocalDate end);
+
+    List<Pago> findByFacturaEps(FacturaEps facturaEps);
 }

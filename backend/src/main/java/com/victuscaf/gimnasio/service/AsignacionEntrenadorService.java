@@ -114,6 +114,29 @@ public class AsignacionEntrenadorService {
         return asignacionRepository.findByEntrenadorAndActivaTrue(entrenador);
     }
 
+    /**
+     * Valida que el cliente tenga una asignacion activa con el entrenador.
+     *
+     * <p>Si el documento no corresponde a un entrenador (por ejemplo, un
+     * administrador) no se valida nada: el rol ADMINISTRADOR puede operar
+     * sobre cualquier cliente.
+     */
+    @Transactional
+    public void validarAsignacionActiva(Long documentoEntrenador, Usuario cliente) {
+        var entrenadorOpt = entrenadorRepository.findByNumeroDeDocumento(documentoEntrenador);
+        if (entrenadorOpt.isEmpty()) {
+            return;
+        }
+        Entrenador entrenador = entrenadorOpt.get();
+        AsignacionEntrenador asignacion = asignacionActiva(cliente)
+                .orElseThrow(() -> new RuntimeException("El cliente no tiene un entrenador asignado"));
+        if (asignacion.getEntrenador() == null
+                || !asignacion.getEntrenador().getIdUsuarioSistema()
+                        .equals(entrenador.getIdUsuarioSistema())) {
+            throw new RuntimeException("El cliente no esta asignado a ti");
+        }
+    }
+
     /** Cierra las asignaciones cuya fecha de fin ya paso. */
     @Transactional
     public void expirarVencidas() {
